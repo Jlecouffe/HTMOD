@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HTMod</title>
+<style>
+  :root { --bg:#0b0f14; --bar:#11161d; --edge:#263040; --text:#e8edf3; --muted:#8a96a8; --amber:#f5a623; --cyan:#4cc9f0; }
+  * { box-sizing:border-box; }
+  html, body { margin:0; background:var(--bg); color:var(--text); font:14px "Segoe UI", system-ui, sans-serif; }
+  #bar { position:sticky; top:0; z-index:2; display:flex; align-items:center; gap:8px; padding:8px 12px; background:var(--bar);
+         border-bottom:1px solid var(--edge); }
+  #brand { font-weight:800; letter-spacing:.06em; font-size:17px; }
+  #brand span { color:var(--amber); }
+  #st { font:12px ui-monospace, Consolas, monospace; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  #st.ok { color:var(--cyan); }
+  .sp { flex:1; }
+  button { background:#1a212b; color:var(--text); border:1px solid var(--edge); border-radius:10px; padding:7px 12px;
+           font:600 13px "Segoe UI", system-ui, sans-serif; cursor:pointer; white-space:nowrap; }
+  button.on { border-color:var(--amber); color:var(--amber); }
+  #view { display:flex; justify-content:center; }
+  #scr { display:block; width:100%; height:auto; touch-action:none; user-select:none; -webkit-user-select:none;
+         -webkit-user-drag:none; -webkit-touch-callout:none; }
+  body.native #scr { width:auto; max-width:none; }
+  #kb { position:fixed; left:0; bottom:0; width:1px; height:1px; opacity:0; border:0; padding:0; }
+  @media (max-width:520px) { #st { display:none; } button { padding:7px 9px; } }
+</style>
+</head>
+<body>
+<div id="bar">
+  <div id="brand">HT<span>MOD</span></div>
+  <div id="st">connexion…</div>
+  <div class="sp"></div>
+  <button id="snd" title="Écouter le son reçu par le poste">Son</button>
+  <button id="kbb" title="Clavier (téléphone, tablette)">Clavier</button>
+  <button id="fit" title="Taille réelle ou ajustée à l'écran">1:1</button>
+</div>
+<div id="view"><img id="scr" alt="HTMod" draggable="false"></div>
+<input id="kb" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+<script>
+(() => {
+  const scr = document.getElementById('scr'), st = document.getElementById('st');
+  // --- image : flux MJPEG, relance automatique
+  let alive = 0;
+  function connect() {
+    scr.src = '/stream?' + Date.now();
+  }
+  scr.onload = () => { alive = Date.now(); st.textContent = 'connecté · ' + scr.naturalWidth + '×' + scr.naturalHeight; st.className = 'ok'; };
+  scr.onerror = () => { st.textContent = 'liaison perdue, nouvel essai…'; st.className = ''; setTimeout(connect, 2000); };
+  connect();
+  setInterval(() => { if (alive && Date.now() - alive > 8000) { alive = 0; st.textContent = 'reconnexion…'; connect(); } }, 3000);
+
+  // --- envoi des commandes, dans l'ordre
+  let chain = Promise.resolve();
+  function post(params) {
+    const body = new URLSearchParams(params).toString();
+    chain = chain.then(() => fetch('/input', { method:'POST', body, headers:{'Content-Type':'application/x-www-form-urlencoded'} })
+      .then(r => { if (r.status === 401) location.reload(); }).catch(() => {}));
+  }
+  function pos(e) {
+    const r = scr.getBoundingClientRect();
+    return { x: Math.round((e.clientX - r.left) * scr.naturalWidth / r.width), y: Math.round((e.clientY - r.top) * scr.naturalHeight / r.height) };
+  }
+  let down = false, lastMove = 0, pendingMove = null;
+  scr.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    scr.setPointerCapture(e.pointerId);
+    down = true;
+    const p = pos(e);
+    post({ t:'down', x:p.x, y:p.y, b: e.button === 2 ? 3 : e.button === 1 ? 2 : 1 });
+  });
+  scr.addEventListener('pointermove', e => {
+    if (!down && e.pointerType !== 'mouse') return;
+    const p = pos(e), now = performance.now();
+    if (now - lastMove < (down ? 30 : 90)) { pendingMove = p; return; }
+    lastMove = now; pendingMove = null;
+    post({ t:'move', x:p.x, y:p.y });
+  });
+  const up = e => {
+    if (!down) return;
+    down = false;
+    const p = pos(e);
+    if (pendingMove) { post({ t:'move', x:pendingMove.x, y:pendingMove.y }); pendingMove = null; }
+    post({ t:'up', x:p.x, y:p.y });
+  };
+  scr.addEventListener('pointerup', up);
+  scr.addEventListener('pointercancel', up);
+  scr.addEventListener('contextmenu', e => e.preventDefault());
+  scr.addEventListener('wheel', e => {
+    e.preventDefault();
+    const p = pos(e);
+    post({ t:'wheel', x:p.x, y:p.y, d: e.deltaY > 0 ? 1 : -1 });
+  }, { passive:false });
+
+  // --- clavier
+  const KEYS = { Backspace:8, Tab:9, Enter:10, Escape:27, ' ':32, PageUp:33, PageDown:34, End:35, Home:36,
+                 ArrowLeft:37, ArrowUp:38, ArrowRight:39, ArrowDown:40, Delete:127, F1:112, F2:113, F3:114, F4:115 };
+  function mods(e) { return (e.shiftKey ? 1 : 0) | (e.ctrlKey ? 2 : 0) | (e.altKey ? 4 : 0); }
+  function onKey(e) {
+    if (e.key === 'Unidentified' || e.key === 'Process') return;
+    if (e.ctrlKey && e.key.length === 1) {
+      e.preventDefault();
+      post({ t:'key', k: e.key.toUpperCase().charCodeAt(0), m: mods(e), c: e.key });
+    } else if (KEYS[e.key] !== undefined && e.key !== ' ') {
+      e.preventDefault();
+      post({ t:'key', k: KEYS[e.key], m: mods(e) });
+    } else if (e.key.length === 1 && !e.altKey) {
+      e.preventDefault();
+      post({ t:'type', c: e.key });
+    }
+  }
+  document.addEventListener('keydown', e => { if (e.target !== kb) onKey(e); });
+  const kb = document.getElementById('kb');
+  kb.addEventListener('keydown', onKey);
+  kb.addEventListener('input', () => {      // claviers tactiles (Android : pas de touche identifiee)
+    if (kb.value) { post({ t:'type', c: kb.value }); kb.value = ''; }
+  });
+  kb.addEventListener('beforeinput', e => {
+    if (e.inputType === 'deleteContentBackward') { e.preventDefault(); post({ t:'key', k:8, m:0 }); }
+    if (e.inputType === 'insertLineBreak') { e.preventDefault(); post({ t:'key', k:10, m:0 }); }
+  });
+  document.getElementById('kbb').onclick = () => { kb.focus(); };
+
+  // --- taille
+  const fit = document.getElementById('fit');
+  fit.onclick = () => { document.body.classList.toggle('native'); fit.classList.toggle('on'); };
+
+  // --- son : PCM 16 bits 16 kHz, lecture Web Audio
+  const snd = document.getElementById('snd');
+  let actx = null, reader = null, next = 0;
+  async function startAudio() {
+    actx = new (window.AudioContext || window.webkitAudioContext)();
+    next = 0;
+    snd.classList.add('on');
+    try {
+      const r = await fetch('/audio');
+      reader = r.body.getReader();
+      let rest = null;
+      for (;;) {
+        const { value, done } = await reader.read();
+        if (done || !actx) break;
+        let bytes = value;
+        if (rest) { const m = new Uint8Array(rest.length + bytes.length); m.set(rest); m.set(bytes, rest.length); bytes = m; rest = null; }
+        const n = bytes.length >> 1;
+        if (bytes.length & 1) rest = bytes.slice(bytes.length - 1);
+        if (!n) continue;
+        const dv = new DataView(bytes.buffer, bytes.byteOffset, n * 2);
+        const buf = actx.createBuffer(1, n, 16000), ch = buf.getChannelData(0);
+        for (let i = 0; i < n; i++) ch[i] = dv.getInt16(2 * i, true) / 32768;
+        const src = actx.createBufferSource();
+        src.buffer = buf;
+        src.connect(actx.destination);
+        const now = actx.currentTime;
+        if (next < now + 0.05 || next > now + 1.5) next = now + 0.25;   // reprise apres un silence, ou retard
+        src.start(next);
+        next += buf.duration;
+      }
+    } catch (e) { /* liaison coupee */ }
+    stopAudio();
+  }
+  function stopAudio() {
+    if (reader) { try { reader.cancel(); } catch (e) {} reader = null; }
+    if (actx) { actx.close(); actx = null; }
+    snd.classList.remove('on');
+  }
+  snd.onclick = () => { if (actx) stopAudio(); else startAudio(); };
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HTMod · connexion</title>
+<style>
+  :root { --bg:#0b0f14; --card:#141a22; --edge:#263040; --text:#e8edf3; --muted:#8a96a8; --amber:#f5a623; }
+  * { box-sizing:border-box; }
+  body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; background:var(--bg);
+         color:var(--text); font:15px/1.4 "Segoe UI", system-ui, sans-serif; padding:16px; }
+  form { background:var(--card); border:1px solid var(--edge); border-radius:16px; padding:28px 24px; width:100%; max-width:360px; }
+  h1 { margin:0 0 4px; font-size:28px; letter-spacing:.06em; }
+  h1 span { color:var(--amber); }
+  p { margin:0 0 20px; color:var(--muted); font-size:13px; }
+  label { display:block; font:11px ui-monospace, Consolas, monospace; letter-spacing:.14em; color:var(--muted); margin-bottom:6px; }
+  input { width:100%; padding:12px 14px; font:22px ui-monospace, Consolas, monospace; letter-spacing:.3em; text-align:center;
+          background:#070a0e; color:var(--text); border:1px solid var(--edge); border-radius:10px; outline:none; }
+  input:focus { border-color:var(--amber); }
+  button { margin-top:16px; width:100%; padding:13px; font-weight:700; font-size:14px; letter-spacing:.06em; border:0;
+           border-radius:12px; background:var(--amber); color:#1a1205; cursor:pointer; }
+  .err { color:#ff6b5b; font-size:13px; margin-top:12px; display:none; }
+</style>
+</head>
+<body>
+<form method="post" action="/login">
+  <h1>HT<span>MOD</span></h1>
+  <p>Accès à distance. Le code est affiché dans l'application, rubrique Options.</p>
+  <label for="pin">CODE D'ACCÈS</label>
+  <input id="pin" name="pin" inputmode="numeric" autocomplete="one-time-code" autofocus required>
+  <button type="submit">SE CONNECTER</button>
+  <div class="err" id="err">Code incorrect.</div>
+</form>
+<script>if (location.search.indexOf('erreur') >= 0) document.getElementById('err').style.display = 'block';</script>
+</body>
+</html>

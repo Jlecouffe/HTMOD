@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0A0E13">
+<title>HTMod</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600&family=JetBrains+Mono:wght@400;700&display=swap">
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<div id="app">
+  <header id="top">
+    <button class="key icon-only drawer-btn" id="drawerBtn" title="Radio et options"><svg data-icon="menu"></svg></button>
+    <svg class="brand-icon" data-icon="globe"></svg>
+    <div class="brand">HT<span>MOD</span></div>
+    <div class="brand-sub">SARSAT · RADIOSONDES · APRS</div>
+    <div class="grow"></div>
+    <div class="conn-state" id="connState"></div>
+    <button class="key sound-btn" id="soundBtn" title="Écouter le son du poste dans ce navigateur"><svg data-icon="speaker"></svg><span>SON</span></button>
+    <button class="key icon-only" id="settingsBtn" title="Réglages et outils"><svg data-icon="sliders"></svg></button>
+  </header>
+  <aside id="side"></aside>
+  <main id="main">
+    <nav id="tabs"></nav>
+    <section id="views"></section>
+  </main>
+</div>
+<div id="overlay" class="hidden"></div>
+<script src="/map.js"></script>
+<script src="/views.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>

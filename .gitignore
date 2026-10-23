@@ -1,0 +1,4 @@
+# sorties de compilation (build.ps1)
+out/
+dist/
+*.class
