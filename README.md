@@ -14,12 +14,10 @@ HTMod se connecte au poste en Bluetooth et décode sur le PC l'audio qu'il reço
 
 ## Installation
 
-1. Téléchargez `HTMod-windows.zip` et décompressez-le où vous voulez.
-2. Lancez `HTMod\HTMod.exe`. Le runtime Java est inclus, il n'y a rien d'autre à installer.
+1. Pour téléchargez `HTMod-Setup.exe` 
+2. cliquez sur code puis sur download zip 
 
 Configuration requise : Windows 10 ou 11, avec Bluetooth classique.
-
-Les résultats sont enregistrés dans `Documents\HTMod\` : `decodages.csv`, `aprs.txt`, enregistrements WAV, images SSTV, cache des tuiles et des satellites.
 
 ## Se connecter au poste
 
