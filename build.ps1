@@ -1,8 +1,11 @@
 # Construit HTMod pour Windows (decodeurs SARSAT / radiosondes + waterfall, liaison Bluetooth avec le poste).
 #   powershell -ExecutionPolicy Bypass -File build.ps1 [-NoTest] [-Run] [-Bsht E:\firmware\bsht]
-# Resultat : dist\HTMod\HTMod.exe (runtime Java inclus), dist\HTMod-windows.zip et HTMod-Setup.exe (installateur)
+#   powershell -ExecutionPolicy Bypass -File build.ps1 -Release -Notes "Nouveautes..."   (publie la Release GitHub)
+# Resultat : dist\HTMod\HTMod.exe (runtime Java inclus), dist\HTMod-windows.zip, HTMod-Setup.exe (installateur)
+# et HTMod-Setup.exe.sha256 (empreinte verifiee par la mise a jour integree).
 # $Bsht : dossier contenant mod\src (decodeurs partages), tools\jdk et htcommander.
-param([switch]$NoTest, [switch]$Run, [string]$Bsht = "E:\firmware\bsht", [string]$Version = "1.1")
+# La version est celle de App.VERSION (src\com\htmod\App.java) : la changer la avant une nouvelle Release.
+param([switch]$NoTest, [switch]$Run, [string]$Bsht = "E:\firmware\bsht", [switch]$Release, [string]$Notes = "")
 
 $b   = $Bsht
 $w   = $PSScriptRoot
@@ -13,6 +16,11 @@ $env:JAVA_HOME = $jh
 $env:PATH = "$jh\bin;$env:PATH"
 
 function Fail($msg) { Write-Host "ECHEC : $msg" -ForegroundColor Red; exit 1 }
+
+$m = Select-String -Path "$w\src\com\htmod\App.java" -Pattern 'static final String VERSION = "([0-9.]+)"'
+if (-not $m) { Fail "VERSION introuvable dans App.java" }
+$Version = $m.Matches[0].Groups[1].Value
+Write-Host "HTMod $Version"
 
 foreach ($d in "classes", "test-classes", "stage") {
     Remove-Item -Recurse -Force "$out\$d" -ErrorAction SilentlyContinue
@@ -60,9 +68,24 @@ $iscc = "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe", "${env:ProgramFiles(
 if ($iscc) {
     & $iscc /Q "/DAppDir=$w\dist\HTMod" "/DOutDir=$w" "/DAppVersion=$Version" "$w\installer\HTMod.iss"
     if ($LASTEXITCODE -ne 0) { Fail "Inno Setup" }
-    Write-Host "OK : $w\HTMod-Setup.exe" -ForegroundColor Green
+    $sha = (Get-FileHash -Algorithm SHA256 "$w\HTMod-Setup.exe").Hash.ToLower()
+    [IO.File]::WriteAllText("$w\HTMod-Setup.exe.sha256", "$sha  HTMod-Setup.exe`n")
+    Write-Host "OK : $w\HTMod-Setup.exe (SHA-256 $sha)" -ForegroundColor Green
 } else {
     Write-Host "Inno Setup absent : HTMod-Setup.exe non reconstruit" -ForegroundColor Yellow
+}
+
+# 6. Release GitHub (gh auth login au prealable) : tag v<version>, installateur et empreinte joints.
+#    Les postes installes la voient au demarrage (Options > Rechercher une mise a jour).
+if ($Release) {
+    if (-not $iscc) { Fail "Inno Setup requis pour publier" }
+    if (-not (Get-Command gh -ErrorAction SilentlyContinue)) { Fail "GitHub CLI absent (winget install GitHub.cli)" }
+    if (git -C $w status --porcelain -- src res installer bridge build.ps1) { Fail "modifications non commitees : commitez et poussez avant de publier" }
+    if (-not $Notes) { $Notes = "HTMod $Version" }
+    & gh release create "v$Version" "$w\HTMod-Setup.exe" "$w\HTMod-Setup.exe.sha256" --repo Jlecouffe/HTMOD `
+        --title "HTMod $Version" --notes $Notes --target main
+    if ($LASTEXITCODE -ne 0) { Fail "gh release create (version deja publiee ? gh auth login ?)" }
+    Write-Host "OK : Release v$Version publiee" -ForegroundColor Green
 }
 
 Write-Host "OK : $w\dist\HTMod\HTMod.exe" -ForegroundColor Green

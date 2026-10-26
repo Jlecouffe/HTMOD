@@ -43,3 +43,11 @@ Name: "{autodesktop}\HTMod"; Filename: "{app}\HTMod.exe"; Tasks: desktopicon
 
 [Run]
 Filename: "{app}\HTMod.exe"; Description: "{cm:LaunchProgram,HTMod}"; Flags: nowait postinstall skipifsilent
+; mise a jour lancee par HTMod (/SILENT /UPDATE=1) : relance l'application a la fin
+Filename: "{app}\HTMod.exe"; Flags: nowait; Check: IsUpdate
+
+[Code]
+function IsUpdate: Boolean;
+begin
+  Result := ExpandConstant('{param:UPDATE|0}') = '1';
+end;

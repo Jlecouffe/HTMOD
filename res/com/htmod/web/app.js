@@ -63,10 +63,12 @@ function buildSide() {
   });
   const sw = { listen: opt('listen', 'Écouter sur le PC'), muteAprs: opt('muteAprs', 'Couper le son des trames APRS'), wav: opt('wav', 'Enregistrer les WAV'),
     web: opt('web', 'Serveur web (réseau local)') };
+  const upd = h('div', { class: 'mono', style: { fontSize: '11.5px', margin: '8px 0 6px' } }, ' ');
   const browser = toggle('Écouter dans ce navigateur', false, v => setAudio(v));
   audioUi.push(on => browser.set(on));
   side.append(section('Options'), h('div', { class: 'card options' }, sw.listen, sw.muteAprs, sw.wav, sw.web,
-    h('div', { class: 'web-info' }, location.host + ' · interface web'), browser));
+    h('div', { class: 'web-info' }, location.host + ' · interface web'), browser, upd,
+    key('RECHERCHER UNE MISE À JOUR', () => { cmd('updateCheck'); toast('Recherche… une mise à jour s\'installe depuis le PC.'); }, { cls: 'small' })));
   // compteurs
   const cnt = ['APRS', 'SONDES', 'SARSAT'].map(n => { const b = h('b', null, '0'); return { el: h('div', { class: 'counter' }, b, h('span', null, n)), b }; });
   side.append(section('Station'), h('div', { class: 'counters' }, cnt.map(c => c.el)));
@@ -83,7 +85,10 @@ function buildSide() {
     const st = $('#connState');
     setText(st, d.running ? '' : '');
   });
-  onState('options', d => { sw.listen.set(d.listen); sw.muteAprs.set(d.muteAprs); sw.wav.set(d.wav); sw.web.set(d.web); });
+  onState('options', d => {
+    sw.listen.set(d.listen); sw.muteAprs.set(d.muteAprs); sw.wav.set(d.wav); sw.web.set(d.web);
+    setText(upd, d.update); upd.style.color = d.updateColor;
+  });
   onState('counters', d => d.forEach((v, i) => { setText(cnt[i].b, v); cnt[i].b.style.color = v > 0 ? [C.cyan, C.green, C.red][i] : C.muted; }));
 
   // mini-spectre (SpectrumStrip) : anime en continu, valeurs du PC

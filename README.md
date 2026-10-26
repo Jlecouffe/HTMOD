@@ -135,6 +135,8 @@ powershell -ExecutionPolicy Bypass -File build.ps1 -NoTest  # sans les tests
 
 Les chemins du JDK et des dossiers voisins sont définis en tête de `build.ps1` : adaptez-les à votre machine.
 
+La version vient de `VERSION` dans `App.java`. Pour publier une version, augmentez ce numéro, commitez et poussez, puis lancez `build.ps1 -Release -Notes "Nouveautés…"` (GitHub CLI requis, après `gh auth login`). Le script crée la Release `v<version>` avec `HTMod-Setup.exe` et son empreinte `HTMod-Setup.exe.sha256`. Au démarrage, puis une fois par jour, les HTMod installés la détectent (**Options › Rechercher une mise à jour**). Ils téléchargent l'installateur, vérifient l'empreinte, l'installent au même endroit et redémarrent.
+
 Le résultat se trouve dans `dist\HTMod\HTMod.exe`, ainsi que dans `dist\HTMod-windows.zip`. Si **Inno Setup 6** est installé (`winget install JRSoftware.InnoSetup`), le script produit aussi l'installateur `HTMod-Setup.exe` (script `installer\HTMod.iss`), qui propose de créer une icône sur le Bureau.
 
 Les tests fonctionnent sans poste : SBC, protocole GAIA, APRS/AFSK, POCSAG, SSTV (9 modes, avec bruit et horloge décalée), SGP4 (vérifié sur les vecteurs officiels SGP4-VER), encodage des canaux mémoire.

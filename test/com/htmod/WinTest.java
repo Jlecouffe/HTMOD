@@ -83,6 +83,7 @@ public class WinTest {
 
         AprsTest.run();
         AprsTxTest.run();
+        UpdaterTest.run();
         PocsagTest.run();
         SstvTest.run();
         ChannelTest.run();

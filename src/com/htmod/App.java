@@ -57,6 +57,7 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
+import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JLayeredPane;
@@ -64,6 +65,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
+import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
@@ -335,6 +337,30 @@ public final class App implements Radio.Listener, Decoders.Listener {
         fwKey.setVisible(false);
         fwKey.addActionListener(e -> { fwKey.setEnabled(false); Firewall.add(bridgeExe, this::log, () -> SwingUtilities.invokeLater(() -> { fwKey.setEnabled(true); checkFirewall(); })); });
         opts.add(fwKey);
+        // Mises a jour (Releases GitHub)
+        updateLbl.setAlignmentX(Component.LEFT_ALIGNMENT);
+        updateLbl.setFont(Shack.mono(11.5f));
+        updateLbl.setForeground(Shack.MUTED);
+        updateLbl.setBorder(new EmptyBorder(8, 2, 4, 0));
+        setUpdateStatus("Version " + VERSION, Shack.MUTED);
+        opts.add(updateLbl);
+        updateKey.setAlignmentX(Component.LEFT_ALIGNMENT);
+        updateKey.setPreferredSize(new Dimension(260, 36));
+        updateKey.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
+        updateKey.addActionListener(e -> {
+            Updater.Release r = availableUpdate;
+            if (r != null) offerUpdate(r);
+            else checkUpdate(true);
+        });
+        opts.add(updateKey);
+        Shack.Switch autoUpd = new Shack.Switch("Vérifier les mises à jour au démarrage", prefs.getBoolean("autoUpdate", true));
+        autoUpd.addActionListener(e -> prefs.putBoolean("autoUpdate", autoUpd.isOn()));
+        autoUpd.setAlignmentX(Component.LEFT_ALIGNMENT);
+        autoUpd.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
+        opts.add(autoUpd);
+        Timer autoCheck = new Timer(15_000, e -> { if (prefs.getBoolean("autoUpdate", true)) checkUpdate(false); });
+        autoCheck.setDelay(24 * 3600_000); // apres la premiere verification (15 s), une fois par jour
+        autoCheck.start();
         add(col, opts);
 
         // Compteurs
@@ -817,6 +843,124 @@ public final class App implements Radio.Listener, Decoders.Listener {
         }
     }
 
+    // ------------------------------------------------------------------ Mises a jour
+
+    private final Updater updater = new Updater();
+    private final JLabel updateLbl = new JLabel();
+    private final Shack.Key updateKey = new Shack.Key("RECHERCHER UNE MISE À JOUR").font(Shack.bold(11.5f));
+    private volatile Updater.Release availableUpdate;
+    private volatile String updateStatus = "";
+    private volatile boolean updateBusy, updateOffered;
+
+    private void setUpdateStatus(String s, Color c) {
+        updateStatus = s;
+        updateLbl.setText(s);
+        updateLbl.setForeground(c);
+    }
+
+    /** Interroge GitHub ; manual = clic sur le bouton (messages d'erreur et « a jour » affiches). */
+    private void checkUpdate(boolean manual) {
+        if (updateBusy) return;
+        updateBusy = true;
+        if (manual) setUpdateStatus("Recherche d'une mise à jour…", Shack.MUTED);
+        new Thread(() -> {
+            try {
+                Updater.Release r = updater.latest();
+                SwingUtilities.invokeLater(() -> {
+                    if (Updater.newer(r)) {
+                        availableUpdate = r;
+                        setUpdateStatus("Version " + r.version + " disponible (installée : " + VERSION + ")", Shack.AMBER);
+                        updateKey.setText("INSTALLER LA VERSION " + r.version);
+                        log("Mise à jour : version " + r.version + " disponible");
+                        if (manual || !updateOffered) { updateOffered = true; offerUpdate(r); }
+                    } else {
+                        setUpdateStatus("Version " + VERSION + " · à jour", Shack.GREEN);
+                        if (manual) JOptionPane.showMessageDialog(frame, "HTMod " + VERSION + " est la dernière version.", "Mise à jour",
+                                JOptionPane.INFORMATION_MESSAGE);
+                    }
+                });
+            } catch (Exception e) {
+                String m = e.getMessage() == null ? e.toString() : e.getMessage();
+                log("Mise à jour : vérification impossible (" + m + ")");
+                SwingUtilities.invokeLater(() -> {
+                    setUpdateStatus("Version " + VERSION + " · vérification impossible", Shack.MUTED);
+                    if (manual) JOptionPane.showMessageDialog(frame, "Vérification impossible : " + m, "Mise à jour", JOptionPane.WARNING_MESSAGE);
+                });
+            } finally {
+                updateBusy = false;
+            }
+        }, "htmod-maj").start();
+    }
+
+    private void offerUpdate(Updater.Release r) {
+        JTextArea notes = new JTextArea(r.notes.isEmpty() ? "(pas de notes de version)" : r.notes, 12, 52);
+        notes.setEditable(false);
+        notes.setLineWrap(true);
+        notes.setWrapStyleWord(true);
+        notes.setFont(Shack.body(12.5f));
+        notes.setBorder(new EmptyBorder(8, 10, 8, 10));
+        JPanel p = new JPanel(new BorderLayout(0, 10));
+        p.setOpaque(false);
+        p.add(Shack.label("HTMod " + r.version + " est disponible (installée : " + VERSION + ").", Shack.body(13.5f), Shack.TEXT), BorderLayout.NORTH);
+        p.add(Shack.scroll(notes), BorderLayout.CENTER);
+        String[] opts = {"METTRE À JOUR", "PLUS TARD"};
+        int c = JOptionPane.showOptionDialog(frame, p, "Mise à jour de HTMod", JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE,
+                null, opts, opts[0]);
+        if (c == 0) installUpdate(r);
+    }
+
+    private void installUpdate(Updater.Release r) {
+        File exe = Updater.installedExe();
+        if (exe == null) { // lance depuis les sources : pas d'installation a remplacer
+            try { Desktop.getDesktop().browse(URI.create(r.page)); } catch (Exception ignore) {}
+            JOptionPane.showMessageDialog(frame, "HTMod n'est pas lancé depuis une installation : téléchargez la version " + r.version
+                    + " sur\n" + r.page, "Mise à jour", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        if (transmitter != null && transmitter.isBusy()) {
+            JOptionPane.showMessageDialog(frame, "Une émission est en cours : réessayez une fois terminée.", "Mise à jour", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        JDialog d = new JDialog(frame, "Mise à jour de HTMod", false);
+        JProgressBar bar = new JProgressBar(0, 100);
+        bar.setStringPainted(true);
+        bar.setString("Téléchargement de la version " + r.version + "…");
+        bar.setForeground(Shack.AMBER);
+        bar.setBackground(Shack.WELL);
+        JPanel p = new JPanel(new BorderLayout());
+        p.setBackground(Shack.BG);
+        p.setBorder(new EmptyBorder(18, 18, 18, 18));
+        p.add(bar);
+        d.setContentPane(p);
+        d.setSize(440, 100);
+        d.setLocationRelativeTo(frame);
+        d.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+        d.setVisible(true);
+        updateKey.setEnabled(false);
+        log("Mise à jour : téléchargement de la version " + r.version);
+        new Thread(() -> {
+            try {
+                File setup = updater.download(r, pct -> SwingUtilities.invokeLater(() -> {
+                    bar.setValue(pct);
+                    bar.setString("Téléchargement de la version " + r.version + " : " + pct + " %");
+                }));
+                log("Mise à jour : installateur vérifié (SHA-256), installation puis redémarrage de HTMod");
+                SwingUtilities.invokeLater(() -> bar.setString("Installation… HTMod va redémarrer"));
+                Updater.install(setup, exe);
+                Thread.sleep(800);
+                SwingUtilities.invokeLater(this::quit);
+            } catch (Exception e) {
+                String m = e.getMessage() == null ? e.toString() : e.getMessage();
+                log("Mise à jour impossible : " + m);
+                SwingUtilities.invokeLater(() -> {
+                    d.dispose();
+                    updateKey.setEnabled(true);
+                    JOptionPane.showMessageDialog(frame, "Mise à jour impossible : " + m, "Mise à jour", JOptionPane.WARNING_MESSAGE);
+                });
+            }
+        }, "htmod-maj-installation").start();
+    }
+
     private void quit() {
         userDisconnect = true;
         if (transmitter != null && transmitter.isBusy()) {
@@ -1164,7 +1308,8 @@ public final class App implements Radio.Listener, Decoders.Listener {
                     "forced", decoders.forcedMode, "running", radio.isRunning()));
             s.put("options", Json.obj("listen", listenSw.isOn(), "muteAprs", muteAprsSw.isOn(), "wav", wavSw.isOn(), "web", webSw.isOn(),
                     "swAprs", prefs.getBoolean("swAprs", true), "night", map.webNight(), "topo", map.webTopo(),
-                    "wind", prefs.getBoolean("mapWind", false), "outDir", outDir.getAbsolutePath(), "version", VERSION));
+                    "wind", prefs.getBoolean("mapWind", false), "outDir", outDir.getAbsolutePath(), "version", VERSION,
+                    "update", updateStatus, "updateColor", updateLbl.getForeground()));
             s.put("counters", new int[]{map.count(MapPanel.KIND_APRS), map.count(MapPanel.KIND_SONDE), map.count(MapPanel.KIND_SARSAT)});
             float[] sp;
             synchronized (spectrum.v) { sp = spectrum.v.clone(); }
@@ -1220,6 +1365,7 @@ public final class App implements Radio.Listener, Decoders.Listener {
                     for (Radio.Device d : devices) if (d.mac.equals(p.get("mac"))) selectDevice(d);
                     return null;
                 case "devices": refreshDevices(true); return null;
+                case "updateCheck": checkUpdate(false); return null; // l'installation se fait sur le PC
                 case "forced": setForced(Integer.parseInt(p.get("v"))); return null;
                 case "option": {
                     boolean on = "1".equals(p.get("on"));
