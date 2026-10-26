@@ -82,6 +82,7 @@ public class WinTest {
         check("aucun decodage sur un canal ordinaire", got.isEmpty());
 
         AprsTest.run();
+        AprsTxTest.run();
         PocsagTest.run();
         SstvTest.run();
         ChannelTest.run();

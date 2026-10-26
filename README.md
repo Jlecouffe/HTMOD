@@ -53,6 +53,8 @@ Carte OpenStreetMap avec mode **NUIT**, fond **TOPO** et **VENT** animé (Open-M
 ### APRS
 Trames reçues par le TNC du poste et par le démodulateur AFSK 1200 du PC : positions (Mic-E et format compressé compris), objets, messages, télémétrie. Un double-clic montre la station sur la carte.
 
+**Émission** : HTMod relit les réglages APRS du poste : indicatif et SSID, symbole, commentaire, intervalle, chemin et position GPS. À défaut de GPS, il utilise la position d'observation de l'onglet Satellites. **ÉMETTRE TRAME** envoie une balise de position, ou le champ d'information saisi (statut, message…). L'interrupteur **Balise automatique** répète la balise à l'intervalle réglé dans le poste. La trame passe par le TNC du poste, qui l'émet en AFSK 1200 dès que le canal est libre. Elle part sur le canal nommé « APRS » s'il existe, sinon sur celui du VFO A, et uniquement en bande radioamateur.
+
 ![APRS](docs/aprs.jpg)
 
 ### Décodages SARSAT et radiosondes
@@ -133,7 +135,7 @@ powershell -ExecutionPolicy Bypass -File build.ps1 -NoTest  # sans les tests
 
 Les chemins du JDK et des dossiers voisins sont définis en tête de `build.ps1` : adaptez-les à votre machine.
 
-Le résultat se trouve dans `dist\HTMod\HTMod.exe`, ainsi que dans `dist\HTMod-windows.zip`.
+Le résultat se trouve dans `dist\HTMod\HTMod.exe`, ainsi que dans `dist\HTMod-windows.zip`. Si **Inno Setup 6** est installé (`winget install JRSoftware.InnoSetup`), le script produit aussi l'installateur `HTMod-Setup.exe` (script `installer\HTMod.iss`), qui propose de créer une icône sur le Bureau.
 
 Les tests fonctionnent sans poste : SBC, protocole GAIA, APRS/AFSK, POCSAG, SSTV (9 modes, avec bruit et horloge décalée), SGP4 (vérifié sur les vecteurs officiels SGP4-VER), encodage des canaux mémoire.
 

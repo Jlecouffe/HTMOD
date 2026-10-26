@@ -24,6 +24,7 @@ import java.awt.event.MouseEvent;
 import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 import java.io.File;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -317,6 +318,12 @@ final class SatPanel extends JPanel implements MapPanel.Overlay {
         rfChoice.setOpaque(false);
         b.add(left(rfChoice));
         b.add(left(dRf));
+        Shack.Key editKey = new Shack.Key("MODIFIER").font(Shack.bold(11f));
+        editKey.setToolTipText("Modifier les fréquences de la configuration choisie");
+        editKey.setPreferredSize(new Dimension(110, 32));
+        editKey.setMaximumSize(new Dimension(110, 32));
+        editKey.addActionListener(e -> editDialog());
+        b.add(left(editKey));
         b.add(left(gap(8)));
         trackKey.setMaximumSize(new Dimension(Integer.MAX_VALUE, 46));
         trackKey.setPreferredSize(new Dimension(260, 46));
@@ -406,6 +413,7 @@ final class SatPanel extends JPanel implements MapPanel.Overlay {
         else {
             SatCatalog.Rf r = s.rf.get(Math.min(rfIndex, s.rf.size() - 1));
             rf.append(r.label()).append('\n');
+            if (r.downHz <= 0) { dRf.setText(rf.toString().trim()); return; }
             rf.append("Réception : ").append(SatCatalog.mhz(l.downlink(r.downHz))).append(" MHz")
                     .append(String.format(Locale.ROOT, " (%+.1f kHz)", (l.downlink(r.downHz) - r.downHz) / 1000.0));
             if (r.upHz > 0) rf.append("\nÉmission : ").append(SatCatalog.mhz(l.uplink(r.upHz))).append(" MHz")
@@ -482,6 +490,10 @@ final class SatPanel extends JPanel implements MapPanel.Overlay {
         if (s == null) return;
         if (!r.isRunning()) { JOptionPane.showMessageDialog(this, "Connectez d'abord le poste."); return; }
         if (s.rf.isEmpty()) { JOptionPane.showMessageDialog(this, "Ce satellite n'a pas de configuration radio."); return; }
+        if (s.rf.get(Math.min(rfIndex, s.rf.size() - 1)).downHz <= 0) {
+            JOptionPane.showMessageDialog(this, "Pas de fréquence pour cette configuration : réglez-la avec MODIFIER.");
+            return;
+        }
         host.stopSweep();
         tracking = true;
         trackKey.setText("ARRÊTER LE SUIVI");
@@ -496,6 +508,7 @@ final class SatPanel extends JPanel implements MapPanel.Overlay {
         SatTrack.Look l = SatTrack.look(s.prop(), System.currentTimeMillis(), observer);
         if (l == null) return;
         SatCatalog.Rf rf = s.rf.get(Math.min(rfIndex, s.rf.size() - 1));
+        if (rf.downHz <= 0) { stopTracking(); return; }
         long rx = l.downlink(rf.downHz), tx = rf.upHz > 0 ? l.uplink(rf.upHz) : rx;
         SatTrack.Pass p = nextPass.get(s.norad);
         int secs = p == null ? 0 : (int) Math.max(0, (p.aosMs - System.currentTimeMillis()) / 1000);
@@ -517,6 +530,72 @@ final class SatPanel extends JPanel implements MapPanel.Overlay {
     void onDisconnected() {
         tracking = false;
         SwingUtilities.invokeLater(() -> trackKey.setText("SUIVRE AVEC LE POSTE"));
+    }
+
+    // ------------------------------------------------------------------ Modification des frequences
+
+    private void editDialog() {
+        SatCatalog.Sat s = selected;
+        if (s == null) { JOptionPane.showMessageDialog(this, "Choisissez un satellite."); return; }
+        if (s.rf.isEmpty()) { JOptionPane.showMessageDialog(this, "Ce satellite n'a pas de configuration radio (ajoutez-en une avec AJOUTER…)."); return; }
+        SatCatalog.Rf r = s.rf.get(Math.min(rfIndex, s.rf.size() - 1));
+        JTextField down = Shack.field(r.downHz > 0 ? SatCatalog.mhz(r.downHz) : "", 10), up = Shack.field(r.upHz > 0 ? SatCatalog.mhz(r.upHz) : "", 10),
+                tone = Shack.field(r.upTone > 0 ? String.format(Locale.ROOT, "%.1f", r.upTone / 100.0) : "", 6);
+        JPanel p = new JPanel();
+        p.setOpaque(false);
+        p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
+        p.add(left(cap("Réception (descente), MHz")));
+        p.add(left(down));
+        p.add(left(cap("Émission (montée), MHz — vide = pas d'émission")));
+        p.add(left(up));
+        p.add(left(cap("CTCSS à l'émission, Hz — vide = aucun")));
+        p.add(left(tone));
+        if (r.orig != null)
+            p.add(left(cap("Origine : ↓ " + SatCatalog.mhz(r.orig[0]) + (r.orig[1] > 0 ? "  ↑ " + SatCatalog.mhz(r.orig[1]) : ""))));
+        String[] opts = r.orig != null ? new String[]{"ENREGISTRER", "RÉTABLIR L'ORIGINE", "ANNULER"} : new String[]{"ENREGISTRER", "ANNULER"};
+        int c = JOptionPane.showOptionDialog(this, p, s.name + " · " + (r.name.isEmpty() ? "FM" : r.name), JOptionPane.DEFAULT_OPTION,
+                JOptionPane.PLAIN_MESSAGE, null, opts, opts[0]);
+        String err;
+        if (c == 0) err = editRf(s, r, down.getText(), up.getText(), tone.getText());
+        else if (c == 1 && r.orig != null) err = resetRf(s, r);
+        else return;
+        if (err != null) JOptionPane.showMessageDialog(this, err);
+    }
+
+    /** Enregistre les frequences saisies (MHz, Hz) ; renvoie un message d'erreur ou null. */
+    private String editRf(SatCatalog.Sat s, SatCatalog.Rf r, String down, String up, String tone) {
+        long d, u;
+        int t;
+        try {
+            d = Math.round(Double.parseDouble(down.trim().replace(',', '.')) * 1e6);
+            u = up.trim().isEmpty() ? 0 : Math.round(Double.parseDouble(up.trim().replace(',', '.')) * 1e6);
+            t = tone.trim().isEmpty() ? 0 : (int) Math.round(Double.parseDouble(tone.trim().replace(',', '.')) * 100);
+        } catch (NumberFormatException e) {
+            return "Valeur invalide.";
+        }
+        if (d < 1_000_000L || d > 6_000_000_000L || u < 0 || u > 6_000_000_000L) return "Fréquence hors plage.";
+        if (t != 0 && (t < 6000 || t > 26000)) return "CTCSS hors plage (60–260 Hz).";
+        try {
+            catalog.editRf(s, r, d, u, t);
+        } catch (IOException e) {
+            return "Enregistrement impossible : " + e.getMessage();
+        }
+        host.log("Satellites : " + s.name + " " + r.label());
+        updateDetail();
+        if (tracking) doTrack();
+        return null;
+    }
+
+    private String resetRf(SatCatalog.Sat s, SatCatalog.Rf r) {
+        try {
+            catalog.resetRf(s, r);
+        } catch (IOException e) {
+            return "Enregistrement impossible : " + e.getMessage();
+        }
+        host.log("Satellites : " + s.name + " fréquences d'origine " + r.label());
+        updateDetail();
+        if (tracking) doTrack();
+        return null;
     }
 
     // ------------------------------------------------------------------ Ajout / suppression
@@ -647,7 +726,7 @@ final class SatPanel extends JPanel implements MapPanel.Overlay {
                     "passes", dPasses.getText(), "tracking", tracking, "trackKey", trackKey.getText(),
                     "look", l == null ? null : Json.obj("az", l.azDeg, "el", l.elDeg, "range", l.rangeKm, "alt", l.altKm, "lat", l.latDeg,
                             "lon", l.lonDeg, "rr", l.rangeRateKms, "foot", l.footprintKm),
-                    "track", tr, "nowIdx", nowIdx);
+                    "track", tr, "nowIdx", nowIdx, "edit", rfEditState(s));
         }
         SatTrack.Observer o = observer;
         return Json.obj("list", list, "total", catalog.all().size(), "filter", filter, "minEl", minEl, "search", search.getText(),
@@ -655,9 +734,26 @@ final class SatPanel extends JPanel implements MapPanel.Overlay {
                 "obs", o == null ? null : new double[]{o.latDeg, o.lonDeg}, "sel", sel);
     }
 
+    /** Valeurs de la configuration choisie pour la fenetre MODIFIER de la page web. */
+    private Map<String, Object> rfEditState(SatCatalog.Sat s) {
+        if (s.rf.isEmpty()) return null;
+        SatCatalog.Rf r = s.rf.get(Math.min(rfIndex, s.rf.size() - 1));
+        return Json.obj("down", r.downHz > 0 ? SatCatalog.mhz(r.downHz) : "","up", r.upHz > 0 ? SatCatalog.mhz(r.upHz) : "",
+                "tone", r.upTone > 0 ? String.format(Locale.ROOT, "%.1f", r.upTone / 100.0) : "",
+                "orig", r.orig == null ? null : "↓ " + SatCatalog.mhz(r.orig[0]) + (r.orig[1] > 0 ? "  ↑ " + SatCatalog.mhz(r.orig[1]) : ""));
+    }
+
     /** Commande web : renvoie null, un message d'erreur (String) ou des donnees (Map). */
     Object webCmd(String a, Map<String, String> p) {
         switch (a) {
+            case "rfEdit":
+            case "rfReset": {
+                SatCatalog.Sat s = selected;
+                if (s == null || s.rf.isEmpty()) return "Choisissez un satellite avec une configuration radio.";
+                SatCatalog.Rf r = s.rf.get(Math.min(rfIndex, s.rf.size() - 1));
+                return a.equals("rfReset") ? resetRf(s, r)
+                        : editRf(s, r, p.getOrDefault("down", ""), p.getOrDefault("up", ""), p.getOrDefault("tone", ""));
+            }
             case "select": {
                 int id = Integer.parseInt(p.get("id"));
                 SatCatalog.Sat s = catalog.get(id);
@@ -702,6 +798,7 @@ final class SatPanel extends JPanel implements MapPanel.Overlay {
                     if (s == null) return "Choisissez un satellite.";
                     if (!host.radio().isRunning()) return "Connectez d'abord le poste.";
                     if (s.rf.isEmpty()) return "Ce satellite n'a pas de configuration radio.";
+                    if (s.rf.get(Math.min(rfIndex, s.rf.size() - 1)).downHz <= 0) return "Pas de fréquence pour cette configuration : réglez-la avec MODIFIER.";
                 }
                 toggleTracking();
                 return null;

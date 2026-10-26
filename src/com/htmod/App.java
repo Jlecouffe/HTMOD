@@ -95,6 +95,7 @@ public final class App implements Radio.Listener, Decoders.Listener {
     private Bandscope bandscope;
     private PocsagPanel pocsag;
     private SstvPanel sstv;
+    private AprsTxPanel aprsTx;
     private VfoPanel vfo;
     private SatPanel sats;
     private Transmitter transmitter;
@@ -393,7 +394,16 @@ public final class App implements Radio.Listener, Decoders.Listener {
             }
         });
         aprsHeader = Shack.label("0 paquet", Shack.mono(11f), Shack.MUTED);
-        addView(tabBar, "APRS", Shack.LIST, tableView("TRAFIC APRS", aprsHeader, aprsTable));
+        aprsTx = new AprsTxPanel(new AprsTxPanel.Host() {
+            @Override public Radio radio() { return radio; }
+            @Override public void log(String s) { App.this.log(s); }
+            @Override public void sent(byte[] f) { onAx25(f, "ÉMIS"); }
+        });
+        JPanel aprsView = new JPanel(new BorderLayout(14, 0));
+        aprsView.setOpaque(false);
+        aprsView.add(tableView("TRAFIC APRS", aprsHeader, aprsTable), BorderLayout.CENTER);
+        aprsView.add(aprsTx, BorderLayout.EAST);
+        addView(tabBar, "APRS", Shack.LIST, aprsView);
 
         // Decodages SARSAT / sondes
         JTable detTable = new JTable(detections);
@@ -1044,12 +1054,22 @@ public final class App implements Radio.Listener, Decoders.Listener {
     public void onSettings(boolean dualWatch, int channelA, int channelB) { if (vfo != null) vfo.refreshSoon(); }
 
     @Override
-    public void onChannelsChanged() { if (vfo != null) vfo.channelsChanged(); }
+    public void onChannelsChanged() {
+        if (vfo != null) vfo.channelsChanged();
+        if (aprsTx != null) SwingUtilities.invokeLater(aprsTx::refresh);
+    }
+
+    @Override
+    public void onAprsSettings() { if (aprsTx != null) SwingUtilities.invokeLater(aprsTx::refresh); }
+
+    @Override
+    public void onTncSent(boolean ok) { if (aprsTx != null) aprsTx.onSent(ok); }
 
     @Override
     public void onDisconnected() {
         if (bandscope != null) bandscope.onDisconnected();
         if (sats != null) sats.onDisconnected();
+        if (aprsTx != null) aprsTx.onDisconnected();
         SwingUtilities.invokeLater(() -> {
             channelLbl.setText("–");
             channelLbl.setForeground(Shack.TEXT);
@@ -1169,6 +1189,7 @@ public final class App implements Radio.Listener, Decoders.Listener {
             synchronized (webLog) { s.put("log", new ArrayList<>(webLog)); }
             s.put("bs", bandscope.web());
             s.put("pocsag", pocsag.web());
+            s.put("aprsTx", aprsTx.web());
             s.put("sstv", sstv.web());
             s.put("vfo", vfo.web());
             if (slow) s.put("sats", sats.web());
@@ -1183,6 +1204,7 @@ public final class App implements Radio.Listener, Decoders.Listener {
                 switch (panel) {
                     case "bs": bandscope.webCmd(act, p); return null;
                     case "pocsag": return pocsag.webCmd(act, p);
+                    case "aprs": return aprsTx.webCmd(act, p);
                     case "sstv": return sstv.webCmd(act, p);
                     case "vfo": return vfo.webCmd(act, p);
                     case "sats": return sats.webCmd(act, p);

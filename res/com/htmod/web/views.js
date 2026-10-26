@@ -270,8 +270,29 @@ VIEWS.APRS = function (v) {
     title: r => r[5] + (r[6] ? '\nDouble-clic : voir la station sur la carte' : ''),
     onDouble: r => { if (r[6]) { selectTab('CARTE'); window.mainMap.focus(r[6]); } },
   });
-  v.append(h('div', { class: 'card table-card' }, h('div', { class: 'head' }, label('TRAFIC APRS'), right), g));
+  v.classList.add('stack-mobile');
+  v.style.gap = '14px';
+  v.append(h('div', { class: 'card table-card', style: { flex: 1 } }, h('div', { class: 'head' }, label('TRAFIC APRS'), right), g));
   onState('aprs', d => { setText(right, d.header); g.set(d.rows, r => r[0] + r[5]); });
+
+  // emission par le TNC du poste, avec ses reglages APRS
+  const params = h('pre', { class: 'mono', style: { fontSize: '12px', color: C.text2, whiteSpace: 'pre-wrap', margin: '8px 0' } }, ' ');
+  const info = field('', { placeholder: 'vide = balise de position' });
+  const auto = toggle('Balise automatique (intervalle du poste)', false, x => cmd('aprs.auto', { on: x ? 1 : 0 }));
+  const txL = h('div', { class: 'mono', style: { fontSize: '11.5px', marginTop: '6px', color: C.muted } }, ' ');
+  const send = key('ÉMETTRE TRAME', () => cmd('aprs.send', { info: info.value }), { primary: true, cls: 'wide' });
+  send.style.height = '48px';
+  v.append(h('div', { class: 'card tx-card' }, label('ÉMISSION APRS · RÉGLAGES DU POSTE', 'tracked'), params,
+    key('RELIRE LE POSTE', () => cmd('aprs.reload'), { cls: 'small' }),
+    caption('Champ d\'information (vide = balise de position)'), info, auto, txL, h('div', { style: { height: '8px' } }), send,
+    h('div', { style: { height: '8px' } }),
+    note('La trame est modulée par le TNC du poste (AFSK 1200) et émise dès que le canal est libre, sur le canal nommé « APRS » s\'il existe, sinon sur celui du VFO A. Réservé aux radioamateurs.')));
+  let init = false;
+  onState('aprsTx', d => {
+    if (!init) { init = true; info.value = d.info; }
+    setText(params, d.params); setText(txL, d.status); txL.style.color = d.statusColor;
+    send.setText(d.sendKey); auto.set(d.auto);
+  });
 };
 
 /* ---------------------------------------------------------------- DECODAGES */
@@ -760,7 +781,7 @@ VIEWS.SATELLITES = function (v) {
   track.style.height = '46px'; track.style.width = '260px'; track.style.maxWidth = '100%';
   const detail = h('div', { class: 'card sat-detail' },
     h('div', { class: 'col' }, label('SATELLITE'), dName, dSub, dPos, h('div', { style: { height: '8px' } }), sstvSw),
-    h('div', { class: 'col' }, label('RADIO (DOPPLER CORRIGÉ)'), rfKeys, dRf, h('div', { style: { height: '8px' } }), track),
+    h('div', { class: 'col' }, label('RADIO (DOPPLER CORRIGÉ)'), rfKeys, dRf, key('MODIFIER', () => editRf(), { cls: 'small', title: 'Modifier les fréquences de la configuration choisie' }), h('div', { style: { height: '8px' } }), track),
     h('div', { class: 'col' }, label('PASSAGES (24 H, HEURE LOCALE)'), dPasses));
   v.append(left, h('div', { class: 'sat-center' }, h('div', { class: 'well map-well' }, cv), detail));
   const satMap = new TileMap(cv, { key: 'satMap', night: true, zoom: 3, overlay });
@@ -806,6 +827,21 @@ VIEWS.SATELLITES = function (v) {
     satMap.redraw();
   });
   v.onShow = () => satMap.resize();
+
+  async function editRf() {
+    const s = S.sats && S.sats.sel;
+    if (!s || !s.rfs.length) { toast('Choisissez un satellite avec une configuration radio.', true); return; }
+    const e = s.edit;
+    const f = { down: field(e.down, { inputmode: 'decimal' }), up: field(e.up, { inputmode: 'decimal' }), tone: field(e.tone, { inputmode: 'decimal' }) };
+    const body = h('div', { class: 'col', style: { gap: '4px' } }, caption('Réception (descente), MHz'), f.down, caption('Émission (montée), MHz — vide = pas d'émission'), f.up,
+      caption('CTCSS à l'émission, Hz — vide = aucun'), f.tone, e.orig ? caption('Origine : ' + e.orig) : null);
+    const btns = [{ text: 'ANNULER', value: 0 }];
+    if (e.orig) btns.push({ text: 'RÉTABLIR L'ORIGINE', value: 2 });
+    btns.push({ text: 'ENREGISTRER', primary: true, value: 1 });
+    const c = await modal(s.name + ' · ' + s.rfs[s.rf], body, btns);
+    if (c === 1) cmd('sats.rfEdit', { down: f.down.value, up: f.up.value, tone: f.tone.value });
+    else if (c === 2) cmd('sats.rfReset');
+  }
 
   async function addDialog() {
     const f = { name: field(''), norad: field('', { inputmode: 'numeric' }), l1: field(''), l2: field(''), rfName: field('FM'), down: field('', { placeholder: 'descente MHz' }),

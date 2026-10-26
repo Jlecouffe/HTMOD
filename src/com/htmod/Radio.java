@@ -41,6 +41,10 @@ final class Radio {
         default void onVfoFreq(long hz) {}
         /** Reglages lus : double veille active, canaux des VFO A et B. */
         default void onSettings(boolean dualWatch, int channelA, int channelB) {}
+        /** Reglages APRS du poste relus (indicatif, symbole, chemin, position...). */
+        default void onAprsSettings() {}
+        /** Trame AX.25 remise au TNC du poste : true = emise, false = abandonnee. */
+        default void onTncSent(boolean ok) {}
     }
 
     static final class Device {
@@ -56,6 +60,8 @@ final class Radio {
             CMD_READ_RF_CH = 13, CMD_GET_HT_STATUS = 20, CMD_FREQ_MODE_SET_PAR = 35, CMD_FREQ_MODE_GET_STATUS = 36,
             CMD_RX_DATA = 57, CMD_WRITE_RF_CH = 14, CMD_SET_REGION = 60, CMD_READ_REGION_NAME = 73, CMD_GET_VOLUME = 22, CMD_SET_VOLUME = 23;
     private static final int NOTIF_HT_STATUS_CHANGED = 1, NOTIF_DATA_RXD = 2, NOTIF_HT_CH_CHANGED = 5;
+    private static final int CMD_HT_SEND_DATA = 31, CMD_READ_BSS_SETTINGS = 33, CMD_GET_APRS_PATH = 72, CMD_GET_POSITION = 76;
+    private static final int NOTIF_BSS_SETTINGS_CHANGED = 11;
 
     /** Commandes en BLE (RT-660) : messages bruts ; sinon SPP : messages enveloppes en GAIA. */
     private volatile boolean bleMode;
@@ -173,6 +179,9 @@ final class Radio {
         audioOpen = false;
         settingsRaw = null;
         dualWatch = -1;
+        bss = null;
+        aprsPath = null;
+        synchronized (txQueue) { txQueue.clear(); txInFlight = false; }
         synchronized (readQueue) { readQueue.clear(); pendingRead = -1; }
     }
 
@@ -322,6 +331,12 @@ final class Radio {
                 break;
             case CMD_SET_VOLUME: send(GROUP_BASIC, CMD_GET_VOLUME, null); break;
             case CMD_RX_DATA: onTncFragment(cmd); break;
+            case CMD_READ_BSS_SETTINGS: onBssSettings(cmd); break;
+            case CMD_GET_APRS_PATH:
+                if (u8(cmd, 4) == 0) { aprsPath = ascii(cmd, 5, cmd.length - 5); listener.onAprsSettings(); }
+                break;
+            case CMD_GET_POSITION: onPosition(cmd); break;
+            case CMD_HT_SEND_DATA: onTncSendAck(u8(cmd, 4) == 0); break;
             case CMD_FREQ_MODE_GET_STATUS:
                 if (cmd.length >= 9 && u8(cmd, 4) == 0)
                     listener.onVfoFreq((((long) u8(cmd, 5) << 24) | (u8(cmd, 6) << 16) | (u8(cmd, 7) << 8) | u8(cmd, 8)) & 0x3FFFFFFFL);
@@ -332,6 +347,7 @@ final class Radio {
                 else if (n == NOTIF_HT_CH_CHANGED) readAllChannels();
                 else if (n == NOTIF_DATA_RXD) onTncFragment(cmd);
                 else if (n == NOTIF_HT_SETTINGS_CHANGED) onSettings(cmd);
+                else if (n == NOTIF_BSS_SETTINGS_CHANGED) send(GROUP_BASIC, CMD_READ_BSS_SETTINGS, null);
                 break;
             default: break;
         }
@@ -354,6 +370,7 @@ final class Radio {
         send(GROUP_BASIC, CMD_GET_HT_STATUS, null);
         send(GROUP_BASIC, CMD_READ_SETTINGS, null);
         send(GROUP_BASIC, CMD_GET_VOLUME, null);
+        readAprsSettings();
         readAllChannels();
     }
 
@@ -445,6 +462,7 @@ final class Radio {
         lastDwStatus = dwStatus;
         activeVfo = av;
         listener.onHtStatus(rssi, sq);
+        pumpTnc();
         if (freqMode) return; // en balayage VFO, le canal affiche n'a pas change
         if (currRegion != -1 && region != currRegion) readAllChannels(); // autre zone = autres canaux
         currRegion = region;
@@ -732,6 +750,165 @@ final class Radio {
         return true;
     }
 
+    // ------------------------------------------------------------------ APRS : reglages du poste et emission par son TNC
+
+    /**
+     * Reglages APRS / BSS du poste (READ_BSS_SETTINGS, structure RadioBssSettings de HTCommander) :
+     * indicatif et SSID, symbole, commentaire de balise, intervalle, format (BSS ou APRS)...
+     */
+    static final class AprsSettings {
+        int maxFwdTimes, timeToLive, packetFormat, ssid, intervalS;
+        boolean sendLocationOnPtt, sendIdOnPtt, shareLocation, sendVoltage, allowPositionCheck, smartBeacon;
+        String callsign = "", symbol = "", beacon = "", pttIdInfo = "";
+
+        /** Indicatif complet (« F4ABC-9 »), vide si le poste n'en a pas. */
+        String source() { return callsign.isEmpty() ? "" : ssid > 0 ? callsign + "-" + ssid : callsign; }
+    }
+
+    private volatile AprsSettings bss;
+    private volatile String aprsPath;
+    private volatile double gpsLat = Double.NaN, gpsLon = Double.NaN;
+    private volatile boolean gpsLocked;
+
+    AprsSettings aprsSettings() { return bss; }
+    /** Chemin APRS du poste (« WIDE1-1,WIDE2-1 »), null si pas encore lu. */
+    String aprsPath() { return aprsPath; }
+    boolean gpsLocked() { return gpsLocked; }
+    double gpsLat() { return gpsLat; }
+    double gpsLon() { return gpsLon; }
+
+    /** Relit les reglages APRS, le chemin et la position GPS du poste. */
+    void readAprsSettings() {
+        send(GROUP_BASIC, CMD_READ_BSS_SETTINGS, null);
+        send(GROUP_BASIC, CMD_GET_APRS_PATH, null);
+        send(GROUP_BASIC, CMD_GET_POSITION, null);
+    }
+
+    private void onBssSettings(byte[] m) {
+        if (u8(m, 4) != 0 || m.length < 51) return;
+        AprsSettings a = new AprsSettings();
+        a.maxFwdTimes = u8(m, 5) >> 4;
+        a.timeToLive = u8(m, 5) & 0x0F;
+        int f = u8(m, 6);
+        a.sendLocationOnPtt = (f & 0x80) != 0;
+        a.sendIdOnPtt = (f & 0x40) != 0;
+        a.shareLocation = (f & 0x10) != 0;
+        a.sendVoltage = (f & 0x08) != 0;
+        a.packetFormat = (f & 0x04) >> 2;
+        a.allowPositionCheck = (f & 0x02) != 0;
+        a.ssid = u8(m, 7) >> 4;
+        a.smartBeacon = (u8(m, 7) & 0x08) != 0;
+        a.intervalS = u8(m, 8) * 10;
+        a.pttIdInfo = ascii(m, 13, 12);
+        a.beacon = ascii(m, 25, 18);
+        a.symbol = ascii(m, 43, 2);
+        a.callsign = ascii(m, 45, 6).toUpperCase(java.util.Locale.ROOT);
+        bss = a;
+        listener.onLog("Réglages APRS du poste : " + (a.source().isEmpty() ? "pas d'indicatif" : a.source()) + ", symbole « " + a.symbol
+                + " », intervalle " + a.intervalS + " s, format " + (a.packetFormat == 1 ? "APRS" : "BSS")
+                + (a.beacon.isEmpty() ? "" : ", commentaire « " + a.beacon + " »"));
+        listener.onAprsSettings();
+    }
+
+    /** GET_POSITION : latitude / longitude sur 24 bits signes en 1/30000 de degre, etat 0 = GPS fixe. */
+    private void onPosition(byte[] m) {
+        if (m.length < 11) return;
+        gpsLocked = u8(m, 4) == 0;
+        if (gpsLocked) {
+            gpsLat = s24(m, 5) / 30000.0;
+            gpsLon = s24(m, 8) / 30000.0;
+        }
+        listener.onAprsSettings();
+    }
+
+    private static int s24(byte[] m, int p) {
+        int v = (u8(m, p) << 16) | (u8(m, p + 1) << 8) | u8(m, p + 2);
+        return (v & 0x800000) != 0 ? v - 0x1000000 : v;
+    }
+
+    private static String ascii(byte[] m, int off, int len) {
+        len = Math.max(0, Math.min(len, m.length - off));
+        String s = new String(m, off, len, StandardCharsets.UTF_8);
+        int z = s.indexOf('\0');
+        return (z >= 0 ? s.substring(0, z) : s).trim();
+    }
+
+    /** Fragments HT_SEND_DATA en attente (un a la fois, comme HTCommander). */
+    private final ArrayDeque<byte[]> txQueue = new ArrayDeque<>();
+    private boolean txInFlight;
+    private long txSince, txQueuedAt;
+    private static final int TNC_MTU = 50;
+
+    /**
+     * Confie une trame AX.25 (sans FCS) au TNC du poste, qui la module en AFSK 1200 et l'emet sur le
+     * canal ch (-1 = canal du VFO A). L'envoi attend que le canal soit libre (ni reception ni
+     * emission en cours) ; resultat par Listener.onTncSent. false si une trame est deja en attente.
+     */
+    boolean sendTncFrame(byte[] ax25, int ch) {
+        if (!running || ax25.length == 0) return false;
+        synchronized (txQueue) {
+            if (!txQueue.isEmpty() || txInFlight) return false;
+            for (int i = 0, frag = 0; i < ax25.length; i += TNC_MTU, frag++) {
+                int n = Math.min(TNC_MTU, ax25.length - i);
+                boolean last = i + n == ax25.length;
+                byte[] p = new byte[1 + n + (ch >= 0 ? 1 : 0)];
+                p[0] = (byte) ((last ? 0x80 : 0) | (ch >= 0 ? 0x40 : 0) | (frag & 0x3F));
+                System.arraycopy(ax25, i, p, 1, n);
+                if (ch >= 0) p[p.length - 1] = (byte) ch;
+                txQueue.add(p);
+            }
+            txQueuedAt = System.currentTimeMillis();
+        }
+        pumpTnc();
+        return true;
+    }
+
+    boolean tncBusy() { synchronized (txQueue) { return txInFlight || !txQueue.isEmpty(); } }
+
+    private void pumpTnc() {
+        byte[] next;
+        synchronized (txQueue) {
+            long now = System.currentTimeMillis();
+            if (txInFlight && now - txSince > 5000) txInFlight = false; // pas d'accuse : on renvoie le fragment
+            if (txInFlight || txQueue.isEmpty()) return;
+            if (now - txQueuedAt > 30_000) {
+                txQueue.clear();
+                next = null;
+            } else if (rssi > 0 || inTx || inRx) {
+                return; // canal occupe : on attend
+            } else {
+                next = txQueue.peek();
+                txInFlight = true;
+                txSince = now;
+            }
+        }
+        if (next == null) {
+            listener.onLog("APRS : canal occupé depuis 30 s, trame abandonnée");
+            listener.onTncSent(false);
+            return;
+        }
+        send(GROUP_BASIC, CMD_HT_SEND_DATA, next);
+    }
+
+    private void onTncSendAck(boolean ok) {
+        boolean done;
+        synchronized (txQueue) {
+            if (!txInFlight) return;
+            txInFlight = false;
+            if (ok) txQueue.poll();
+            else txQueue.clear();
+            done = txQueue.isEmpty();
+        }
+        if (!ok) {
+            listener.onLog("APRS : le poste a refusé la trame");
+            listener.onTncSent(false);
+        } else if (done) {
+            listener.onTncSent(true);
+        } else {
+            pumpTnc();
+        }
+    }
+
     // ------------------------------------------------------------------ Canaux : detail, ecriture
 
     /**
@@ -860,6 +1037,7 @@ final class Radio {
                 }
             }
             if (retry) pumpReads();
+            pumpTnc();
         }
     }
 

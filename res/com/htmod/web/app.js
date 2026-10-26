@@ -3,7 +3,7 @@
 
 const TABS = [['CARTE', 'pin'], ['APRS', 'list'], ['DÉCODAGES', 'target'], ['BANDSCOPE', 'bars'], ['POCSAG', 'pager'], ['SSTV', 'picture'],
   ['VFO', 'ab'], ['SATELLITES', 'globe'], ['JOURNAL', 'wave']];
-const SECTIONS = ['radio', 'options', 'counters', 'spec', 'aprs', 'det', 'markers', 'log', 'bs', 'pocsag', 'sstv', 'vfo', 'sats'];
+const SECTIONS = ['radio', 'options', 'counters', 'spec', 'aprs', 'aprsTx', 'det', 'markers', 'log', 'bs', 'pocsag', 'sstv', 'vfo', 'sats'];
 const tabKeys = {}, views = {};
 let currentTab = null;
 

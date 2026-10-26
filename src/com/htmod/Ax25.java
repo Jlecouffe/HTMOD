@@ -69,6 +69,38 @@ final class Ax25 {
         return p;
     }
 
+    /**
+     * Trame UI (controle 0x03, PID 0xF0) sans FCS, pour le TNC du poste : destination, source puis
+     * relais (« WIDE1-1 »). IllegalArgumentException si un indicatif est invalide.
+     */
+    static byte[] encodeUi(String src, String dst, List<String> path, String info) {
+        List<String> addrs = new ArrayList<>();
+        addrs.add(dst);
+        addrs.add(src);
+        for (String p : path) if (!p.trim().isEmpty()) addrs.add(p.trim());
+        if (addrs.size() > 10) throw new IllegalArgumentException("chemin trop long (8 relais au plus)");
+        byte[] body = info.getBytes(StandardCharsets.ISO_8859_1);
+        byte[] d = new byte[addrs.size() * 7 + 2 + body.length];
+        for (int a = 0; a < addrs.size(); a++) {
+            String cs = addrs.get(a).toUpperCase(java.util.Locale.ROOT);
+            int ssid = 0, dash = cs.indexOf('-');
+            if (dash >= 0) {
+                try { ssid = Integer.parseInt(cs.substring(dash + 1)); } catch (NumberFormatException e) { ssid = -1; }
+                cs = cs.substring(0, dash);
+            }
+            if (cs.isEmpty() || cs.length() > 6 || !cs.matches("[A-Z0-9]+") || ssid < 0 || ssid > 15)
+                throw new IllegalArgumentException("indicatif invalide : " + addrs.get(a));
+            for (int k = 0; k < 6; k++) d[a * 7 + k] = (byte) ((k < cs.length() ? cs.charAt(k) : ' ') << 1);
+            // bits reserves a 1 ; bit C de la destination a 1 (commande, AX.25 v2) ; bit d'extension sur la derniere
+            d[a * 7 + 6] = (byte) ((a == 0 ? 0x80 : 0) | 0x60 | (ssid << 1) | (a == addrs.size() - 1 ? 1 : 0));
+        }
+        int i = addrs.size() * 7;
+        d[i++] = 0x03;
+        d[i++] = (byte) 0xF0;
+        System.arraycopy(body, 0, d, i, body.length);
+        return d;
+    }
+
     /** FCS AX.25 (CRC-16 CCITT reflechi, init 0xFFFF, complemente). */
     static int fcs(byte[] d, int off, int len) {
         int crc = 0xFFFF;

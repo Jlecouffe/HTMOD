@@ -1,10 +1,11 @@
 # Construit HTMod pour Windows (decodeurs SARSAT / radiosondes + waterfall, liaison Bluetooth avec le poste).
-#   powershell -ExecutionPolicy Bypass -File C:\Users\Admin\bsht\windows\build.ps1 [-NoTest] [-Run]
-# Resultat : dist\HTMod\HTMod.exe (runtime Java inclus, rien a installer) et dist\HTMod-windows.zip
-param([switch]$NoTest, [switch]$Run)
+#   powershell -ExecutionPolicy Bypass -File build.ps1 [-NoTest] [-Run] [-Bsht E:\firmware\bsht]
+# Resultat : dist\HTMod\HTMod.exe (runtime Java inclus), dist\HTMod-windows.zip et HTMod-Setup.exe (installateur)
+# $Bsht : dossier contenant mod\src (decodeurs partages), tools\jdk et htcommander.
+param([switch]$NoTest, [switch]$Run, [string]$Bsht = "E:\firmware\bsht", [string]$Version = "1.1")
 
-$b   = "C:\Users\Admin\bsht"
-$w   = "$b\windows"
+$b   = $Bsht
+$w   = $PSScriptRoot
 $jh  = "$b\tools\jdk\jdk-17.0.20.1+1"
 $csc = "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
 $out = "$w\out"
@@ -45,13 +46,24 @@ if (-not $NoTest) {
 
 # 4. Paquet autonome (runtime Java reduit inclus).
 Remove-Item -Recurse -Force "$w\dist" -ErrorAction SilentlyContinue
-& jpackage --type app-image --name HTMod --app-version 1.0 --vendor HTMod `
+& jpackage --type app-image --name HTMod --app-version $Version --vendor HTMod `
     --input "$out\stage" --main-jar htmod.jar --main-class com.htmod.App `
     --add-modules java.desktop,java.prefs,java.net.http,jdk.crypto.ec,jdk.charsets,java.naming,jdk.localedata,jdk.httpserver `
     --java-options "-Dsun.java2d.uiScale.enabled=true" `
     --dest "$w\dist"
 if ($LASTEXITCODE -ne 0) { Fail "jpackage" }
 Compress-Archive -Force -Path "$w\dist\HTMod" -DestinationPath "$w\dist\HTMod-windows.zip"
+
+# 5. Installateur (Inno Setup 6 : winget install JRSoftware.InnoSetup) ; propose l'icone sur le Bureau.
+$iscc = "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe", "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe",
+        "$env:ProgramFiles\Inno Setup 6\ISCC.exe" | Where-Object { Test-Path $_ } | Select-Object -First 1
+if ($iscc) {
+    & $iscc /Q "/DAppDir=$w\dist\HTMod" "/DOutDir=$w" "/DAppVersion=$Version" "$w\installer\HTMod.iss"
+    if ($LASTEXITCODE -ne 0) { Fail "Inno Setup" }
+    Write-Host "OK : $w\HTMod-Setup.exe" -ForegroundColor Green
+} else {
+    Write-Host "Inno Setup absent : HTMod-Setup.exe non reconstruit" -ForegroundColor Yellow
+}
 
 Write-Host "OK : $w\dist\HTMod\HTMod.exe" -ForegroundColor Green
 if ($Run) { & "$w\dist\HTMod\HTMod.exe" }

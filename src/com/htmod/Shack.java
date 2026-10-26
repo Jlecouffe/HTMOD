@@ -544,6 +544,10 @@ final class Shack {
             "OptionPane.background", BG, "OptionPane.messageForeground", TEXT, "OptionPane.messageFont", body(13f),
             "OptionPane.buttonFont", bold(12f),
             "Button.background", KEY_TOP, "Button.foreground", TEXT, "Button.font", bold(12f), "Button.select", KEY_BOT,
+            // Metal peint un degrade clair par-dessus le fond (bouton blanc, texte clair invisible jusqu'au clic)
+            "Button.gradient", Arrays.asList(0.3f, 0f, KEY_TOP, KEY_TOP, KEY_BOT),
+            "ToggleButton.gradient", Arrays.asList(0.3f, 0f, KEY_TOP, KEY_TOP, KEY_BOT),
+            "Button.disabledText", MUTED, "Button.shadow", EDGE, "Button.darkShadow", BG, "Button.highlight", KEY_TOP,
             "Button.focus", AMBER, "Button.border", BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(EDGE),
                     BorderFactory.createEmptyBorder(6, 16, 6, 16)),
             "PopupMenu.background", KEY_BOT, "PopupMenu.border", BorderFactory.createLineBorder(EDGE),

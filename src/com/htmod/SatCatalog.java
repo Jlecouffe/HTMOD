@@ -42,10 +42,13 @@ final class SatCatalog {
         long upHz, downHz;
         int upTone, downTone;
         boolean upAm, downAm;
+        /** Frequences d'origine {descente, montee, CTCSS} si l'utilisateur les a modifiees, sinon null. */
+        long[] orig;
 
         String label() {
+            if (downHz <= 0) return (name.isEmpty() ? "FM" : name) + " · fréquence à régler (MODIFIER)";
             return (name.isEmpty() ? "FM" : name) + " · ↓ " + mhz(downHz) + (upHz > 0 ? "  ↑ " + mhz(upHz) : "")
-                    + (upTone > 0 ? String.format(Locale.ROOT, "  CTCSS %.1f", upTone / 100.0) : "");
+                    + (upTone > 0 ? String.format(Locale.ROOT, "  CTCSS %.1f", upTone / 100.0) : "") + (orig != null ? "  (modifié)" : "");
         }
     }
 
@@ -128,6 +131,117 @@ final class SatCatalog {
         String celes = readText(new File(dir, "celestrak-amateur.tle"));
         if (celes != null) mergeTles(celes, false);
         loadUser();
+        fixIss();
+    }
+
+    /**
+     * ISS (NORAD 25544) : frequences fixees ici, quoi que donne le serveur Benshi :
+     * FM (relais) montee 145,990 MHz CTCSS 67 Hz / descente 437,800 MHz ; APRS 437,825 MHz (emission et
+     * reception, quand le relais n'emet pas) ; CW sans frequence (a regler avec MODIFIER) ; SSTV 437,550 MHz
+     * (reception, Robot 36, evenements ARISS). Puis les frequences modifiees par l'utilisateur.
+     */
+    private void fixIss() {
+        Sat s = sats.get(25544);
+        if (s != null && !SRC_USER.equals(s.source)) {
+            String fm = "ISS-FM", aprs = "ISS APRS", sstv = "ISS SSTV";
+            List<Rf> others = new ArrayList<>();
+            for (Rf r : s.rf) {
+                String n = r.name.toUpperCase(Locale.ROOT);
+                if (n.contains("APRS")) aprs = r.name;
+                else if (n.contains("SSTV")) sstv = r.name;
+                else if (n.contains("FM")) fm = r.name;
+                else if (!n.contains("CW")) others.add(r);
+            }
+            s.rf.clear();
+            s.rf.add(issRf(fm, 437_800_000L, 145_990_000L, 6700));
+            s.rf.add(issRf(aprs, 437_825_000L, 437_825_000L, 0));
+            s.rf.add(issRf("ISS CW", 0, 0, 0));
+            s.rf.add(issRf(sstv, 437_550_000L, 0, 0));
+            s.rf.addAll(others);
+            s.sstvAuto = true;
+        }
+        applyEdits();
+    }
+
+    private static Rf issRf(String name, long downHz, long upHz, int upTone) {
+        Rf r = new Rf();
+        r.name = name;
+        r.downHz = downHz;
+        r.upHz = upHz;
+        r.upTone = upTone;
+        return r;
+    }
+
+    // ------------------------------------------------------------------ Frequences modifiees par l'utilisateur
+
+    /** « norad|nom de la configuration » -> {descente Hz, montee Hz, CTCSS en 0,01 Hz} (frequences-perso.txt). */
+    private final Map<String, long[]> edits = Collections.synchronizedMap(new LinkedHashMap<>());
+    private boolean editsLoaded;
+
+    private File editsFile() { return new File(dir, "frequences-perso.txt"); }
+
+    private static String editKey(Sat s, Rf r) { return s.norad + "|" + r.name; }
+
+    private void applyEdits() {
+        if (!editsLoaded) {
+            editsLoaded = true;
+            String t = readText(editsFile());
+            if (t != null) for (String line : t.replace("\r", "").split("\n")) {
+                String[] f = line.split(";", -1);
+                if (f.length < 5) continue;
+                try {
+                    edits.put(f[0] + "|" + f[1], new long[]{Math.round(Double.parseDouble(f[2]) * 1e6),
+                        f[3].isEmpty() ? 0 : Math.round(Double.parseDouble(f[3]) * 1e6), f[4].isEmpty() ? 0 : Math.round(Double.parseDouble(f[4]) * 100)});
+                } catch (NumberFormatException ignore) {
+                }
+            }
+        }
+        synchronized (sats) {
+            for (Sat s : sats.values()) for (Rf r : s.rf) {
+                long[] e = edits.get(editKey(s, r));
+                if (e != null) apply(r, e);
+            }
+        }
+    }
+
+    private static void apply(Rf r, long[] e) {
+        if (r.orig == null) r.orig = new long[]{r.downHz, r.upHz, r.upTone};
+        r.downHz = e[0];
+        r.upHz = e[1];
+        r.upTone = (int) e[2];
+    }
+
+    /** Modifie les frequences d'une configuration (descente, montee 0 = aucune, CTCSS en 0,01 Hz) et l'enregistre. */
+    void editRf(Sat s, Rf r, long downHz, long upHz, int upTone) throws IOException {
+        long[] e = {downHz, upHz, upTone};
+        edits.put(editKey(s, r), e);
+        apply(r, e);
+        saveEdits();
+    }
+
+    /** Revient aux frequences d'origine (serveur, base integree) d'une configuration. */
+    void resetRf(Sat s, Rf r) throws IOException {
+        edits.remove(editKey(s, r));
+        if (r.orig != null) {
+            r.downHz = r.orig[0];
+            r.upHz = r.orig[1];
+            r.upTone = (int) r.orig[2];
+            r.orig = null;
+        }
+        saveEdits();
+    }
+
+    private void saveEdits() throws IOException {
+        StringBuilder sb = new StringBuilder();
+        synchronized (edits) {
+            for (Map.Entry<String, long[]> e : edits.entrySet()) {
+                int bar = e.getKey().indexOf('|');
+                long[] v = e.getValue();
+                sb.append(e.getKey(), 0, bar).append(';').append(e.getKey().substring(bar + 1)).append(';').append(mhz(v[0])).append(';')
+                        .append(v[1] > 0 ? mhz(v[1]) : "").append(';').append(v[2] > 0 ? String.format(Locale.ROOT, "%.1f", v[2] / 100.0) : "").append('\n');
+            }
+        }
+        Files.write(editsFile().toPath(), sb.toString().getBytes(StandardCharsets.UTF_8));
     }
 
     /** Met a jour depuis le reseau (Benshi toujours, CelesTrak si le cache a plus de 2 h). */
@@ -154,6 +268,7 @@ final class SatCatalog {
             }
         }
         loadUser(); // les satellites perso gardent leurs propres TLE
+        fixIss();
         return msg.toString();
     }
 
