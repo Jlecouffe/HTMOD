@@ -307,7 +307,7 @@ class TileMap {
     if (this.overlay) { ctx.save(); this.overlay.paint(ctx, this); ctx.restore(); }
 
     // attribution (obligatoire) et position
-    const attr = this.topo ? '© OpenStreetMap, SRTM · © OpenTopoMap (CC-BY-SA)' : '© contributeurs OpenStreetMap';
+    const attr = this.topo ? '© OpenStreetMap, SRTM · © OpenTopoMap (CC-BY-SA)' : _t('© contributeurs OpenStreetMap');
     ctx.font = '11px ' + FONT.body;
     const aw = ctx.measureText(attr).width + 12;
     ctx.fillStyle = alpha(C.bg, 0.78);
@@ -406,7 +406,7 @@ class WindLayer {
         this.failures = 0;
         this.status = 'max ' + Math.round(max) + ' km/h';
       })
-      .catch(e => { this.failures++; this.status = 'indisponible'; if (this.failures === 1) this.log('Vent (Open-Meteo) : ' + e.message); })
+      .catch(e => { this.failures++; this.status = _t('indisponible'); if (this.failures === 1) this.log(_t('Vent (Open-Meteo) : ') + e.message); })
       .finally(() => { this.fetching = false; });
   }
 
@@ -447,7 +447,7 @@ class WindLayer {
       ctx.drawImage(this.trail, 0, 0, w, h);
     }
     // legende
-    const s = 'VENT 10 m · ' + (g ? this.status : (this.fetching ? 'chargement…' : (this.status || '…'))) + ' · Open-Meteo';
+    const s = _t('VENT 10 m · ') + (g ? this.status : (this.fetching ? _t('chargement…') : (this.status || '…'))) + ' · Open-Meteo';
     ctx.font = '11px ' + FONT.mono;
     const tw = ctx.measureText(s).width, pal = this.palette(true), bw = 12 * pal.length;
     const ly = w < 640 ? 62 : 12; // ecran etroit : sous la rangee de touches

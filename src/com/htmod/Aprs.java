@@ -30,7 +30,7 @@ final class Aprs {
             if (message != null) sb.append("→ ").append(addressee).append(" : ").append(message);
             if (hasPos) {
                 if (speedKmh >= 0) sb.append(sb.length() > 0 ? "  " : "").append(Math.round(speedKmh)).append(" km/h");
-                if (course >= 0) sb.append(" cap ").append(course).append("°");
+                if (course >= 0) sb.append(Tr.t(" cap ")).append(course).append("°");
                 if (!Double.isNaN(altM)) sb.append(sb.length() > 0 ? "  " : "").append("alt ").append(Math.round(altM)).append(" m");
             }
             if (!comment.isEmpty()) sb.append(sb.length() > 0 ? "  " : "").append(comment);
@@ -52,20 +52,20 @@ final class Aprs {
         Report r = new Report();
         r.source = src;
         r.name = src;
-        if (info == null || info.isEmpty()) { r.type = "Vide"; return r; }
+        if (info == null || info.isEmpty()) { r.type = Tr.t("Vide"); return r; }
         try {
             char t = info.charAt(0);
             switch (t) {
                 case '!': case '=':
-                    r.type = "Position";
+                    r.type = Tr.t("Position");
                     position(r, info, 1);
                     break;
                 case '/': case '@':
-                    r.type = "Position";
+                    r.type = Tr.t("Position");
                     position(r, info, 8);
                     break;
                 case ';':
-                    r.type = "Objet";
+                    r.type = Tr.t("Objet");
                     if (info.length() >= 18) {
                         r.name = info.substring(1, 10).trim();
                         r.killed = info.charAt(10) == '_';
@@ -91,16 +91,16 @@ final class Aprs {
                     micE(r, dst, info);
                     break;
                 case ':':
-                    r.type = "Message";
+                    r.type = Tr.t("Message");
                     if (info.length() >= 11 && info.charAt(10) == ':') {
                         r.addressee = info.substring(1, 10).trim();
                         r.message = info.substring(11);
-                        if (r.message.matches("(ack|rej)[A-Za-z0-9]{1,5}")) r.type = "Accusé";
-                        else if (r.addressee.startsWith("BLN")) r.type = "Bulletin";
+                        if (r.message.matches("(ack|rej)[A-Za-z0-9]{1,5}")) r.type = Tr.t("Accusé");
+                        else if (r.addressee.startsWith("BLN")) r.type = Tr.t("Bulletin");
                     }
                     break;
                 case '>':
-                    r.type = "Statut";
+                    r.type = Tr.t("Statut");
                     r.comment = info.substring(1).trim();
                     break;
                 case '$':
@@ -116,35 +116,35 @@ final class Aprs {
                         String head = inner.substring(gt + 1, colon);
                         String idst = head.split(",")[0];
                         Report in = parse(isrc, idst, inner.substring(colon + 1), depth + 1);
-                        in.comment = (in.comment + " (via " + src + ")").trim();
+                        in.comment = (in.comment + Tr.t(" (via ") + src + ")").trim();
                         return in;
                     }
-                    r.type = "Tiers";
+                    r.type = Tr.t("Tiers");
                     break;
                 }
                 case 'T':
-                    r.type = "Télémétrie";
+                    r.type = Tr.t("Télémétrie");
                     r.comment = info;
                     break;
                 case '_':
-                    r.type = "Météo";
+                    r.type = Tr.t("Météo");
                     r.comment = info.substring(1);
                     break;
                 default:
                     // Certaines stations mettent la position plus loin (ex. "!" apres un texte)
                     int bang = info.indexOf('!');
                     if (bang > 0 && bang < 40 && info.length() - bang > 19) {
-                        r.type = "Position";
+                        r.type = Tr.t("Position");
                         position(r, info, bang + 1);
                     } else {
-                        r.type = "Autre";
+                        r.type = Tr.t("Autre");
                         r.comment = info;
                     }
             }
         } catch (RuntimeException e) {
             r.comment = info; // paquet tronque ou non conforme
         }
-        if (r.symTable == '/' && r.symCode == '_' && "Position".equals(r.type)) r.type = "Météo";
+        if (r.symTable == '/' && r.symCode == '_' && Tr.t("Position").equals(r.type)) r.type = Tr.t("Météo");
         if (r.hasPos && (Math.abs(r.lat) > 90 || Math.abs(r.lon) > 180 || (r.lat == 0 && r.lon == 0))) r.hasPos = false;
         return r;
     }
@@ -320,37 +320,37 @@ final class Aprs {
     static String symbolName(char table, char code) {
         boolean alt = table != '/';
         switch (code) {
-            case '>': return "Voiture";
-            case '-': return "Maison";
-            case '#': return "Relais numérique";
-            case '&': return "Passerelle";
-            case '_': return "Météo";
-            case 'k': return alt ? "Véhicule" : "Camion";
-            case 'u': return "Poids lourd";
-            case 'v': return "Fourgon";
+            case '>': return Tr.t("Voiture");
+            case '-': return Tr.t("Maison");
+            case '#': return Tr.t("Relais numérique");
+            case '&': return Tr.t("Passerelle");
+            case '_': return Tr.t("Météo");
+            case 'k': return alt ? Tr.t("Véhicule") : Tr.t("Camion");
+            case 'u': return Tr.t("Poids lourd");
+            case 'v': return Tr.t("Fourgon");
             case 'j': return "Jeep";
-            case '[': return "Piéton";
-            case 'b': return "Vélo";
-            case '<': return "Moto";
-            case 'O': return alt ? "Fusée" : "Ballon";
-            case '\'': return "Avion";
-            case '^': return alt ? "Aéronef" : "Gros avion";
-            case 'X': return "Hélicoptère";
-            case 's': return "Bateau";
-            case 'Y': return "Voilier";
-            case 'r': return "Antenne";
+            case '[': return Tr.t("Piéton");
+            case 'b': return Tr.t("Vélo");
+            case '<': return Tr.t("Moto");
+            case 'O': return alt ? Tr.t("Fusée") : Tr.t("Ballon");
+            case '\'': return Tr.t("Avion");
+            case '^': return alt ? Tr.t("Aéronef") : Tr.t("Gros avion");
+            case 'X': return Tr.t("Hélicoptère");
+            case 's': return Tr.t("Bateau");
+            case 'Y': return Tr.t("Voilier");
+            case 'r': return Tr.t("Antenne");
             case 'a': return "Ambulance";
-            case 'f': return "Pompiers";
-            case 'P': return "Police";
-            case 'y': return "Maison (yagi)";
-            case 'l': return "Ordinateur";
-            case 'n': return "Nœud";
-            case '`': return "Antenne parabolique";
-            case 'R': return "Camping-car";
+            case 'f': return Tr.t("Pompiers");
+            case 'P': return Tr.t("Police");
+            case 'y': return Tr.t("Maison (yagi)");
+            case 'l': return Tr.t("Ordinateur");
+            case 'n': return Tr.t("Nœud");
+            case '`': return Tr.t("Antenne parabolique");
+            case 'R': return Tr.t("Camping-car");
             case 'U': return "Bus";
-            case 'S': return alt ? "Satellite" : "Navette";
-            case 'E': return "Événement";
-            default: return "Symbole " + table + code;
+            case 'S': return alt ? "Satellite" : Tr.t("Navette");
+            case 'E': return Tr.t("Événement");
+            default: return Tr.t("Symbole ") + table + code;
         }
     }
 

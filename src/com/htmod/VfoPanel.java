@@ -51,8 +51,8 @@ final class VfoPanel extends JPanel {
     private final JLabel freqA = Shack.label(" ", Shack.mono(12f), Shack.MUTED);
     private final JLabel freqB = Shack.label(" ", Shack.mono(12f), Shack.MUTED);
     private final Shack.Chip dualChip = new Shack.Chip();
-    private final Shack.Key dualOn = new Shack.Key("DOUBLE VEILLE").font(Shack.bold(12f));
-    private final Shack.Key dualOff = new Shack.Key("UN SEUL VFO").font(Shack.bold(12f));
+    private final Shack.Key dualOn = new Shack.Key(Tr.t("DOUBLE VEILLE")).font(Shack.bold(12f));
+    private final Shack.Key dualOff = new Shack.Key(Tr.t("UN SEUL VFO")).font(Shack.bold(12f));
     private final JLabel tuneState = Shack.label(" ", Shack.mono(12f), Shack.CYAN);
     private final JTextField freq;
     private volatile boolean pending, chPending;
@@ -65,7 +65,7 @@ final class VfoPanel extends JPanel {
     // poste : volume, squelch, PTT
     private final JLabel volLbl = Shack.label("–", Shack.display(22f), Shack.TEXT);
     private final JLabel sqLbl = Shack.label("–", Shack.display(22f), Shack.TEXT);
-    private final Shack.Key pttKey = new Shack.Key("PTT · MAINTENIR POUR ÉMETTRE").primary().font(Shack.bold(14f));
+    private final Shack.Key pttKey = new Shack.Key(Tr.t("PTT · MAINTENIR POUR ÉMETTRE")).primary().font(Shack.bold(14f));
     private final JLabel pttState = Shack.label(" ", Shack.mono(11.5f), Shack.MUTED);
     private final MicMeter meter = new MicMeter();
     private static final int[] GAINS = {50, 100, 150, 200};
@@ -82,7 +82,7 @@ final class VfoPanel extends JPanel {
         col.setLayout(new BoxLayout(col, BoxLayout.Y_AXIS));
 
         // --- ecoute des 2 VFO
-        col.add(left(Shack.section("Écoute des 2 VFO")));
+        col.add(left(Shack.section(Tr.t("Écoute des 2 VFO"))));
         Shack.Card dw = new Shack.Card(16);
         dw.setLayout(new BoxLayout(dw, BoxLayout.Y_AXIS));
         JPanel ab = new JPanel(new java.awt.GridLayout(1, 2, 16, 0));
@@ -106,23 +106,23 @@ final class VfoPanel extends JPanel {
         dualOff.addActionListener(e -> setDual(false));
         dw.add(left(keys));
         dw.add(Box.createVerticalStrut(8));
-        dw.add(left(note("Le poste surveille le VFO A et le VFO B et bascule sur celui qui reçoit (canaux choisis sur le "
-                + "poste). Les décodeurs (APRS, SARSAT, sondes, POCSAG) suivent le VFO qui reçoit.")));
+        dw.add(left(note(Tr.t("Le poste surveille le VFO A et le VFO B et bascule sur celui qui reçoit (canaux choisis sur le ")
+                + Tr.t("poste). Les décodeurs (APRS, SARSAT, sondes, POCSAG) suivent le VFO qui reçoit."))));
         col.add(fill(dw));
 
         // --- poste : volume, squelch, emission
-        col.add(left(Shack.section("Poste : volume, squelch, émission")));
+        col.add(left(Shack.section(Tr.t("Poste : volume, squelch, émission"))));
         Shack.Card pc = new Shack.Card(16);
         pc.setLayout(new BoxLayout(pc, BoxLayout.Y_AXIS));
         JPanel vs = new JPanel(new java.awt.GridLayout(1, 2, 16, 0));
         vs.setOpaque(false);
-        vs.add(stepper("VOLUME DU POSTE (0–15)", volLbl, d -> {
+        vs.add(stepper(Tr.t("VOLUME DU POSTE (0–15)"), volLbl, d -> {
             Radio r = host.radio();
             if (!r.isRunning() || r.volume() < 0) return;
             r.setVolume(r.volume() + d);
             refresh();
         }));
-        vs.add(stepper("SQUELCH (0 = OUVERT · 9)", sqLbl, d -> {
+        vs.add(stepper(Tr.t("SQUELCH (0 = OUVERT · 9)"), sqLbl, d -> {
             Radio r = host.radio();
             if (!r.isRunning() || r.squelch() < 0) return;
             r.setSquelch(r.squelch() + d);
@@ -140,7 +140,7 @@ final class VfoPanel extends JPanel {
         JPanel side = new JPanel();
         side.setOpaque(false);
         side.setLayout(new BoxLayout(side, BoxLayout.Y_AXIS));
-        side.add(left(Shack.label("MICRO DU PC", Shack.tracked(Shack.mono(10f), 0.14f), Shack.MUTED)));
+        side.add(left(Shack.label(Tr.t("MICRO DU PC"), Shack.tracked(Shack.mono(10f), 0.14f), Shack.MUTED)));
         side.add(Box.createVerticalStrut(4));
         meter.setAlignmentX(Component.LEFT_ALIGNMENT);
         side.add(meter);
@@ -160,18 +160,18 @@ final class VfoPanel extends JPanel {
         pc.add(Box.createVerticalStrut(8));
         pc.add(left(pttState));
         pc.add(Box.createVerticalStrut(4));
-        pc.add(left(note("Maintenez le bouton PTT enfoncé pour parler dans le micro du PC : le poste émet sur la fréquence du "
-                + "VFO actif (ou celle accordée ci-dessous) et repasse en réception au relâchement. Coupure de sécurité "
-                + "après 3 minutes. Le volume et le squelch sont ceux du poste lui-même.")));
+        pc.add(left(note(Tr.t("Maintenez le bouton PTT enfoncé pour parler dans le micro du PC : le poste émet sur la fréquence du ")
+                + Tr.t("VFO actif (ou celle accordée ci-dessous) et repasse en réception au relâchement. Coupure de sécurité ")
+                + Tr.t("après 3 minutes. Le volume et le squelch sont ceux du poste lui-même."))));
         col.add(fill(pc));
 
         // --- groupes et canaux memoire
-        col.add(left(Shack.section("Groupes et canaux mémoire")));
+        col.add(left(Shack.section(Tr.t("Groupes et canaux mémoire"))));
         Shack.Card gc = new Shack.Card(16);
         gc.setLayout(new BoxLayout(gc, BoxLayout.Y_AXIS));
         JPanel gr = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         gr.setOpaque(false);
-        gr.add(Shack.label("GROUPE", Shack.tracked(Shack.mono(10f), 0.14f), Shack.MUTED));
+        gr.add(Shack.label(Tr.t("GROUPE"), Shack.tracked(Shack.mono(10f), 0.14f), Shack.MUTED));
         groupBox.setFont(Shack.body(13f));
         groupBox.setPreferredSize(new Dimension(280, 36));
         groupBox.addActionListener(e -> {
@@ -182,16 +182,26 @@ final class VfoPanel extends JPanel {
                 host.stopSweep();
                 r.backToChannels();
                 r.setRegion(g);
-                chState.setText("Chargement du groupe " + (g + 1) + "…");
+                chState.setText(Tr.t("Chargement du groupe ") + (g + 1) + "…");
             }
         });
         gr.add(groupBox);
-        Shack.Key toA = new Shack.Key("METTRE SUR VFO A").primary().font(Shack.bold(12f));
-        Shack.Key toB = new Shack.Key("METTRE SUR VFO B").font(Shack.bold(12f));
+        Shack.Key toA = new Shack.Key(Tr.t("METTRE SUR VFO A")).primary().font(Shack.bold(12f));
+        Shack.Key toB = new Shack.Key(Tr.t("METTRE SUR VFO B")).font(Shack.bold(12f));
         for (Shack.Key k : new Shack.Key[]{toA, toB}) { k.setPreferredSize(new Dimension(170, 40)); gr.add(k); }
         toA.addActionListener(e -> assign(1));
         toB.addActionListener(e -> assign(2));
         gc.add(left(gr));
+        gc.add(Box.createVerticalStrut(8));
+        JPanel gr2 = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        gr2.setOpaque(false);
+        Shack.Key addCh = new Shack.Key(Tr.t("AJOUTER UNE FRÉQUENCE")).font(Shack.bold(12f));
+        addCh.setToolTipText(Tr.t("Enregistrer une nouvelle fréquence dans le premier canal libre du groupe affiché"));
+        addCh.addActionListener(e -> addChannel());
+        Shack.Key renGroup = new Shack.Key(Tr.t("RENOMMER LE GROUPE")).font(Shack.bold(12f));
+        renGroup.addActionListener(e -> renameGroup());
+        for (Shack.Key k : new Shack.Key[]{addCh, renGroup}) { k.setPreferredSize(new Dimension(k.getPreferredSize().width + 10, 38)); gr2.add(k); }
+        gc.add(left(gr2));
         gc.add(Box.createVerticalStrut(10));
         Shack.styleTable(chTable, 0, 2, 3, 4);
         chTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -216,15 +226,15 @@ final class VfoPanel extends JPanel {
         gc.add(Box.createVerticalStrut(8));
         gc.add(left(chState));
         gc.add(Box.createVerticalStrut(4));
-        gc.add(left(note("Double-clic : canal sur le VFO A. Clic droit : modifier le canal, le mettre sur le VFO A ou B, "
-                + "exporter le groupe en CSV. Le changement de groupe recharge les canaux du poste.")));
+        gc.add(left(note(Tr.t("Double-clic : canal sur le VFO A. Clic droit : modifier le canal, le mettre sur le VFO A ou B, ")
+                + Tr.t("exporter le groupe en CSV. Le changement de groupe recharge les canaux du poste."))));
         col.add(fill(gc));
 
         // --- changer de frequence
-        col.add(left(Shack.section("Changer de fréquence")));
+        col.add(left(Shack.section(Tr.t("Changer de fréquence"))));
         Shack.Card fq = new Shack.Card(16);
         fq.setLayout(new BoxLayout(fq, BoxLayout.Y_AXIS));
-        fq.add(left(Shack.label("FRÉQUENCE (MHz) · RÉCEPTION ET ÉMISSION", Shack.tracked(Shack.mono(10f), 0.14f), Shack.MUTED)));
+        fq.add(left(Shack.label(Tr.t("FRÉQUENCE (MHz) · RÉCEPTION ET ÉMISSION"), Shack.tracked(Shack.mono(10f), 0.14f), Shack.MUTED)));
         fq.add(Box.createVerticalStrut(6));
         JPanel fr = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         fr.setOpaque(false);
@@ -232,11 +242,11 @@ final class VfoPanel extends JPanel {
         freq.setFont(Shack.mono(18f));
         freq.addActionListener(e -> tune());
         fr.add(freq);
-        Shack.Key tuneKey = new Shack.Key("ACCORDER").primary().font(Shack.bold(12.5f));
+        Shack.Key tuneKey = new Shack.Key(Tr.t("ACCORDER")).primary().font(Shack.bold(12.5f));
         tuneKey.setPreferredSize(new Dimension(140, 44));
         tuneKey.addActionListener(e -> tune());
         fr.add(tuneKey);
-        Shack.Key back = new Shack.Key("RETOUR AUX CANAUX").font(Shack.bold(12f));
+        Shack.Key back = new Shack.Key(Tr.t("RETOUR AUX CANAUX")).font(Shack.bold(12f));
         back.setPreferredSize(new Dimension(190, 44));
         back.addActionListener(e -> backToChannels());
         fr.add(back);
@@ -244,8 +254,8 @@ final class VfoPanel extends JPanel {
         fq.add(Box.createVerticalStrut(10));
         JPanel pr = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         pr.setOpaque(false);
-        String[][] presets = {{"DAPNET 439,9875", "439.9875"}, {"APRS 144,800", "144.800"}, {"ISS 145,800", "145.800"},
-            {"Appel 2 m 145,500", "145.500"}, {"Appel 70 cm 433,500", "433.500"}};
+        String[][] presets = {{Tr.t("DAPNET 439,9875"), "439.9875"}, {Tr.t("APRS 144,800"), "144.800"}, {Tr.t("ISS 145,800"), "145.800"},
+            {Tr.t("Appel 2 m 145,500"), "145.500"}, {Tr.t("Appel 70 cm 433,500"), "433.500"}};
         for (String[] p : presets) {
             Shack.Key k = new Shack.Key(p[0]).font(Shack.bold(11.5f));
             k.addActionListener(e -> { freq.setText(p[1]); tune(); });
@@ -255,8 +265,8 @@ final class VfoPanel extends JPanel {
         fq.add(Box.createVerticalStrut(10));
         fq.add(left(tuneState));
         fq.add(Box.createVerticalStrut(6));
-        fq.add(left(note("Le mode fréquence du poste est utilisé : aucun canal n'est modifié en mémoire. L'émission (PTT, "
-                + "POCSAG) se fait sur la fréquence accordée. Le bandscope se centre sur cette fréquence.")));
+        fq.add(left(note(Tr.t("Le mode fréquence du poste est utilisé : aucun canal n'est modifié en mémoire. L'émission (PTT, ")
+                + Tr.t("POCSAG) se fait sur la fréquence accordée. Le bandscope se centre sur cette fréquence."))));
         col.add(fill(fq));
         col.add(Box.createVerticalGlue());
         add(Shack.scroll(col), BorderLayout.CENTER);
@@ -307,14 +317,14 @@ final class VfoPanel extends JPanel {
         sqLbl.setText(sq < 0 ? "–" : String.valueOf(sq));
         if (pttHeld) {
             long s = (System.currentTimeMillis() - pttStart) / 1000;
-            pttKey.setText("ÉMISSION… " + s + " s · RELÂCHER");
-            pttState.setText((r.isInTx() ? "Le poste émet" : "Envoi de l'audio au poste…") + " sur " + Bandscope.mhz(r.currentTxHz()) + " MHz");
+            pttKey.setText(Tr.t("ÉMISSION… ") + s + Tr.t(" s · RELÂCHER"));
+            pttState.setText((r.isInTx() ? Tr.t("Le poste émet") : Tr.t("Envoi de l'audio au poste…")) + Tr.t(" sur ") + Bandscope.mhz(r.currentTxHz()) + " MHz");
             pttState.setForeground(Shack.RED);
         } else {
-            pttKey.setText("PTT · MAINTENIR POUR ÉMETTRE");
+            pttKey.setText(Tr.t("PTT · MAINTENIR POUR ÉMETTRE"));
             if (System.currentTimeMillis() > errUntil || !on) {
                 long tx = on ? r.currentTxHz() : 0;
-                pttState.setText(!on ? "Poste non connecté" : tx > 0 ? "Émission sur " + Bandscope.mhz(tx) + " MHz" : "Fréquence d'émission inconnue");
+                pttState.setText(!on ? Tr.t("Poste non connecté") : tx > 0 ? Tr.t("Émission sur ") + Bandscope.mhz(tx) + " MHz" : Tr.t("Fréquence d'émission inconnue"));
                 pttState.setForeground(Shack.MUTED);
             }
         }
@@ -327,16 +337,16 @@ final class VfoPanel extends JPanel {
         boolean dualOnNow = dual > 0;
         vfoA.setForeground(dualOnNow && act == 1 ? Shack.CYAN : Shack.TEXT);
         vfoB.setForeground(dualOnNow && act == 2 ? Shack.CYAN : dualOnNow ? Shack.TEXT : Shack.MUTED);
-        if (!on) dualChip.set("POSTE NON CONNECTÉ", Shack.MUTED, Shack.MUTED);
-        else if (dual < 0) dualChip.set("LECTURE DES RÉGLAGES…", Shack.MUTED, Shack.MUTED);
-        else if (dualOnNow) dualChip.set("DOUBLE VEILLE ACTIVE" + (act == 1 ? " · RÉCEPTION SUR A" : act == 2 ? " · RÉCEPTION SUR B" : ""), Shack.CYAN, Shack.TEXT);
-        else dualChip.set("UN SEUL VFO (A)", Shack.AMBER, Shack.TEXT2);
+        if (!on) dualChip.set(Tr.t("POSTE NON CONNECTÉ"), Shack.MUTED, Shack.MUTED);
+        else if (dual < 0) dualChip.set(Tr.t("LECTURE DES RÉGLAGES…"), Shack.MUTED, Shack.MUTED);
+        else if (dualOnNow) dualChip.set(Tr.t("DOUBLE VEILLE ACTIVE") + (act == 1 ? Tr.t(" · RÉCEPTION SUR A") : act == 2 ? Tr.t(" · RÉCEPTION SUR B") : ""), Shack.CYAN, Shack.TEXT);
+        else dualChip.set(Tr.t("UN SEUL VFO (A)"), Shack.AMBER, Shack.TEXT2);
         dualOn.setSelected(on && dualOnNow);
         dualOff.setSelected(on && dual == 0);
         long u = r.userVfoHz();
         if (chModel.getRowCount() > 0) chModel.fireTableRowsUpdated(0, chModel.getRowCount() - 1);
         if (!on && !rows.isEmpty()) reloadChannels();
-        tuneState.setText(!on ? " " : u > 0 ? "Accordé sur " + Bandscope.mhz(u) + " MHz (mode fréquence)" : "Sur les canaux mémoire");
+        tuneState.setText(!on ? " " : u > 0 ? Tr.t("Accordé sur ") + Bandscope.mhz(u) + Tr.t(" MHz (mode fréquence)") : Tr.t("Sur les canaux mémoire"));
     }
 
     /** Reglage « − valeur + ». */
@@ -365,27 +375,27 @@ final class VfoPanel extends JPanel {
         if (pttHeld) return;
         Radio r = host.radio();
         Transmitter t = host.transmitter();
-        if (!r.isRunning() || !r.audioOpen()) { pttError("Poste non connecté (canal audio fermé)"); return; }
-        if (t.isBusy()) { pttError("Une émission est déjà en cours (POCSAG / SSTV)"); return; }
+        if (!r.isRunning() || !r.audioOpen()) { pttError(Tr.t("Poste non connecté (canal audio fermé)")); return; }
+        if (t.isBusy()) { pttError(Tr.t("Une émission est déjà en cours (POCSAG / SSTV)")); return; }
         long hz = r.currentTxHz();
-        if (hz <= 0) { pttError("Émission impossible : fréquence d'émission inconnue ou canal en réception seule"); return; }
+        if (hz <= 0) { pttError(Tr.t("Émission impossible : fréquence d'émission inconnue ou canal en réception seule")); return; }
         host.stopSweep();
         pttHeld = true;
         pttStart = System.currentTimeMillis();
         try {
             boolean ok = t.startLive(GAINS[gainIdx] / 100.0, 180, new Transmitter.Listener() {
-                @Override public void onTxStart(double seconds) { host.log("PTT : émission sur " + Bandscope.mhz(hz) + " MHz"); }
+                @Override public void onTxStart(double seconds) { host.log(Tr.t("PTT : émission sur ") + Bandscope.mhz(hz) + " MHz"); }
                 @Override public void onTxEnd(boolean stopped) {
                     pttHeld = false;
                     long s = (System.currentTimeMillis() - pttStart) / 1000;
-                    host.log("PTT : fin d'émission (" + s + " s" + (stopped ? ", coupure de sécurité" : "") + ")");
+                    host.log(Tr.t("PTT : fin d'émission (") + s + " s" + (stopped ? Tr.t(", coupure de sécurité") : "") + ")");
                     SwingUtilities.invokeLater(() -> refresh());
                 }
             });
-            if (!ok) { pttHeld = false; pttError("Émission impossible (canal audio fermé)"); }
+            if (!ok) { pttHeld = false; pttError(Tr.t("Émission impossible (canal audio fermé)")); }
         } catch (IllegalStateException e) {
             pttHeld = false;
-            pttError("Émission impossible : " + e.getMessage());
+            pttError(Tr.t("Émission impossible : ") + e.getMessage());
         }
         refresh();
     }
@@ -452,27 +462,27 @@ final class VfoPanel extends JPanel {
             for (int i = 0; i < n; i++) groupBox.addItem("");
         }
         for (int i = 0; i < n; i++) {
-            String name = "Groupe " + (i + 1) + (r.regionName(i).isEmpty() ? "" : " · " + r.regionName(i));
+            String name = Tr.t("Groupe ") + (i + 1) + (r.regionName(i).isEmpty() ? "" : " · " + r.regionName(i));
             if (!name.equals(groupBox.getItemAt(i))) { groupBox.removeItemAt(i); groupBox.insertItemAt(name, i); }
         }
         int cur = r.currentRegion();
         if (cur >= 0 && cur < n && groupBox.getSelectedIndex() != cur) groupBox.setSelectedIndex(cur);
         fillingGroups = false;
         groupBox.setEnabled(n > 1);
-        chState.setText(!r.isRunning() ? " " : rows.size() + " canal(aux) dans le groupe" + (cur >= 0 ? " " + (cur + 1) : ""));
+        chState.setText(!r.isRunning() ? " " : rows.size() + Tr.t(" canal(aux) dans le groupe") + (cur >= 0 ? " " + (cur + 1) : ""));
     }
 
     private void assign(int vfo) {
         Radio r = host.radio();
-        if (!r.isRunning()) { JOptionPane.showMessageDialog(this, "Connectez d'abord le poste."); return; }
+        if (!r.isRunning()) { JOptionPane.showMessageDialog(this, Tr.t("Connectez d'abord le poste.")); return; }
         int sel = chTable.getSelectedRow();
-        if (sel < 0 || sel >= rows.size()) { JOptionPane.showMessageDialog(this, "Choisissez un canal dans la liste."); return; }
+        if (sel < 0 || sel >= rows.size()) { JOptionPane.showMessageDialog(this, Tr.t("Choisissez un canal dans la liste.")); return; }
         if (r.userVfoHz() > 0 || r.isFreqMode()) { host.stopSweep(); r.backToChannels(); }
-        if (!r.setVfoChannel(vfo, rows.get(sel))) host.log("Canal : réglages du poste pas encore lus.");
+        if (!r.setVfoChannel(vfo, rows.get(sel))) host.log(Tr.t("Canal : réglages du poste pas encore lus."));
     }
 
     private final class ChannelModel extends AbstractTableModel {
-        private final String[] cols = {"N°", "Nom", "Réception", "Émission", "VFO"};
+        private final String[] cols = {Tr.t("N°"), Tr.t("Nom"), Tr.t("Réception"), Tr.t("Émission"), "VFO"};
         @Override public int getRowCount() { return rows.size(); }
         @Override public int getColumnCount() { return cols.length; }
         @Override public String getColumnName(int c) { return cols[c]; }
@@ -485,7 +495,7 @@ final class VfoPanel extends JPanel {
                 case 2: return mhz(r.channelRxHz(ch));
                 case 3: {
                     long rx = r.channelRxHz(ch), tx = r.channelTxHz(ch);
-                    if (tx <= 0) return "RX seul";
+                    if (tx <= 0) return Tr.t("RX seul");
                     if (tx == rx) return mhz(tx);
                     double d = (tx - rx) / 1e6;
                     return mhz(tx) + String.format(Locale.ROOT, " (%+.1f)", d);
@@ -502,7 +512,7 @@ final class VfoPanel extends JPanel {
 
     private static String label(Radio r, int ch) {
         String n = r.channelName(ch);
-        return "Canal " + (ch + 1) + (n.isEmpty() ? "" : " · " + n);
+        return Tr.t("Canal ") + (ch + 1) + (n.isEmpty() ? "" : " · " + n);
     }
 
     private static String hz(long hz) { return hz > 0 ? String.format(Locale.ROOT, "%.4f MHz", hz / 1e6) : " "; }
@@ -510,30 +520,30 @@ final class VfoPanel extends JPanel {
     private void setDual(boolean on) {
         Radio r = host.radio();
         if (!r.isRunning()) return;
-        if (on && r.userVfoHz() > 0) host.log("Double veille : retour aux canaux mémoire (le mode fréquence n'écoute qu'une fréquence)");
+        if (on && r.userVfoHz() > 0) host.log(Tr.t("Double veille : retour aux canaux mémoire (le mode fréquence n'écoute qu'une fréquence)"));
         if (on) { host.stopSweep(); r.backToChannels(); }
-        if (!r.setDualWatch(on)) { host.log("Double veille : réglages du poste pas encore lus."); return; }
-        host.log("Double veille " + (on ? "activée" : "désactivée"));
+        if (!r.setDualWatch(on)) { host.log(Tr.t("Double veille : réglages du poste pas encore lus.")); return; }
+        host.log(Tr.t("Double veille ") + (on ? Tr.t("activée") : Tr.t("désactivée")));
     }
 
     private void tune() {
         Radio r = host.radio();
-        if (!r.isRunning()) { JOptionPane.showMessageDialog(this, "Connectez d'abord le poste."); return; }
+        if (!r.isRunning()) { JOptionPane.showMessageDialog(this, Tr.t("Connectez d'abord le poste.")); return; }
         long hz;
         try {
             hz = Math.round(Double.parseDouble(freq.getText().trim().replace(',', '.')) * 1e6);
         } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(this, "Fréquence invalide.");
+            JOptionPane.showMessageDialog(this, Tr.t("Fréquence invalide."));
             return;
         }
         if (!((hz >= 136_000_000 && hz <= 174_000_000) || (hz >= 400_000_000 && hz <= 520_000_000))) {
-            JOptionPane.showMessageDialog(this, "Hors des bandes du poste (136–174 / 400–520 MHz).");
+            JOptionPane.showMessageDialog(this, Tr.t("Hors des bandes du poste (136–174 / 400–520 MHz)."));
             return;
         }
         prefs.put("vfoFreq", freq.getText().trim());
         host.stopSweep();
         r.tuneUser(hz);
-        host.log("Accord sur " + Bandscope.mhz(hz) + " MHz (mode fréquence)");
+        host.log(Tr.t("Accord sur ") + Bandscope.mhz(hz) + Tr.t(" MHz (mode fréquence)"));
         refresh();
     }
 
@@ -542,7 +552,7 @@ final class VfoPanel extends JPanel {
         if (!r.isRunning()) return;
         host.stopSweep();
         r.backToChannels();
-        host.log("Retour aux canaux mémoire");
+        host.log(Tr.t("Retour aux canaux mémoire"));
         refresh();
     }
 
@@ -552,11 +562,14 @@ final class VfoPanel extends JPanel {
         javax.swing.JPopupMenu m = new javax.swing.JPopupMenu();
         Radio r = host.radio();
         boolean on = r.isRunning() && ch >= 0;
-        m.add(menuItem("Modifier le canal" + (ch >= 0 ? " " + (ch + 1) : "") + "…", on, () -> editChannel(ch)));
-        m.add(menuItem("Mettre sur le VFO A", on, () -> assign(1)));
-        m.add(menuItem("Mettre sur le VFO B", on, () -> assign(2)));
+        m.add(menuItem(Tr.t("Modifier le canal") + (ch >= 0 ? " " + (ch + 1) : "") + "…", on, () -> editChannel(ch)));
+        m.add(menuItem(Tr.t("Mettre sur le VFO A"), on, () -> assign(1)));
+        m.add(menuItem(Tr.t("Mettre sur le VFO B"), on, () -> assign(2)));
         m.addSeparator();
-        m.add(menuItem("Exporter le groupe en CSV…", r.isRunning() && !rows.isEmpty(), this::exportCsv));
+        m.add(menuItem(Tr.t("Ajouter une fréquence au groupe…"), r.isRunning(), this::addChannel));
+        m.add(menuItem(Tr.t("Renommer le groupe…"), r.isRunning() && r.regionCount() > 0, this::renameGroup));
+        m.addSeparator();
+        m.add(menuItem(Tr.t("Exporter le groupe en CSV…"), r.isRunning() && !rows.isEmpty(), this::exportCsv));
         return m;
     }
 
@@ -568,51 +581,108 @@ final class VfoPanel extends JPanel {
         return i;
     }
 
+    // ------------------------------------------------------------------ Groupes : ajout d'une frequence, nom
+
+    /** Nouvelle frequence : premier canal libre du groupe courant, ouvert dans la fenetre de modification. */
+    private void addChannel() {
+        String err = addChannelCheck();
+        if (err != null) { JOptionPane.showMessageDialog(this, err); return; }
+        editChannel(host.radio().firstFreeChannel(), true);
+    }
+
+    private String addChannelCheck() {
+        Radio r = host.radio();
+        if (!r.isRunning()) return Tr.t("Connectez d'abord le poste.");
+        if (r.firstFreeChannel() < 0)
+            return r.channelCount() == 0 ? Tr.t("Canaux pas encore lus, réessayez dans un instant.")
+                    : Tr.t("Plus de canal libre dans ce groupe (") + r.channelCount() + Tr.t(" canaux) : modifiez un canal existant ou changez de groupe.");
+        return null;
+    }
+
+    private void renameGroup() {
+        Radio r = host.radio();
+        if (!r.isRunning()) { JOptionPane.showMessageDialog(this, Tr.t("Connectez d'abord le poste.")); return; }
+        int g = r.currentRegion();
+        if (g < 0 || g >= r.regionCount()) { JOptionPane.showMessageDialog(this, Tr.t("Groupe courant inconnu, réessayez dans un instant.")); return; }
+        JTextField name = Shack.field(r.regionName(g), 14);
+        JPanel p = new JPanel();
+        p.setOpaque(false);
+        p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
+        p.add(left(cap(Tr.t("Nouveau nom du groupe ") + (g + 1) + Tr.t(" (10 caractères au plus)"))));
+        p.add(left(name));
+        String[] opts = {Tr.t("RENOMMER"), Tr.t("ANNULER")};
+        if (JOptionPane.showOptionDialog(this, p, Tr.t("Renommer le groupe"), JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE, null, opts, opts[0]) != 0) return;
+        String err = renameGroup(g, name.getText());
+        if (err != null) JOptionPane.showMessageDialog(this, err);
+    }
+
+    private String renameGroup(int g, String name) {
+        Radio r = host.radio();
+        String nm = name == null ? "" : name.trim();
+        if (nm.isEmpty()) return Tr.t("Nom vide.");
+        if (nm.getBytes(java.nio.charset.Charset.forName("GBK")).length > 10) return Tr.t("Nom trop long (10 caractères au plus).");
+        if (!r.isRunning() || !r.setRegionName(g, nm)) return Tr.t("Groupe inconnu ou poste déconnecté.");
+        return null;
+    }
+
     /** Fenetre de modification d'un canal memoire, puis ecriture dans le poste (WRITE_RF_CH). */
-    private void editChannel(int ch) {
+    private void editChannel(int ch) { editChannel(ch, false); }
+
+    /** isNew : canal libre a remplir (valeurs par defaut : 25 kHz, puissance haute, FM). */
+    private void editChannel(int ch, boolean isNew) {
         Radio r = host.radio();
         Radio.Channel c = r.channel(ch);
-        if (c == null) { JOptionPane.showMessageDialog(this, "Canal pas encore lu par le poste, réessayez dans un instant."); return; }
-        javax.swing.JDialog d = new javax.swing.JDialog(SwingUtilities.getWindowAncestor(this), "Canal " + (ch + 1));
+        if (c == null) { JOptionPane.showMessageDialog(this, Tr.t("Canal pas encore lu par le poste, réessayez dans un instant.")); return; }
+        if (isNew) {
+            c.wide = true;
+            c.maxPower = true;
+            c.medPower = false;
+            c.txDisable = false;
+            c.rxMod = c.txMod = 0;
+            c.rxSub = c.txSub = 0;
+        }
+        javax.swing.JDialog d = new javax.swing.JDialog(SwingUtilities.getWindowAncestor(this), isNew ? Tr.t("Nouvelle fréquence") : Tr.t("Canal ") + (ch + 1));
         d.setModal(true);
         JPanel p = new JPanel();
         p.setBackground(Shack.BG);
         p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
         p.setBorder(new EmptyBorder(16, 18, 14, 18));
         JTextField name = Shack.field(c.name, 14);
-        JTextField rx = Shack.field(mhz(c.rxHz), 12), tx = Shack.field(c.txHz > 0 ? mhz(c.txHz) : "", 12);
+        JTextField rx = Shack.field(c.rxHz > 0 ? mhz(c.rxHz) : "", 12), tx = Shack.field(c.txHz > 0 ? mhz(c.txHz) : "", 12);
         JTextField rxTone = Shack.field(Radio.Channel.subText(c.rxSub), 8), txTone = Shack.field(Radio.Channel.subText(c.txSub), 8);
         int[] power = {c.maxPower ? 0 : c.medPower ? 1 : 2}, bw = {c.wide ? 0 : 1}, mod = {c.rxMod == 1 ? 1 : 0};
-        Shack.Switch scan = new Shack.Switch("Inclus dans le balayage (scan)", c.scan);
-        Shack.Switch txOff = new Shack.Switch("Émission interdite sur ce canal", c.txDisable);
-        p.add(left(Shack.label("CANAL " + (ch + 1) + " · GROUPE " + (r.currentRegion() + 1), Shack.tracked(Shack.mono(10f), 0.14f), Shack.MUTED)));
-        p.add(left(cap("Nom (10 caractères au plus)")));
+        Shack.Switch scan = new Shack.Switch(Tr.t("Inclus dans le balayage (scan)"), c.scan);
+        Shack.Switch txOff = new Shack.Switch(Tr.t("Émission interdite sur ce canal"), c.txDisable);
+        String grp = r.regionName(r.currentRegion());
+        p.add(left(Shack.label((isNew ? Tr.t("NOUVELLE FRÉQUENCE · CANAL LIBRE ") : Tr.t("CANAL ")) + (ch + 1) + Tr.t(" · GROUPE ") + (r.currentRegion() + 1)
+                + (grp.isEmpty() ? "" : " " + grp.toUpperCase(Locale.ROOT)), Shack.tracked(Shack.mono(10f), 0.14f), Shack.MUTED)));
+        p.add(left(cap(Tr.t("Nom (10 caractères au plus)"))));
         p.add(left(name));
-        p.add(left(cap("Fréquences (MHz) : réception · émission (vide = même que la réception)")));
+        p.add(left(cap(Tr.t("Fréquences (MHz) : réception · émission (vide = même que la réception)"))));
         p.add(left(rowOf(rx, tx)));
-        p.add(left(cap("Sous-tons : réception · émission (88.5 = CTCSS, D023 = DCS, vide = aucun)")));
+        p.add(left(cap(Tr.t("Sous-tons : réception · émission (88.5 = CTCSS, D023 = DCS, vide = aucun)"))));
         p.add(left(rowOf(rxTone, txTone)));
-        p.add(left(cap("Puissance d'émission")));
-        p.add(left(keysOf(new String[]{"HAUTE", "MOYENNE", "BASSE"}, power)));
-        p.add(left(cap("Largeur de bande")));
+        p.add(left(cap(Tr.t("Puissance d'émission"))));
+        p.add(left(keysOf(new String[]{Tr.t("HAUTE"), Tr.t("MOYENNE"), Tr.t("BASSE")}, power)));
+        p.add(left(cap(Tr.t("Largeur de bande"))));
         p.add(left(keysOf(new String[]{"25 kHz", "12,5 kHz"}, bw)));
-        p.add(left(cap("Modulation")));
+        p.add(left(cap(Tr.t("Modulation"))));
         p.add(left(keysOf(new String[]{"FM", "AM"}, mod)));
         p.add(Box.createVerticalStrut(6));
         for (Shack.Switch s : new Shack.Switch[]{scan, txOff}) { s.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34)); p.add(left(s)); }
         JPanel br = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 8));
         br.setOpaque(false);
-        Shack.Key cancel = new Shack.Key("ANNULER").font(Shack.bold(12f));
+        Shack.Key cancel = new Shack.Key(Tr.t("ANNULER")).font(Shack.bold(12f));
         cancel.addActionListener(e -> d.dispose());
-        Shack.Key ok = new Shack.Key("ENREGISTRER DANS LE POSTE").primary().font(Shack.bold(12f));
+        Shack.Key ok = new Shack.Key(Tr.t("ENREGISTRER DANS LE POSTE")).primary().font(Shack.bold(12f));
         ok.addActionListener(e -> {
             try {
                 Radio.Channel n = Radio.Channel.parse(c.toBytes()); // copie (options non editees conservees)
                 String nm = name.getText().trim();
-                if (nm.getBytes(java.nio.charset.Charset.forName("GBK")).length > 10) throw new IllegalArgumentException("Nom trop long (10 caractères au plus).");
+                if (nm.getBytes(java.nio.charset.Charset.forName("GBK")).length > 10) throw new IllegalArgumentException(Tr.t("Nom trop long (10 caractères au plus)."));
                 n.name = nm;
-                n.rxHz = parseMhz(rx.getText(), "réception");
-                n.txHz = tx.getText().trim().isEmpty() ? n.rxHz : parseMhz(tx.getText(), "émission");
+                n.rxHz = parseMhz(rx.getText(), Tr.t("réception"));
+                n.txHz = tx.getText().trim().isEmpty() ? n.rxHz : parseMhz(tx.getText(), Tr.t("émission"));
                 n.rxSub = Radio.Channel.parseSub(rxTone.getText());
                 n.txSub = Radio.Channel.parseSub(txTone.getText());
                 n.maxPower = power[0] == 0;
@@ -621,11 +691,11 @@ final class VfoPanel extends JPanel {
                 n.rxMod = n.txMod = mod[0];
                 n.scan = scan.isOn();
                 n.txDisable = txOff.isOn();
-                if (!r.isRunning()) throw new IllegalArgumentException("Poste déconnecté.");
+                if (!r.isRunning()) throw new IllegalArgumentException(Tr.t("Poste déconnecté."));
                 r.writeChannel(n);
                 d.dispose();
             } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(d, "Valeur invalide : " + ex.getMessage());
+                JOptionPane.showMessageDialog(d, Tr.t("Valeur invalide : ") + ex.getMessage());
             } catch (IllegalArgumentException ex) {
                 JOptionPane.showMessageDialog(d, ex.getMessage());
             }
@@ -641,9 +711,9 @@ final class VfoPanel extends JPanel {
 
     private static long parseMhz(String s, String what) {
         double v;
-        try { v = Double.parseDouble(s.trim().replace(',', '.')); } catch (NumberFormatException e) { throw new IllegalArgumentException("Fréquence de " + what + " invalide."); }
+        try { v = Double.parseDouble(s.trim().replace(',', '.')); } catch (NumberFormatException e) { throw new IllegalArgumentException(Tr.t("Fréquence de ") + what + Tr.t(" invalide.")); }
         long hz = Math.round(v * 1e6);
-        if (hz < 18_000_000L || hz > 1_000_000_000L) throw new IllegalArgumentException("Fréquence de " + what + " hors plage : " + s.trim() + " MHz.");
+        if (hz < 18_000_000L || hz > 1_000_000_000L) throw new IllegalArgumentException(Tr.t("Fréquence de ") + what + Tr.t(" hors plage : ") + s.trim() + " MHz.");
         return hz;
     }
 
@@ -675,7 +745,7 @@ final class VfoPanel extends JPanel {
         javax.swing.JFileChooser fc = new javax.swing.JFileChooser(prefs.get("csvDir", System.getProperty("user.home")));
         String base = "groupe-" + (g + 1) + (gname.isEmpty() ? "" : "-" + gname.replaceAll("[^\\w\\-]+", "_"));
         fc.setSelectedFile(new java.io.File(fc.getCurrentDirectory(), base + ".csv"));
-        fc.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("Fichier CSV", "csv"));
+        fc.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(Tr.t("Fichier CSV"), "csv"));
         if (fc.showSaveDialog(this) != javax.swing.JFileChooser.APPROVE_OPTION) return;
         java.io.File f = fc.getSelectedFile();
         if (!f.getName().toLowerCase(Locale.ROOT).endsWith(".csv")) f = new java.io.File(f.getParentFile(), f.getName() + ".csv");
@@ -699,11 +769,11 @@ final class VfoPanel extends JPanel {
         }
         try {
             java.nio.file.Files.write(f.toPath(), sb.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
-            host.log("Export CSV : " + n + " canal(aux) du groupe " + (g + 1) + " → " + f.getAbsolutePath());
-            JOptionPane.showMessageDialog(this, n + " canal(aux) exporté(s) dans\n" + f.getAbsolutePath()
-                    + (missing > 0 ? "\n(" + missing + " canal(aux) pas encore lu(s), ignoré(s))" : ""));
+            host.log(Tr.t("Export CSV : ") + n + Tr.t(" canal(aux) du groupe ") + (g + 1) + " → " + f.getAbsolutePath());
+            JOptionPane.showMessageDialog(this, n + Tr.t(" canal(aux) exporté(s) dans\n") + f.getAbsolutePath()
+                    + (missing > 0 ? "\n(" + missing + Tr.t(" canal(aux) pas encore lu(s), ignoré(s))") : ""));
         } catch (java.io.IOException e) {
-            JOptionPane.showMessageDialog(this, "Export impossible : " + e.getMessage());
+            JOptionPane.showMessageDialog(this, Tr.t("Export impossible : ") + e.getMessage());
         }
     }
 
@@ -748,24 +818,55 @@ final class VfoPanel extends JPanel {
                 break;
             }
             case "assign": {
-                if (!r.isRunning()) return "Connectez d'abord le poste.";
+                if (!r.isRunning()) return Tr.t("Connectez d'abord le poste.");
                 int ch = Integer.parseInt(p.get("ch"));
                 if (r.userVfoHz() > 0 || r.isFreqMode()) { host.stopSweep(); r.backToChannels(); }
-                if (!r.setVfoChannel(Integer.parseInt(p.get("vfo")), ch)) return "Réglages du poste pas encore lus.";
+                if (!r.setVfoChannel(Integer.parseInt(p.get("vfo")), ch)) return Tr.t("Réglages du poste pas encore lus.");
                 break;
             }
             case "tune": {
-                if (!r.isRunning()) return "Connectez d'abord le poste.";
+                if (!r.isRunning()) return Tr.t("Connectez d'abord le poste.");
                 long hz;
                 try { hz = Math.round(Double.parseDouble(p.getOrDefault("f", "").trim().replace(',', '.')) * 1e6); }
-                catch (NumberFormatException e) { return "Fréquence invalide."; }
+                catch (NumberFormatException e) { return Tr.t("Fréquence invalide."); }
                 if (!((hz >= 136_000_000 && hz <= 174_000_000) || (hz >= 400_000_000 && hz <= 520_000_000)))
-                    return "Hors des bandes du poste (136–174 / 400–520 MHz).";
+                    return Tr.t("Hors des bandes du poste (136–174 / 400–520 MHz).");
                 freq.setText(p.get("f").trim());
                 tune();
                 break;
             }
             case "back": backToChannels(); break;
+            case "renameGroup": {
+                if (!r.isRunning()) return Tr.t("Connectez d'abord le poste.");
+                String err = renameGroup(r.currentRegion(), p.get("name"));
+                if (err != null) return err;
+                break;
+            }
+            case "addChannel": {
+                String err = addChannelCheck();
+                if (err != null) return err;
+                Radio.Channel c = r.channel(r.firstFreeChannel());
+                if (c == null) return Tr.t("Canal libre pas encore lu, réessayez.");
+                try {
+                    String nm = p.getOrDefault("name", "").trim();
+                    if (nm.getBytes(java.nio.charset.Charset.forName("GBK")).length > 10) return Tr.t("Nom trop long (10 caractères au plus).");
+                    c.name = nm;
+                    c.rxHz = parseMhz(p.getOrDefault("rx", ""), Tr.t("réception"));
+                    String tx = p.getOrDefault("tx", "").trim();
+                    c.txHz = tx.isEmpty() ? c.rxHz : parseMhz(tx, Tr.t("émission"));
+                    c.rxSub = 0;
+                    c.txSub = Radio.Channel.parseSub(p.getOrDefault("tone", ""));
+                    c.wide = true;
+                    c.maxPower = true;
+                    c.medPower = false;
+                    c.txDisable = false;
+                    c.rxMod = c.txMod = 0;
+                } catch (IllegalArgumentException e) {
+                    return e.getMessage();
+                }
+                r.writeChannel(c);
+                break;
+            }
             default: break;
         }
         refresh();

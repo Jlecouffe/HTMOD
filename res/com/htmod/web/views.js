@@ -24,6 +24,23 @@ function h(tag, attrs, ...kids) {
 const $ = (sel, root) => (root || document).querySelector(sel);
 function setText(e, t) { t = t == null ? '' : String(t); if (e.textContent !== t) e.textContent = t; }
 
+/* drapeaux des langues (Flags.java) : Windows n'affiche pas les emoji de drapeaux */
+const LANGS = [['fr', 'Français'], ['en', 'English'], ['it', 'Italiano']];
+const bands = (a, b, c) => `<rect width="20" height="40" fill="${a}"/><rect x="20" width="20" height="40" fill="${b}"/><rect x="40" width="20" height="40" fill="${c}"/>`;
+const FLAGS = {
+  fr: bands('#002395', '#FFFFFF', '#ED2939'),
+  it: bands('#009246', '#FFFFFF', '#CE2B37'),
+  en: '<rect width="60" height="40" fill="#012169"/><path d="M0 0L60 40M60 0L0 40" stroke="#FFFFFF" stroke-width="8"/><path d="M0 0L60 40M60 0L0 40" stroke="#C8102E" stroke-width="3"/><path d="M30 0V40M0 20H60" stroke="#FFFFFF" stroke-width="13"/><path d="M30 0V40M0 20H60" stroke="#C8102E" stroke-width="8"/>',
+};
+function flagIcon(code) {
+  const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  s.setAttribute('viewBox', '0 0 60 40');
+  s.setAttribute('class', 'flag');
+  s.setAttribute('aria-hidden', 'true');
+  s.innerHTML = FLAGS[code] || '';
+  return s;
+}
+
 /* icones au trait (Shack.Icon) */
 const ICONS = {
   globe: '<circle cx="9" cy="9" r="7.6"/><ellipse cx="9" cy="9" rx="3.8" ry="7.6"/><path d="M1.4 9h15.2M2.6 5.2Q9 7.6 15.4 5.2M2.6 12.8Q9 10.4 15.4 12.8"/>',
@@ -154,7 +171,7 @@ function menu(anchor, items) {
   for (const it of items) {
     if (it === '-') { m.append(h('div', { class: 'sep' })); continue; }
     const e = h('div', { class: 'it' + (it.disabled ? ' dis' : '') + (it.current ? ' cur' : '') },
-      it.check !== undefined ? h('span', { class: 'ck' }, it.check ? '✓' : '') : null, it.text);
+      it.check !== undefined ? h('span', { class: 'ck' }, it.check ? '✓' : '') : null, it.flag ? flagIcon(it.flag) : null, it.text);
     if (!it.disabled) e.addEventListener('click', () => { closeOverlays(); it.run(); });
     m.append(e);
   }
@@ -182,7 +199,7 @@ function modal(title, body, buttons) {
   });
 }
 const alertBox = (t, title) => modal(title || 'HTMod', t);
-const confirmBox = (title, t, okText) => modal(title, t, [{ text: 'ANNULER', value: false }, { text: okText || 'OK', primary: true, value: true }]);
+const confirmBox = (title, t, okText) => modal(title, t, [{ text: _t('ANNULER'), value: false }, { text: okText || 'OK', primary: true, value: true }]);
 let toastTimer = null;
 function toast(t, err) {
   document.querySelectorAll('.toast').forEach(e => e.remove());
@@ -202,7 +219,7 @@ async function cmd(a, params) {
     if (!j.ok) { alertBox(j.error); return null; }
     return j.data === undefined ? true : j.data;
   } catch (e) {
-    toast('Liaison avec le PC perdue', true);
+    toast(_t('Liaison avec le PC perdue'), true);
     return null;
   }
 }
@@ -213,7 +230,7 @@ async function upload(what, file, params) {
     const j = await r.json();
     if (!j.ok) { alertBox(j.error); return false; }
     return true;
-  } catch (e) { toast('Envoi impossible', true); return false; }
+  } catch (e) { toast(_t('Envoi impossible'), true); return false; }
 }
 function pickFile(accept, fn) {
   const i = h('input', { type: 'file', accept, style: { display: 'none' } });
@@ -237,11 +254,11 @@ VIEWS.CARTE = function (v) {
   const wind = new WindLayer(map, s => toast(s, true));
   map.underlay = wind;
   window.mainMap = map;
-  const kWind = key('VENT', () => { wind.setOn(!wind.on); kWind.setSel(wind.on); try { localStorage.setItem('htmod.wind', wind.on ? '1' : '0'); } catch (e) {} }, { cls: 'txt', title: 'Vent animé (Open-Meteo, 10 m)' });
-  const kTopo = key('TOPO', () => { map.setTopo(!map.topo); kTopo.setSel(map.topo); }, { cls: 'txt', title: 'Fond OpenTopoMap (relief)' });
-  const kNight = key('NUIT', () => { map.setNight(!map.night); kNight.setSel(map.night); }, { cls: 'txt', title: 'Carte en couleurs inversées (mode nuit)' });
-  const kFit = key('', () => map.fitAll(), { icon: 'target', title: 'Cadrer toutes les positions' });
-  well.append(h('div', { class: 'map-keys' }, kWind, kTopo, kNight, kFit, key('−', () => map.zoomOut(), { title: 'Zoom arrière' }), key('+', () => map.zoomIn(), { title: 'Zoom avant' })));
+  const kWind = key(_t('VENT'), () => { wind.setOn(!wind.on); kWind.setSel(wind.on); try { localStorage.setItem('htmod.wind', wind.on ? '1' : '0'); } catch (e) {} }, { cls: 'txt', title: _t('Vent animé (Open-Meteo, 10 m)') });
+  const kTopo = key('TOPO', () => { map.setTopo(!map.topo); kTopo.setSel(map.topo); }, { cls: 'txt', title: _t('Fond OpenTopoMap (relief)') });
+  const kNight = key(_t('NUIT'), () => { map.setNight(!map.night); kNight.setSel(map.night); }, { cls: 'txt', title: _t('Carte en couleurs inversées (mode nuit)') });
+  const kFit = key('', () => map.fitAll(), { icon: 'target', title: _t('Cadrer toutes les positions') });
+  well.append(h('div', { class: 'map-keys' }, kWind, kTopo, kNight, kFit, key('−', () => map.zoomOut(), { title: _t('Zoom arrière') }), key('+', () => map.zoomIn(), { title: _t('Zoom avant') })));
   kTopo.setSel(map.topo);
   kNight.setSel(map.night);
   let w0 = null;
@@ -255,8 +272,8 @@ VIEWS.CARTE = function (v) {
       h('div', { class: 's' }, m.sub + '  ·  ' + hms(m.time)),
       h('pre', null, m.details),
       h('div', { class: 'acts' },
-        h('a', { onclick: () => window.open('https://www.openstreetmap.org/?mlat=' + m.lat.toFixed(6) + '&mlon=' + m.lon.toFixed(6) + '#map=13/' + m.lat.toFixed(6) + '/' + m.lon.toFixed(6), '_blank') }, 'Ouvrir sur OpenStreetMap ›'),
-        h('a', { class: 'close', onclick: () => { info.classList.add('hidden'); map.selected = null; map.redraw(); } }, 'Fermer ×')));
+        h('a', { onclick: () => window.open('https://www.openstreetmap.org/?mlat=' + m.lat.toFixed(6) + '&mlon=' + m.lon.toFixed(6) + '#map=13/' + m.lat.toFixed(6) + '/' + m.lon.toFixed(6), '_blank') }, _t('Ouvrir sur OpenStreetMap ›')),
+        h('a', { class: 'close', onclick: () => { info.classList.add('hidden'); map.selected = null; map.redraw(); } }, _t('Fermer ×'))));
     info.classList.remove('hidden');
   }
   onState('markers', d => map.setMarkers(d));
@@ -265,28 +282,28 @@ VIEWS.CARTE = function (v) {
 
 /* ---------------------------------------------------------------- APRS */
 VIEWS.APRS = function (v) {
-  const right = h('div', { class: 'mono muted', style: { fontSize: '11px' } }, '0 paquet');
-  const g = grid([{ t: 'Heure', w: 96, m: 1 }, { t: 'Indicatif', w: 150, m: 1 }, { t: 'Type', w: 110 }, { t: 'Position', w: 180, m: 1 }, { t: 'Informations' }], {
-    title: r => r[5] + (r[6] ? '\nDouble-clic : voir la station sur la carte' : ''),
+  const right = h('div', { class: 'mono muted', style: { fontSize: '11px' } }, _t('0 paquet'));
+  const g = grid([{ t: _t('Heure'), w: 96, m: 1 }, { t: _t('Indicatif'), w: 150, m: 1 }, { t: _t('Type'), w: 110 }, { t: _t('Position'), w: 180, m: 1 }, { t: _t('Informations') }], {
+    title: r => r[5] + (r[6] ? _t('\nDouble-clic : voir la station sur la carte') : ''),
     onDouble: r => { if (r[6]) { selectTab('CARTE'); window.mainMap.focus(r[6]); } },
   });
   v.classList.add('stack-mobile');
   v.style.gap = '14px';
-  v.append(h('div', { class: 'card table-card', style: { flex: 1 } }, h('div', { class: 'head' }, label('TRAFIC APRS'), right), g));
+  v.append(h('div', { class: 'card table-card', style: { flex: 1 } }, h('div', { class: 'head' }, label(_t('TRAFIC APRS')), right), g));
   onState('aprs', d => { setText(right, d.header); g.set(d.rows, r => r[0] + r[5]); });
 
   // emission par le TNC du poste, avec ses reglages APRS
   const params = h('pre', { class: 'mono', style: { fontSize: '12px', color: C.text2, whiteSpace: 'pre-wrap', margin: '8px 0' } }, ' ');
-  const info = field('', { placeholder: 'vide = balise de position' });
-  const auto = toggle('Balise automatique (intervalle du poste)', false, x => cmd('aprs.auto', { on: x ? 1 : 0 }));
+  const info = field('', { placeholder: _t('vide = balise de position') });
+  const auto = toggle(_t('Balise automatique (intervalle du poste)'), false, x => cmd('aprs.auto', { on: x ? 1 : 0 }));
   const txL = h('div', { class: 'mono', style: { fontSize: '11.5px', marginTop: '6px', color: C.muted } }, ' ');
-  const send = key('ÉMETTRE TRAME', () => cmd('aprs.send', { info: info.value }), { primary: true, cls: 'wide' });
+  const send = key(_t('ÉMETTRE TRAME'), () => cmd('aprs.send', { info: info.value }), { primary: true, cls: 'wide' });
   send.style.height = '48px';
-  v.append(h('div', { class: 'card tx-card' }, label('ÉMISSION APRS · RÉGLAGES DU POSTE', 'tracked'), params,
-    key('RELIRE LE POSTE', () => cmd('aprs.reload'), { cls: 'small' }),
-    caption('Champ d\'information (vide = balise de position)'), info, auto, txL, h('div', { style: { height: '8px' } }), send,
+  v.append(h('div', { class: 'card tx-card' }, label(_t('ÉMISSION APRS · RÉGLAGES DU POSTE'), 'tracked'), params,
+    key(_t('RELIRE LE POSTE'), () => cmd('aprs.reload'), { cls: 'small' }),
+    caption(_t('Champ d\'information (vide = balise de position)')), info, auto, txL, h('div', { style: { height: '8px' } }), send,
     h('div', { style: { height: '8px' } }),
-    note('La trame est modulée par le TNC du poste (AFSK 1200) et émise dès que le canal est libre, sur le canal nommé « APRS » s\'il existe, sinon sur celui du VFO A. Réservé aux radioamateurs.')));
+    note(_t('La trame est modulée par le TNC du poste (AFSK 1200) et émise dès que le canal est libre, sur le canal nommé « APRS » s\'il existe, sinon sur celui du VFO A. Réservé aux radioamateurs.'))));
   let init = false;
   onState('aprsTx', d => {
     if (!init) { init = true; info.value = d.info; }
@@ -297,12 +314,12 @@ VIEWS.APRS = function (v) {
 
 /* ---------------------------------------------------------------- DECODAGES */
 VIEWS['DÉCODAGES'] = function (v) {
-  const g = grid([{ t: 'Reçu (local)', w: 150, m: 1 }, { t: 'Type', w: 90 }, { t: 'Identifiant', w: 170, m: 1 }, { t: 'Latitude', w: 90, m: 1 },
-    { t: 'Longitude', w: 90, m: 1 }, { t: 'Détails' }], {
-    title: r => r[5] + (r[6] ? '\nDouble-clic : voir la position sur la carte' : ''),
+  const g = grid([{ t: _t('Reçu (local)'), w: 150, m: 1 }, { t: _t('Type'), w: 90 }, { t: _t('Identifiant'), w: 170, m: 1 }, { t: _t('Latitude'), w: 90, m: 1 },
+    { t: _t('Longitude'), w: 90, m: 1 }, { t: _t('Détails') }], {
+    title: r => r[5] + (r[6] ? _t('\nDouble-clic : voir la position sur la carte') : ''),
     onDouble: r => { if (r[6]) { selectTab('CARTE'); window.mainMap.focus(r[6]); } },
   });
-  v.append(h('div', { class: 'card table-card' }, h('div', { class: 'head' }, label('SARSAT & RADIOSONDES'), h('span')), g));
+  v.append(h('div', { class: 'card table-card' }, h('div', { class: 'head' }, label(_t('SARSAT & RADIOSONDES')), h('span')), g));
   onState('det', d => g.set(d, r => r[0] + r[2]));
 };
 
@@ -326,17 +343,17 @@ const mhz = hz => (hz / 1e6).toFixed(4);
 
 VIEWS.BANDSCOPE = function (v) {
   v.style.flexDirection = 'column';
-  const center = h('div', { class: 'bigger' }, '—'), infoL = h('div', { class: 'mono muted', style: { fontSize: '11px' } }, 'Arrêté');
+  const center = h('div', { class: 'bigger' }, '—'), infoL = h('div', { class: 'mono muted', style: { fontSize: '11px' } }, _t('Arrêté'));
   const spans = choice(['100 kHz', '250 kHz', '500 kHz', '1 MHz'], -1, i => cmd('bs.span', { v: [100000, 250000, 500000, 1000000][i] }));
   const steps = choice(['6.25', '8.33', '12.5', '25'], -1, i => cmd('bs.step', { v: [6250, 8333, 12500, 25000][i] }));
-  const back = key('RETOUR AU CANAL', () => cmd('bs.back'), { cls: 'small' });
+  const back = key(_t('RETOUR AU CANAL'), () => cmd('bs.back'), { cls: 'small' });
   back.style.width = '150px';
-  const start = key('BALAYER', () => cmd('bs.start'), { primary: true });
+  const start = key(_t('BALAYER'), () => cmd('bs.start'), { primary: true });
   start.style.width = '130px';
   v.append(h('div', { class: 'bs-head' },
-    h('div', null, label('BANDSCOPE · FRÉQUENCE CENTRALE'), center, infoL),
-    h('div', { class: 'bs-ctl' }, label('LARGEUR ±'), spans, label('PAS'), steps, back, start)));
-  const cv = h('canvas', { title: 'Double-clic : écouter cette fréquence' });
+    h('div', null, label(_t('BANDSCOPE · FRÉQUENCE CENTRALE')), center, infoL),
+    h('div', { class: 'bs-ctl' }, label(_t('LARGEUR ±')), spans, label(_t('PAS')), steps, back, start)));
+  const cv = h('canvas', { title: _t('Double-clic : écouter cette fréquence') });
   v.append(h('div', { class: 'well bs-well' }, cv));
   let mouseX = -1;
   cv.addEventListener('mousemove', e => { mouseX = e.offsetX; draw(); });
@@ -381,7 +398,7 @@ VIEWS.BANDSCOPE = function (v) {
       }
     } else {
       g.font = '13px ' + FONT.body; g.fillStyle = C.muted;
-      g.fillText('Connectez le poste puis cliquez sur BALAYER : le bandscope se centre sur la fréquence du canal.', x0 + 10, specTop + 30);
+      g.fillText(_t('Connectez le poste puis cliquez sur BALAYER : le bandscope se centre sur la fréquence du canal.'), x0 + 10, specTop + 30);
     }
     const bw = P / Math.max(1, n - 1);
     for (let i = 0; i < lv.length; i++) {
@@ -396,7 +413,7 @@ VIEWS.BANDSCOPE = function (v) {
       const xc = x0 + P / 2 + 0.5;
       g.strokeStyle = C.amber; g.setLineDash([4, 6]); g.beginPath(); g.moveTo(xc, specTop - 6); g.lineTo(xc, H - 4); g.stroke(); g.setLineDash([]);
       g.font = 'bold 11px ' + FONT.mono; g.fillStyle = C.amber;
-      g.fillText((d.parked ? 'canal ' : '') + mhz(c), xc + 6, specTop + 4);
+      g.fillText((d.parked ? _t('canal ') : '') + mhz(c), xc + 6, specTop + 4);
     }
     if (d.running && d.cursor >= 0) {
       const x = x0 + Math.round(d.cursor * bw) + 0.5;
@@ -408,7 +425,7 @@ VIEWS.BANDSCOPE = function (v) {
     }
     g.strokeStyle = alpha(C.edge, 0.78); g.strokeRect(x0 + 0.5, wfTop + 0.5, P, wfH);
     g.font = '9.5px ' + FONT.mono; g.fillStyle = C.muted;
-    g.fillText('C A S C A D E   D E S   B A L A Y A G E S', x0, wfTop - 6);
+    g.fillText(_t('C A S C A D E   D E S   B A L A Y A G E S'), x0, wfTop - 6);
     const rowH = 6;
     (d.history || []).forEach((hl, k) => {
       const y = wfTop + 1 + k * rowH;
@@ -431,7 +448,7 @@ VIEWS.BANDSCOPE = function (v) {
     setText(infoL, d.info);
     spans.set(d.spans.indexOf(d.half));
     steps.set(d.steps.indexOf(d.step));
-    start.setText(d.running ? 'ARRÊTER' : 'BALAYER');
+    start.setText(d.running ? _t('ARRÊTER') : _t('BALAYER'));
     back.classList.toggle('hidden', d.running || !d.parked);
     draw();
   });
@@ -442,34 +459,34 @@ VIEWS.BANDSCOPE = function (v) {
 VIEWS.POCSAG = function (v) {
   v.classList.add('stack-mobile');
   v.style.gap = '14px';
-  const sync = h('div', { class: 'mono cyan', style: { fontSize: '11px' } }, 'En écoute…');
-  const count = h('div', { class: 'mono muted', style: { fontSize: '11px' } }, '0 message');
-  const g = grid([{ t: 'Heure', w: 86, m: 1 }, { t: 'RIC', w: 90, m: 1 }, { t: 'Fonction', w: 84 }, { t: 'Débit', w: 84, m: 1 }, { t: 'Type', w: 70 }, { t: 'Message' }],
+  const sync = h('div', { class: 'mono cyan', style: { fontSize: '11px' } }, _t('En écoute…'));
+  const count = h('div', { class: 'mono muted', style: { fontSize: '11px' } }, _t('0 message'));
+  const g = grid([{ t: _t('Heure'), w: 86, m: 1 }, { t: 'RIC', w: 90, m: 1 }, { t: _t('Fonction'), w: 84 }, { t: _t('Débit'), w: 84, m: 1 }, { t: _t('Type'), w: 70 }, { t: _t('Message') }],
     { title: r => r[5] });
   v.append(h('div', { class: 'card table-card', style: { flex: 1 } },
-    h('div', { class: 'head' }, h('div', null, label('MESSAGES REÇUS · 512 / 1200 / 2400 BAUDS', 'tracked'), sync), count), g));
+    h('div', { class: 'head' }, h('div', null, label(_t('MESSAGES REÇUS · 512 / 1200 / 2400 BAUDS'), 'tracked'), sync), count), g));
 
   const F = { func: 3, baud: 1, numeric: 0, level: 2, pre: 0, inv: 0 };
   const ric = field('', { inputmode: 'numeric' }), msg = field('');
   const kFunc = choice(['0', '1', '2', '3'], 3, i => F.func = i);
   const kBaud = choice(['512 bd', '1200 bd', '2400 bd'], 1, i => F.baud = i);
-  const kType = choice(['Alphanumérique', 'Numérique'], 0, i => F.numeric = i);
+  const kType = choice([_t('Alphanumérique'), _t('Numérique')], 0, i => F.numeric = i);
   const kLevel = choice(['40 %', '60 %', '80 %', '100 %'], 2, i => F.level = i);
-  const sPre = toggle('Pré-compensation (pré-accentuation)', false, x => F.pre = x ? 1 : 0);
-  const sInv = toggle('Inverser la polarité', false, x => F.inv = x ? 1 : 0);
+  const sPre = toggle(_t('Pré-compensation (pré-accentuation)'), false, x => F.pre = x ? 1 : 0);
+  const sInv = toggle(_t('Inverser la polarité'), false, x => F.inv = x ? 1 : 0);
   const txL = h('div', { class: 'mono', style: { fontSize: '11.5px', marginTop: '6px', color: C.muted } }, ' ');
-  const send = key('ÉMETTRE', async () => {
+  const send = key(_t('ÉMETTRE'), async () => {
     const d = S.pocsag;
     if (d && d.busy) { cmd('pocsag.stop'); return; }
-    const ok = await confirmBox('Émettre le message POCSAG ?', 'RIC ' + ric.value.trim() + ' · fonction ' + F.func + ' · ' + [512, 1200, 2400][F.baud] + ' bauds\n'
-      + (d ? d.tx : '') + '\n\nJe confirme être radioamateur et émettre sur une fréquence autorisée.', 'ÉMETTRE');
+    const ok = await confirmBox(_t('Émettre le message POCSAG ?'), 'RIC ' + ric.value.trim() + _t(' · fonction ') + F.func + ' · ' + [512, 1200, 2400][F.baud] + _t(' bauds\n')
+      + (d ? d.tx : '') + _t('\n\nJe confirme être radioamateur et émettre sur une fréquence autorisée.'), _t('ÉMETTRE'));
     if (ok) cmd('pocsag.send', Object.assign({ ric: ric.value, msg: msg.value }, F));
   }, { primary: true, cls: 'wide' });
   send.style.height = '48px';
-  v.append(h('div', { class: 'card tx-card' }, label('ÉMISSION', 'tracked'), caption('RIC (adresse du récepteur)'), ric, caption('Fonction'), kFunc, caption('Débit'), kBaud,
-    caption('Type'), kType, caption('Message (vide = bip seul)'), msg, caption('Niveau audio'), kLevel, sPre, sInv, txL, h('div', { style: { height: '8px' } }), send,
+  v.append(h('div', { class: 'card tx-card' }, label(_t('ÉMISSION'), 'tracked'), caption(_t('RIC (adresse du récepteur)')), ric, caption(_t('Fonction')), kFunc, caption(_t('Débit')), kBaud,
+    caption(_t('Type')), kType, caption(_t('Message (vide = bip seul)')), msg, caption(_t('Niveau audio')), kLevel, sPre, sInv, txL, h('div', { style: { height: '8px' } }), send,
     h('div', { style: { height: '8px' } }),
-    note('Émission sur la fréquence du canal ou celle accordée dans l\'onglet VFO, réservée aux radioamateurs sur une fréquence autorisée (ex. DAPNET 439,9875 MHz). Vérifiez la réception avec un second poste ou un SDR.')));
+    note(_t('Émission sur la fréquence du canal ou celle accordée dans l\'onglet VFO, réservée aux radioamateurs sur une fréquence autorisée (ex. DAPNET 439,9875 MHz). Vérifiez la réception avec un second poste ou un SDR.'))));
   let init = false;
   onState('pocsag', d => {
     if (!init) {
@@ -489,17 +506,17 @@ VIEWS.SSTV = function (v) {
   v.classList.add('stack-mobile');
   v.style.gap = '14px';
   const state = h('div', { class: 'mono', style: { fontSize: '11.5px' } }, ' '), mode = h('div', { class: 'mono muted', style: { fontSize: '11px' } }, ' ');
-  const rxSw = toggle('Réception', true, x => cmd('sstv.rx', { on: x ? 1 : 0 }));
+  const rxSw = toggle(_t('Réception'), true, x => cmd('sstv.rx', { on: x ? 1 : 0 }));
   rxSw.style.width = '150px';
-  const img = h('img', { alt: '' }), empty = h('div', { class: 'empty' }, 'En attente d\'une image SSTV…');
+  const img = h('img', { alt: '' }), empty = h('div', { class: 'empty' }, _t('En attente d\'une image SSTV…'));
   const view = h('div', { class: 'well sstv-view' }, empty, img);
   img.classList.add('hidden');
   const gallery = h('div', { class: 'gallery' });
-  const save = key('ENREGISTRER', () => { if (S.sstv && S.sstv.hasRx) { const a = h('a', { href: '/api/img?w=rx&v=' + Date.now(), download: 'sstv.png' }); a.click(); } }, { cls: 'small', title: 'Télécharger l\'image affichée' });
+  const save = key(_t('ENREGISTRER'), () => { if (S.sstv && S.sstv.hasRx) { const a = h('a', { href: '/api/img?w=rx&v=' + Date.now(), download: 'sstv.png' }); a.click(); } }, { cls: 'small', title: _t('Télécharger l\'image affichée') });
   v.append(h('div', { class: 'card col sstv-rx', style: { flex: 1, gap: '10px' } },
-    h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' } }, label('RÉCEPTION SSTV', 'tracked'),
-      h('div', { class: 'keys' }, rxSw, key('TERMINER', () => cmd('sstv.finish'), { cls: 'small' }), save)),
-    h('div', null, label('ROBOT 36 / 72 · MARTIN M1 / M2 · SCOTTIE S1 / S2 / DX · PD 90 À 240'), h('div', { style: { height: '6px' } }), state, mode),
+    h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' } }, label(_t('RÉCEPTION SSTV'), 'tracked'),
+      h('div', { class: 'keys' }, rxSw, key(_t('TERMINER'), () => cmd('sstv.finish'), { cls: 'small' }), save)),
+    h('div', null, label(_t('ROBOT 36 / 72 · MARTIN M1 / M2 · SCOTTIE S1 / S2 / DX · PD 90 À 240')), h('div', { style: { height: '6px' } }), state, mode),
     view, gallery));
 
   const prev = h('img', { alt: '' });
@@ -511,21 +528,21 @@ VIEWS.SSTV = function (v) {
   text.addEventListener('keydown', e => { if (e.key === 'Enter') text.blur(); });
   const kLevel = choice(['40 %', '60 %', '80 %', '100 %'], 2, i => cmd('sstv.level', { v: i }));
   const txInfo = h('div', { class: 'mono', style: { fontSize: '11.5px', marginTop: '8px' } }), txFreq = h('div', { class: 'mono', style: { fontSize: '11.5px' } });
-  const send = key('ÉMETTRE L\'IMAGE', async () => {
+  const send = key(_t('ÉMETTRE L\'IMAGE'), async () => {
     const d = S.sstv;
     if (d && d.busy) { cmd('sstv.send'); return; }
-    const ok = await confirmBox('Émettre l\'image SSTV ?', (d ? d.txInfo + '\n' + d.txFreq : '') + '\n\nJe confirme être radioamateur et émettre sur une fréquence autorisée.', 'ÉMETTRE');
+    const ok = await confirmBox(_t('Émettre l\'image SSTV ?'), (d ? d.txInfo + '\n' + d.txFreq : '') + _t('\n\nJe confirme être radioamateur et émettre sur une fréquence autorisée.'), _t('ÉMETTRE'));
     if (ok) cmd('sstv.send');
   }, { primary: true, cls: 'wide' });
   send.style.height = '48px';
-  v.append(h('div', { class: 'card tx-card' }, label('ÉMISSION', 'tracked'), h('div', { style: { height: '8px' } }),
+  v.append(h('div', { class: 'card tx-card' }, label(_t('ÉMISSION'), 'tracked'), h('div', { style: { height: '8px' } }),
     h('div', { class: 'well tx-preview' }, prev), h('div', { style: { height: '8px' } }),
     h('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' } },
-      key('CHOISIR UNE IMAGE…', () => pickFile('image/*', f => upload('sstv', f)), { cls: 'small' }),
-      key('MIRE DE TEST', () => cmd('sstv.testcard'), { cls: 'small' })),
-    caption('Mode'), kModes, caption('Texte incrusté (indicatif)'), text, caption('Niveau audio'), kLevel, txInfo, txFreq, h('div', { style: { height: '8px' } }), send,
+      key(_t('CHOISIR UNE IMAGE…'), () => pickFile('image/*', f => upload('sstv', f)), { cls: 'small' }),
+      key(_t('MIRE DE TEST'), () => cmd('sstv.testcard'), { cls: 'small' })),
+    caption(_t('Mode')), kModes, caption(_t('Texte incrusté (indicatif)')), text, caption(_t('Niveau audio')), kLevel, txInfo, txFreq, h('div', { style: { height: '8px' } }), send,
     h('div', { style: { height: '8px' } }),
-    note('Émission sur la fréquence du canal ou celle accordée dans l\'onglet VFO, réservée aux radioamateurs (ex. 145,500 MHz puis dégagement, 433,400 MHz…). Pensez au temps d\'émission du poste (TOT) pour les modes longs.')));
+    note(_t('Émission sur la fréquence du canal ou celle accordée dans l\'onglet VFO, réservée aux radioamateurs (ex. 145,500 MHz puis dégagement, 433,400 MHz…). Pensez au temps d\'émission du poste (TOT) pour les modes longs.'))));
 
   let rxV = -1, txV = -1, lastRxLoad = 0, galleryKey = '', textInit = false, rxTimer = null;
   function loadRx(d) {
@@ -554,7 +571,7 @@ VIEWS.SSTV = function (v) {
     if (gk !== galleryKey) {
       galleryKey = gk;
       gallery.replaceChildren(...d.gallery.map(n => {
-        const t = h('img', { src: '/api/img?w=file&name=' + encodeURIComponent(n), loading: 'lazy', title: n + '\nDouble-clic : ouvrir', alt: n });
+        const t = h('img', { src: '/api/img?w=file&name=' + encodeURIComponent(n), loading: 'lazy', title: n + _t('\nDouble-clic : ouvrir'), alt: n });
         t.addEventListener('click', () => cmd('sstv.show', { name: n }));
         t.addEventListener('dblclick', () => window.open('/api/img?w=file&name=' + encodeURIComponent(n), '_blank'));
         return t;
@@ -574,19 +591,19 @@ VIEWS.VFO = function (v) {
   };
   const A = vfoBox('VFO A'), B = vfoBox('VFO B');
   const dChip = chip();
-  const kOn = key('DOUBLE VEILLE', () => cmd('vfo.dual', { on: 1 }), { cls: 'small' }), kOff = key('UN SEUL VFO', () => cmd('vfo.dual', { on: 0 }), { cls: 'small' });
+  const kOn = key(_t('DOUBLE VEILLE'), () => cmd('vfo.dual', { on: 1 }), { cls: 'small' }), kOff = key(_t('UN SEUL VFO'), () => cmd('vfo.dual', { on: 0 }), { cls: 'small' });
   kOn.style.width = kOff.style.width = '170px';
   kOn.style.height = kOff.style.height = '42px';
-  sc.append(section('Écoute des 2 VFO'), h('div', { class: 'card vfo-card' }, h('div', { class: 'vfo-ab' }, A.el, B.el), h('div', { style: { height: '10px' } }), dChip,
+  sc.append(section(_t('Écoute des 2 VFO')), h('div', { class: 'card vfo-card' }, h('div', { class: 'vfo-ab' }, A.el, B.el), h('div', { style: { height: '10px' } }), dChip,
     h('div', { style: { height: '10px' } }), h('div', { class: 'keys', style: { gap: '8px' } }, kOn, kOff), h('div', { style: { height: '8px' } }),
-    note('Le poste surveille le VFO A et le VFO B et bascule sur celui qui reçoit (canaux choisis sur le poste). Les décodeurs (APRS, SARSAT, sondes, POCSAG) suivent le VFO qui reçoit.')));
+    note(_t('Le poste surveille le VFO A et le VFO B et bascule sur celui qui reçoit (canaux choisis sur le poste). Les décodeurs (APRS, SARSAT, sondes, POCSAG) suivent le VFO qui reçoit.'))));
 
   const stepper = (t, a) => {
     const val = h('div', { class: 'big' }, '–');
     return { el: h('div', { class: 'well stepper' }, h('div', null, label(t), val), h('div', { class: 'keys' }, key('−', () => cmd('vfo.' + a, { d: -1 })), key('+', () => cmd('vfo.' + a, { d: 1 })))), val };
   };
-  const vol = stepper('VOLUME DU POSTE (0–15)', 'vol'), sq = stepper('SQUELCH (0 = OUVERT · 9)', 'sq');
-  const ptt = key('PTT · MAINTENIR POUR ÉMETTRE', null, { primary: true, cls: 'ptt' });
+  const vol = stepper(_t('VOLUME DU POSTE (0–15)'), 'vol'), sq = stepper(_t('SQUELCH (0 = OUVERT · 9)'), 'sq');
+  const ptt = key(_t('PTT · MAINTENIR POUR ÉMETTRE'), null, { primary: true, cls: 'ptt' });
   let held = false;
   const down = e => { e.preventDefault(); if (held) return; held = true; ptt.setPointerCapture && e.pointerId !== undefined && ptt.setPointerCapture(e.pointerId); cmd('vfo.pttDown'); };
   const up = () => { if (!held) return; held = false; cmd('vfo.pttUp'); };
@@ -600,42 +617,60 @@ VIEWS.VFO = function (v) {
   const gain = choice(['50 %', '100 %', '150 %', '200 %'], 1, i => cmd('vfo.gain', { v: i }));
   gain.keys.forEach(k => { k.style.width = '64px'; k.style.height = '32px'; k.style.minWidth = '0'; });
   const pState = h('div', { class: 'mono', style: { fontSize: '11.5px', marginTop: '8px' } }, ' ');
-  sc.append(section('Poste : volume, squelch, émission'), h('div', { class: 'card vfo-card' }, h('div', { class: 'vfo-ab' }, vol.el, sq.el), h('div', { style: { height: '12px' } }),
-    h('div', { class: 'ptt-row' }, ptt, h('div', { class: 'col', style: { gap: '6px' } }, label('MICRO DU PC'), meter, h('div', { class: 'keys' }, label('GAIN'), gain))),
+  sc.append(section(_t('Poste : volume, squelch, émission')), h('div', { class: 'card vfo-card' }, h('div', { class: 'vfo-ab' }, vol.el, sq.el), h('div', { style: { height: '12px' } }),
+    h('div', { class: 'ptt-row' }, ptt, h('div', { class: 'col', style: { gap: '6px' } }, label(_t('MICRO DU PC')), meter, h('div', { class: 'keys' }, label('GAIN'), gain))),
     pState, h('div', { style: { height: '4px' } }),
-    note('Maintenez le bouton PTT enfoncé pour parler : c\'est le micro du PC qui émet (pas celui de cet appareil). Le poste émet sur la fréquence du VFO actif (ou celle accordée ci-dessous) et repasse en réception au relâchement. Coupure de sécurité après 3 minutes.')));
+    note(_t('Maintenez le bouton PTT enfoncé pour parler : c\'est le micro du PC qui émet (pas celui de cet appareil). Le poste émet sur la fréquence du VFO actif (ou celle accordée ci-dessous) et repasse en réception au relâchement. Coupure de sécurité après 3 minutes.'))));
 
+  const GROUP_WORD = _t('Groupe');
   const group = h('select', { class: 'field', style: { width: '280px', height: '36px' } });
   group.addEventListener('change', () => cmd('vfo.group', { v: group.selectedIndex }));
   let chSel = null;
-  const chg = grid([{ t: 'N°', w: 50, m: 1 }, { t: 'Nom', w: 170 }, { t: 'Réception', w: 120, m: 1 }, { t: 'Émission', w: 150, m: 1 }, { t: 'VFO', w: 70, m: 1 }], {
+  const chg = grid([{ t: _t('N°'), w: 50, m: 1 }, { t: _t('Nom'), w: 170 }, { t: _t('Réception'), w: 120, m: 1 }, { t: _t('Émission'), w: 150, m: 1 }, { t: 'VFO', w: 70, m: 1 }], {
     cells: r => r.cells, onSelect: r => chSel = r.ch,
     onDouble: r => cmd('vfo.assign', { vfo: 1, ch: r.ch }), onContext: r => cmd('vfo.assign', { vfo: 2, ch: r.ch }),
   });
   chg.style.maxHeight = '330px';
   chg.style.flex = 'none';
   const chState = h('div', { class: 'mono muted', style: { fontSize: '11.5px', marginTop: '8px' } }, ' ');
-  const assign = n => { if (chSel == null) { alertBox('Choisissez un canal dans la liste.'); return; } cmd('vfo.assign', { vfo: n, ch: chSel }); };
-  const toA = key('METTRE SUR VFO A', () => assign(1), { primary: true, cls: 'small' }), toB = key('METTRE SUR VFO B', () => assign(2), { cls: 'small' });
+  const assign = n => { if (chSel == null) { alertBox(_t('Choisissez un canal dans la liste.')); return; } cmd('vfo.assign', { vfo: n, ch: chSel }); };
+  const toA = key(_t('METTRE SUR VFO A'), () => assign(1), { primary: true, cls: 'small' }), toB = key(_t('METTRE SUR VFO B'), () => assign(2), { cls: 'small' });
   toA.style.width = toB.style.width = '170px';
-  sc.append(section('Groupes et canaux mémoire'), h('div', { class: 'card vfo-card' },
-    h('div', { class: 'keys', style: { gap: '8px' } }, label('GROUPE'), group, toA, toB), h('div', { style: { height: '10px' } }), chg, chState, h('div', { style: { height: '4px' } }),
-    note('Double-clic : canal sur le VFO A (clic droit : VFO B). Le changement de groupe recharge les canaux du poste. Rien n\'est modifié dans les canaux eux-mêmes.')));
+  const addCh = key(_t('AJOUTER UNE FRÉQUENCE'), async () => {
+    const f = { name: field(''), rx: field('', { inputmode: 'decimal', placeholder: _t('ex. 145.500') }), tx: field('', { inputmode: 'decimal', placeholder: _t('vide = même') }),
+      tone: field('', { placeholder: _t('88.5 ou D023') }) };
+    const body = h('div', { class: 'col', style: { gap: '4px' } }, caption(_t('Nom (10 caractères au plus)')), f.name, caption(_t('Réception, MHz')), f.rx,
+      caption(_t('Émission, MHz (vide = même que la réception)')), f.tx, caption(_t('Sous-ton à l\'émission (vide = aucun)')), f.tone,
+      note(_t('Enregistrée dans le premier canal libre du groupe affiché (25 kHz, puissance haute, FM).')));
+    if (await modal(_t('Ajouter une fréquence'), body, [{ text: _t('ANNULER'), value: false }, { text: _t('ENREGISTRER'), primary: true, value: true }]))
+      cmd('vfo.addChannel', { name: f.name.value, rx: f.rx.value, tx: f.tx.value, tone: f.tone.value });
+  }, { cls: 'small' });
+  const renGroup = key(_t('RENOMMER LE GROUPE'), async () => {
+    const cur = group.options[group.selectedIndex] ? group.options[group.selectedIndex].text.replace(new RegExp('^' + GROUP_WORD + ' \\d+( · )?'), '') : '';
+    const name = field(cur);
+    const body = h('div', { class: 'col', style: { gap: '4px' } }, caption(_t('Nouveau nom (10 caractères au plus)')), name);
+    if (await modal(_t('Renommer le groupe'), body, [{ text: _t('ANNULER'), value: false }, { text: _t('RENOMMER'), primary: true, value: true }]))
+      cmd('vfo.renameGroup', { name: name.value });
+  }, { cls: 'small' });
+  sc.append(section(_t('Groupes et canaux mémoire')), h('div', { class: 'card vfo-card' },
+    h('div', { class: 'keys', style: { gap: '8px' } }, label(_t('GROUPE')), group, toA, toB), h('div', { style: { height: '8px' } }),
+    h('div', { class: 'keys', style: { gap: '8px' } }, addCh, renGroup), h('div', { style: { height: '10px' } }), chg, chState, h('div', { style: { height: '4px' } }),
+    note(_t('Double-clic : canal sur le VFO A (clic droit : VFO B). Le changement de groupe recharge les canaux du poste. Une nouvelle fréquence va dans le premier canal libre du groupe affiché.'))));
 
   const freq = field('', { inputmode: 'decimal' });
   freq.style.font = '18px ' + FONT.mono;
   freq.style.width = '170px';
   const tune = () => cmd('vfo.tune', { f: freq.value });
   freq.addEventListener('keydown', e => { if (e.key === 'Enter') tune(); });
-  const kTune = key('ACCORDER', tune, { primary: true }), kBack = key('RETOUR AUX CANAUX', () => cmd('vfo.back'));
+  const kTune = key(_t('ACCORDER'), tune, { primary: true }), kBack = key(_t('RETOUR AUX CANAUX'), () => cmd('vfo.back'));
   kTune.style.width = '140px'; kTune.style.height = kBack.style.height = '44px'; kBack.style.width = '190px';
-  const presets = [['DAPNET 439,9875', '439.9875'], ['APRS 144,800', '144.800'], ['ISS 145,800', '145.800'], ['Appel 2 m 145,500', '145.500'], ['Appel 70 cm 433,500', '433.500']];
+  const presets = [[_t('DAPNET 439,9875'), '439.9875'], [_t('APRS 144,800'), '144.800'], [_t('ISS 145,800'), '145.800'], [_t('Appel 2 m 145,500'), '145.500'], [_t('Appel 70 cm 433,500'), '433.500']];
   const tState = h('div', { class: 'mono cyan', style: { fontSize: '12px', marginTop: '10px' } }, ' ');
-  sc.append(section('Changer de fréquence'), h('div', { class: 'card vfo-card' }, label('FRÉQUENCE (MHz) · RÉCEPTION ET ÉMISSION'), h('div', { style: { height: '6px' } }),
+  sc.append(section(_t('Changer de fréquence')), h('div', { class: 'card vfo-card' }, label(_t('FRÉQUENCE (MHz) · RÉCEPTION ET ÉMISSION')), h('div', { style: { height: '6px' } }),
     h('div', { class: 'keys', style: { gap: '8px' } }, freq, kTune, kBack), h('div', { style: { height: '10px' } }),
     h('div', { class: 'keys', style: { gap: '8px' } }, presets.map(p => key(p[0], () => { freq.value = p[1]; tune(); }, { cls: 'small' }))),
     tState, h('div', { style: { height: '6px' } }),
-    note('Le mode fréquence du poste est utilisé : aucun canal n\'est modifié en mémoire. L\'émission (PTT, POCSAG) se fait sur la fréquence accordée. Le bandscope se centre sur cette fréquence.')));
+    note(_t('Le mode fréquence du poste est utilisé : aucun canal n\'est modifié en mémoire. L\'émission (PTT, POCSAG) se fait sur la fréquence accordée. Le bandscope se centre sur cette fréquence.'))));
 
   let freqInit = false, groupsKey = '';
   onState('vfo', d => {
@@ -670,14 +705,14 @@ VIEWS.SATELLITES = function (v) {
   lat.style.width = lon.style.width = '110px';
   const okObs = key('OK', () => cmd('sats.obs', { lat: lat.value, lon: lon.value }), { cls: 'small' });
   okObs.style.minWidth = '56px';
-  const filt = choice(['TOUS', 'SSTV', 'VISIBLES'], 0, i => cmd('sats.filter', { v: i }));
+  const filt = choice([_t('TOUS'), 'SSTV', _t('VISIBLES')], 0, i => cmd('sats.filter', { v: i }));
   const ELS = [0, 10, 20, 30, 45];
   const els = choice(ELS.map(e => e + '°'), 0, i => cmd('sats.minEl', { v: ELS[i] }));
   els.keys.forEach(k => { k.style.minWidth = '48px'; k.style.width = '48px'; k.style.height = '34px'; });
-  const search = field('', { placeholder: 'Rechercher (nom ou n° NORAD)' });
+  const search = field('', { placeholder: _t('Rechercher (nom ou n° NORAD)') });
   let searchT = null;
   search.addEventListener('input', () => { clearTimeout(searchT); searchT = setTimeout(() => cmd('sats.search', { q: search.value }), 250); });
-  const g = grid([{ t: 'Satellite', w: 120 }, { t: 'Élév.', w: 56, m: 1 }, { t: 'Prochain', w: 104, m: 1 }, { t: 'SSTV', w: 48 }], {
+  const g = grid([{ t: 'Satellite', w: 120 }, { t: _t('Élév.'), w: 56, m: 1 }, { t: _t('Prochain'), w: 104, m: 1 }, { t: 'SSTV', w: 48 }], {
     cells: r => [r.n, r.el == null ? '' : Math.round(r.el) + '°', r.next, r.sstv ? '●' : ''],
     cellStyle: (r, j) => j === 3 ? { color: C.purple } : null,
     onSelect: r => cmd('sats.select', { id: r.id }),
@@ -685,18 +720,18 @@ VIEWS.SATELLITES = function (v) {
   });
   const status = h('div', { class: 'mono muted', style: { fontSize: '11px', padding: '6px 4px 0' } }, ' ');
   const left = h('div', { class: 'sat-left' },
-    h('div', { class: 'card', style: { padding: '10px 14px' } }, label('POSITION D\'OBSERVATION (LAT / LON EN DEGRÉS)'), h('div', { class: 'keys', style: { marginTop: '6px' } }, lat, lon, okObs)),
-    filt, h('div', { class: 'keys' }, label('ÉLÉV. MIN'), els), search,
+    h('div', { class: 'card', style: { padding: '10px 14px' } }, label(_t('POSITION D\'OBSERVATION (LAT / LON EN DEGRÉS)')), h('div', { class: 'keys', style: { marginTop: '6px' } }, lat, lon, okObs)),
+    filt, h('div', { class: 'keys' }, label(_t('ÉLÉV. MIN')), els), search,
     h('div', { class: 'card table-card', style: { padding: '8px 2px 6px' } }, g),
     h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '6px' } },
-      key('ACTUALISER', () => cmd('sats.refresh'), { cls: 'small', title: 'Recharger la liste du serveur Benshi (et les TLE CelesTrak si besoin)' }),
-      key('AJOUTER…', () => addDialog(), { cls: 'small' }),
-      key('SUPPRIMER', async () => {
+      key(_t('ACTUALISER'), () => cmd('sats.refresh'), { cls: 'small', title: _t('Recharger la liste du serveur Benshi (et les TLE CelesTrak si besoin)') }),
+      key(_t('AJOUTER…'), () => addDialog(), { cls: 'small' }),
+      key(_t('SUPPRIMER'), async () => {
         const s = S.sats && S.sats.sel;
         if (!s) return;
-        if (!s.user) { alertBox('Seuls les satellites ajoutés par vous peuvent être supprimés (le filtre SSTV permet de masquer les autres).'); return; }
-        if (await confirmBox('Satellites', 'Supprimer « ' + s.name + ' » ?')) cmd('sats.remove');
-      }, { cls: 'small', title: 'Supprimer un satellite ajouté par vous' })),
+        if (!s.user) { alertBox(_t('Seuls les satellites ajoutés par vous peuvent être supprimés (le filtre SSTV permet de masquer les autres).')); return; }
+        if (await confirmBox(_t('Satellites'), _t('Supprimer « ') + s.name + _t(' » ?'))) cmd('sats.remove');
+      }, { cls: 'small', title: _t('Supprimer un satellite ajouté par vous') })),
     status);
 
   const cv = h('canvas', { class: 'map' });
@@ -753,7 +788,7 @@ VIEWS.SATELLITES = function (v) {
         }
       }
       ctx.font = '10.5px ' + FONT.mono;
-      const parts = [['● visible   ', C.cyan], ['● SSTV   ', C.purple], ['● sous l\'horizon   ', C.text2], ['— trace   ○ empreinte', C.amber]];
+      const parts = [[_t('● visible   '), C.cyan], ['● SSTV   ', C.purple], [_t('● sous l\'horizon   '), C.text2], [_t('— trace   ○ empreinte'), C.amber]];
       const tw = parts.reduce((a, p) => a + ctx.measureText(p[0]).width, 0);
       ctx.fillStyle = alpha(C.bg, 0.82); roundRect(ctx, 8, 8, tw + 16, 20, 4); ctx.fill();
       let x = 16;
@@ -773,16 +808,16 @@ VIEWS.SATELLITES = function (v) {
       return true;
     },
   };
-  const dName = h('div', { class: 'big' }, 'Aucun satellite'), dSub = h('div', { class: 'mono muted', style: { fontSize: '11px' } }, ' ');
+  const dName = h('div', { class: 'big' }, _t('Aucun satellite')), dSub = h('div', { class: 'mono muted', style: { fontSize: '11px' } }, ' ');
   const dPos = h('div', { class: 'mono text2', style: { fontSize: '12.5px', marginTop: '8px', lineHeight: '1.5' } });
-  const sstvSw = toggle('Satellite SSTV', false, x => cmd('sats.sstv', { on: x ? 1 : 0 }));
+  const sstvSw = toggle(_t('Satellite SSTV'), false, x => cmd('sats.sstv', { on: x ? 1 : 0 }));
   const rfKeys = h('div', { class: 'keys', style: { margin: '4px 0' } }), dRf = h('pre'), dPasses = h('pre');
-  const track = key('SUIVRE AVEC LE POSTE', () => cmd('sats.track'), { primary: true });
+  const track = key(_t('SUIVRE AVEC LE POSTE'), () => cmd('sats.track'), { primary: true });
   track.style.height = '46px'; track.style.width = '260px'; track.style.maxWidth = '100%';
   const detail = h('div', { class: 'card sat-detail' },
-    h('div', { class: 'col' }, label('SATELLITE'), dName, dSub, dPos, h('div', { style: { height: '8px' } }), sstvSw),
-    h('div', { class: 'col' }, label('RADIO (DOPPLER CORRIGÉ)'), rfKeys, dRf, key('MODIFIER', () => editRf(), { cls: 'small', title: 'Modifier les fréquences de la configuration choisie' }), h('div', { style: { height: '8px' } }), track),
-    h('div', { class: 'col' }, label('PASSAGES (24 H, HEURE LOCALE)'), dPasses));
+    h('div', { class: 'col' }, label(_t('SATELLITE')), dName, dSub, dPos, h('div', { style: { height: '8px' } }), sstvSw),
+    h('div', { class: 'col' }, label(_t('RADIO (DOPPLER CORRIGÉ)')), rfKeys, dRf, key(_t('MODIFIER'), () => editRf(), { cls: 'small', title: _t('Modifier les fréquences de la configuration choisie') }), h('div', { style: { height: '8px' } }), track),
+    h('div', { class: 'col' }, label(_t('PASSAGES (24 H, HEURE LOCALE)')), dPasses));
   v.append(left, h('div', { class: 'sat-center' }, h('div', { class: 'well map-well' }, cv), detail));
   const satMap = new TileMap(cv, { key: 'satMap', night: true, zoom: 3, overlay });
 
@@ -803,12 +838,12 @@ VIEWS.SATELLITES = function (v) {
       setText(dSub, s.sub);
       const l = s.look;
       dPos.innerHTML = '';
-      if (!l) dPos.append('Position incalculable (TLE trop ancien ?)');
+      if (!l) dPos.append(_t('Position incalculable (TLE trop ancien ?)'));
       else {
-        dPos.append('Az ' + l.az.toFixed(1) + '°  ·  Él ', h('b', null, l.el.toFixed(1) + '°'), '  ·  ' + Math.round(l.range) + ' km', h('br'),
+        dPos.append('Az ' + l.az.toFixed(1) + _t('°  ·  Él '), h('b', null, l.el.toFixed(1) + '°'), '  ·  ' + Math.round(l.range) + ' km', h('br'),
           'Alt ' + Math.round(l.alt) + ' km  ·  ' + l.lat.toFixed(3) + ', ' + l.lon.toFixed(3), h('br'),
-          l.el > 0 ? h('span', { style: { color: C.cyan } }, 'VISIBLE') : 'sous l\'horizon',
-          l.el > 0 ? '  ·  vitesse radiale ' + (l.rr >= 0 ? '+' : '') + l.rr.toFixed(2) + ' km/s' : '');
+          l.el > 0 ? h('span', { style: { color: C.cyan } }, _t('VISIBLE')) : _t('sous l\'horizon'),
+          l.el > 0 ? _t('  ·  vitesse radiale ') + (l.rr >= 0 ? '+' : '') + l.rr.toFixed(2) + ' km/s' : '');
       }
       sstvSw.set(s.sstv);
       const rk = s.id + ':' + s.rfs.join('|');
@@ -821,7 +856,7 @@ VIEWS.SATELLITES = function (v) {
       setText(dPasses, s.passes);
       track.setText(s.trackKey);
     } else {
-      setText(dName, 'Aucun satellite'); dName.style.color = C.text;
+      setText(dName, _t('Aucun satellite')); dName.style.color = C.text;
       setText(dSub, ' '); dPos.innerHTML = ''; rfKeys.replaceChildren(); setText(dRf, ''); setText(dPasses, ''); rfKey = '';
     }
     satMap.redraw();
@@ -830,35 +865,35 @@ VIEWS.SATELLITES = function (v) {
 
   async function editRf() {
     const s = S.sats && S.sats.sel;
-    if (!s || !s.rfs.length) { toast('Choisissez un satellite avec une configuration radio.', true); return; }
+    if (!s || !s.rfs.length) { toast(_t('Choisissez un satellite avec une configuration radio.'), true); return; }
     const e = s.edit;
     const f = { down: field(e.down, { inputmode: 'decimal' }), up: field(e.up, { inputmode: 'decimal' }), tone: field(e.tone, { inputmode: 'decimal' }) };
-    const body = h('div', { class: 'col', style: { gap: '4px' } }, caption('Réception (descente), MHz'), f.down, caption('Émission (montée), MHz — vide = pas d'émission'), f.up,
-      caption('CTCSS à l'émission, Hz — vide = aucun'), f.tone, e.orig ? caption('Origine : ' + e.orig) : null);
-    const btns = [{ text: 'ANNULER', value: 0 }];
-    if (e.orig) btns.push({ text: 'RÉTABLIR L'ORIGINE', value: 2 });
-    btns.push({ text: 'ENREGISTRER', primary: true, value: 1 });
+    const body = h('div', { class: 'col', style: { gap: '4px' } }, caption(_t('Réception (descente), MHz')), f.down, caption(_t('Émission (montée), MHz — vide = pas d\'émission')), f.up,
+      caption(_t('CTCSS à l\'émission, Hz — vide = aucun')), f.tone, e.orig ? caption(_t('Origine : ') + e.orig) : null);
+    const btns = [{ text: _t('ANNULER'), value: 0 }];
+    if (e.orig) btns.push({ text: _t('RÉTABLIR L\'ORIGINE'), value: 2 });
+    btns.push({ text: _t('ENREGISTRER'), primary: true, value: 1 });
     const c = await modal(s.name + ' · ' + s.rfs[s.rf], body, btns);
     if (c === 1) cmd('sats.rfEdit', { down: f.down.value, up: f.up.value, tone: f.tone.value });
     else if (c === 2) cmd('sats.rfReset');
   }
 
   async function addDialog() {
-    const f = { name: field(''), norad: field('', { inputmode: 'numeric' }), l1: field(''), l2: field(''), rfName: field('FM'), down: field('', { placeholder: 'descente MHz' }),
-      up: field('', { placeholder: 'montée MHz' }), tone: field('', { placeholder: 'CTCSS Hz' }) };
+    const f = { name: field(''), norad: field('', { inputmode: 'numeric' }), l1: field(''), l2: field(''), rfName: field('FM'), down: field('', { placeholder: _t('descente MHz') }),
+      up: field('', { placeholder: _t('montée MHz') }), tone: field('', { placeholder: 'CTCSS Hz' }) };
     f.l1.style.font = f.l2.style.font = '12px ' + FONT.mono;
     let sstv = false;
-    const sw = toggle('Satellite SSTV', false, x => sstv = x);
-    const fetchK = key('RÉCUPÉRER LE TLE', async () => {
+    const sw = toggle(_t('Satellite SSTV'), false, x => sstv = x);
+    const fetchK = key(_t('RÉCUPÉRER LE TLE'), async () => {
       const r = await cmd('sats.fetchTle', { norad: f.norad.value });
       if (r && r.l1) { if (!f.name.value.trim()) f.name.value = r.name; f.l1.value = r.l1; f.l2.value = r.l2; }
     }, { cls: 'small' });
-    const body = h('div', null, caption('Nom'), f.name, caption('N° NORAD (pour récupérer le TLE sur CelesTrak)'),
-      h('div', { class: 'keys' }, f.norad, fetchK), caption('TLE ligne 1'), f.l1, caption('TLE ligne 2'), f.l2,
-      caption('Configuration radio (facultatif) : nom, descente MHz, montée MHz, CTCSS Hz'),
+    const body = h('div', null, caption(_t('Nom')), f.name, caption(_t('N° NORAD (pour récupérer le TLE sur CelesTrak)')),
+      h('div', { class: 'keys' }, f.norad, fetchK), caption(_t('TLE ligne 1')), f.l1, caption(_t('TLE ligne 2')), f.l2,
+      caption(_t('Configuration radio (facultatif) : nom, descente MHz, montée MHz, CTCSS Hz')),
       h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '6px' } }, f.rfName, f.down, f.up, f.tone), sw);
     f.norad.style.width = '120px';
-    const ok = await modal('Ajouter un satellite', body, [{ text: 'ANNULER', value: false }, { text: 'AJOUTER', primary: true, value: true }]);
+    const ok = await modal(_t('Ajouter un satellite'), body, [{ text: _t('ANNULER'), value: false }, { text: _t('AJOUTER'), primary: true, value: true }]);
     if (!ok) return;
     const p = { sstv: sstv ? 1 : 0 };
     for (const k in f) p[k] = f[k].value;

@@ -22,6 +22,9 @@ ArchitecturesInstallIn64BitMode=x64compatible
 OutputDir={#OutDir}
 OutputBaseFilename=HTMod-Setup
 UninstallDisplayIcon={app}\HTMod.exe
+#ifdef IconFile
+SetupIconFile={#IconFile}
+#endif
 Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern

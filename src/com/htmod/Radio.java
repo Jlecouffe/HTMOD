@@ -62,6 +62,7 @@ final class Radio {
     private static final int NOTIF_HT_STATUS_CHANGED = 1, NOTIF_DATA_RXD = 2, NOTIF_HT_CH_CHANGED = 5;
     private static final int CMD_HT_SEND_DATA = 31, CMD_READ_BSS_SETTINGS = 33, CMD_GET_APRS_PATH = 72, CMD_GET_POSITION = 76;
     private static final int NOTIF_BSS_SETTINGS_CHANGED = 11;
+    private static final int CMD_WRITE_REGION_NAME = 59;
 
     /** Commandes en BLE (RT-660) : messages bruts ; sinon SPP : messages enveloppes en GAIA. */
     private volatile boolean bleMode;
@@ -140,7 +141,7 @@ final class Radio {
 
     synchronized void connect(String mac) throws IOException {
         disconnect();
-        listener.onStatus("Connexion à " + mac + "...");
+        listener.onStatus(Tr.t("Connexion à ") + mac + "...");
         proc = new ProcessBuilder(bridgeExe.getAbsolutePath(), "connect", mac).start();
         toBridge = proc.getOutputStream();
         running = true;
@@ -151,7 +152,7 @@ final class Radio {
         Thread err = new Thread(() -> {
             try (BufferedReader r = new BufferedReader(new InputStreamReader(p.getErrorStream(), StandardCharsets.UTF_8))) {
                 String l;
-                while ((l = r.readLine()) != null) listener.onLog("btbridge : " + l);
+                while ((l = r.readLine()) != null) listener.onLog(Tr.t("btbridge : ") + l);
             } catch (IOException ignore) {
             }
         }, "htmod-bridge-err");
@@ -202,29 +203,29 @@ final class Radio {
             }
         } catch (IOException ignore) {
         } catch (Throwable t) {
-            listener.onLog("Erreur liaison : " + t);
+            listener.onLog(Tr.t("Erreur liaison : ") + t);
         }
         boolean was = running;
         running = false;
         if (was) {
-            listener.onStatus("Déconnecté");
+            listener.onStatus(Tr.t("Déconnecté"));
             listener.onDisconnected();
         }
     }
 
     void onBridgeEvent(String ev) {
-        listener.onLog("Bluetooth : " + ev);
+        listener.onLog(Tr.t("Bluetooth : ") + ev);
         if (ev.startsWith("connected 0")) {
             bleMode = ev.endsWith("ble");
-            listener.onStatus("Commandes ouvertes (" + (bleMode ? "BLE" : "Bluetooth classique") + "), lecture du poste…");
+            listener.onStatus(Tr.t("Commandes ouvertes (") + (bleMode ? "BLE" : Tr.t("Bluetooth classique")) + Tr.t("), lecture du poste…"));
             send(GROUP_BASIC, CMD_GET_DEV_INFO, new byte[]{3});
         } else if (ev.equals("closed 1")) {
             audioOpen = false;
         } else if (ev.equals("connected 1")) {
             audioOpen = true;
-            listener.onStatus("Connecté (commandes + audio)");
+            listener.onStatus(Tr.t("Connecté (commandes + audio)"));
         } else if (ev.startsWith("error canal commandes")) {
-            listener.onStatus("Échec de connexion : poste éteint, hors de portée, ou déjà connecté à l'appli du téléphone ?");
+            listener.onStatus(Tr.t("Échec de connexion : poste éteint, hors de portée, ou déjà connecté à l'appli du téléphone ?"));
         }
     }
 
@@ -236,7 +237,7 @@ final class Radio {
             toBridge.write(data);
             toBridge.flush();
         } catch (IOException e) {
-            listener.onLog("Écriture vers le pont impossible : " + e.getMessage());
+            listener.onLog(Tr.t("Écriture vers le pont impossible : ") + e.getMessage());
         }
     }
 
@@ -272,7 +273,7 @@ final class Radio {
             try {
                 handleCommand(data);
             } catch (Throwable t) {
-                listener.onLog("Commande mal formée : " + t);
+                listener.onLog(Tr.t("Commande mal formée : ") + t);
             }
             return;
         }
@@ -291,7 +292,7 @@ final class Radio {
             try {
                 handleCommand(cmd);
             } catch (Throwable t) {
-                listener.onLog("Commande mal formée : " + t);
+                listener.onLog(Tr.t("Commande mal formée : ") + t);
             }
         }
         ctrlAcc = new byte[b.length - off];
@@ -310,19 +311,24 @@ final class Radio {
             case CMD_READ_SETTINGS: if (u8(cmd, 4) == 0) onSettings(cmd); break; // octet 4 = etat de la reponse
             case CMD_WRITE_SETTINGS:
                 if (u8(cmd, 4) == 0) send(GROUP_BASIC, CMD_READ_SETTINGS, null); // relecture apres ecriture
-                else listener.onLog("Écriture des réglages refusée (état " + u8(cmd, 4) + ")");
+                else listener.onLog(Tr.t("Écriture des réglages refusée (état ") + u8(cmd, 4) + ")");
                 break;
             case CMD_GET_HT_STATUS: onHtStatus(cmd); break;
             case CMD_READ_RF_CH: onReadChannel(cmd); break;
             case CMD_READ_REGION_NAME: onRegionName(cmd); break;
+            case CMD_WRITE_REGION_NAME:
+                // [etat, n° du groupe] : le poste ne notifie pas, on relit le nom enregistre
+                if (u8(cmd, 4) == 0 && cmd.length > 5) send(GROUP_BASIC, CMD_READ_REGION_NAME, new byte[]{cmd[5]});
+                else if (u8(cmd, 4) != 0) listener.onLog(Tr.t("Nom de groupe refusé par le poste (état ") + u8(cmd, 4) + ")");
+                break;
             case CMD_WRITE_RF_CH:
                 // [etat, n° de canal] : relecture du canal pour afficher ce que le poste a vraiment enregistre
                 if (u8(cmd, 4) == 0) {
                     int id = cmd.length > 5 ? u8(cmd, 5) : pendingWrite;
-                    listener.onLog("Canal " + (id + 1) + " enregistré dans le poste");
+                    listener.onLog(Tr.t("Canal ") + (id + 1) + Tr.t(" enregistré dans le poste"));
                     readChannel(id);
                 } else {
-                    listener.onLog("Écriture du canal refusée par le poste (état " + u8(cmd, 4) + ")");
+                    listener.onLog(Tr.t("Écriture du canal refusée par le poste (état ") + u8(cmd, 4) + ")");
                     if (pendingWrite >= 0) readChannel(pendingWrite);
                 }
                 break;
@@ -357,8 +363,8 @@ final class Radio {
         int productId = (u8(m, 6) << 8) | u8(m, 7);
         int count = u8(m, 13);
         int regions = ((u8(m, 11) & 0x03) << 4) | (u8(m, 12) >> 4);
-        listener.onLog("Poste : produit " + productId + ", logiciel " + ((u8(m, 9) << 8) | u8(m, 10)) + ", " + count + " canaux, "
-                + regions + " groupe(s)");
+        listener.onLog(Tr.t("Poste : produit ") + productId + Tr.t(", logiciel ") + ((u8(m, 9) << 8) | u8(m, 10)) + ", " + count + Tr.t(" canaux, ")
+                + regions + Tr.t(" groupe(s)"));
         regionNames = new String[regions];
         nextRegionRead = regions > 0 ? 0 : -1;
         channels = new String[count];
@@ -382,8 +388,8 @@ final class Radio {
         channelB = (u8(m, 5) & 0x0F) + ((u8(m, 14) & 0x0F) << 4);
         int dw = (u8(m, 6) & 0x30) >> 4;
         if (dw != dualWatch || channelA != lastLoggedA || channelB != lastLoggedB)
-            listener.onLog("Réglages du poste : double veille " + (dw == 0 ? "inactive" : "active (" + dw + ")") + ", VFO A canal "
-                    + (channelA + 1) + ", VFO B canal " + (channelB + 1));
+            listener.onLog(Tr.t("Réglages du poste : double veille ") + (dw == 0 ? Tr.t("inactive") : Tr.t("active (") + dw + ")") + Tr.t(", VFO A canal ")
+                    + (channelA + 1) + Tr.t(", VFO B canal ") + (channelB + 1));
         lastLoggedA = channelA;
         lastLoggedB = channelB;
         dualWatch = dw;
@@ -396,7 +402,7 @@ final class Radio {
         if (raw == null || raw.length < 15) return false;
         byte[] data = java.util.Arrays.copyOfRange(raw, 5, raw.length);
         data[1] = (byte) ((data[1] & ~0x30) | ((on ? 1 : 0) << 4));
-        listener.onLog("Écriture des réglages : double veille " + (on ? "active" : "inactive") + " (" + data.length + " octets)");
+        listener.onLog(Tr.t("Écriture des réglages : double veille ") + (on ? Tr.t("active") : Tr.t("inactive")) + " (" + data.length + Tr.t(" octets)"));
         send(GROUP_BASIC, CMD_WRITE_SETTINGS, data);
         return true;
     }
@@ -422,7 +428,7 @@ final class Radio {
         level = Math.max(0, Math.min(9, level));
         byte[] data = java.util.Arrays.copyOfRange(raw, 5, raw.length);
         data[1] = (byte) ((data[1] & 0xF0) | level);
-        listener.onLog("Squelch du poste → " + level);
+        listener.onLog(Tr.t("Squelch du poste → ") + level);
         send(GROUP_BASIC, CMD_WRITE_SETTINGS, data);
         return true;
     }
@@ -454,10 +460,10 @@ final class Radio {
         int dwStatus = (u8(m, 5) & 0x0C) >> 2;
         int av = freqMode ? 0 : ch == channelA ? 1 : ch == channelB ? 2 : 0;
         if (!freqMode && (ch != lastStatusCh || dwStatus != lastDwStatus))
-            listener.onLog("État du poste : canal " + (ch + 1) + " " + channelName(ch)
-                    + (av == 1 ? " (VFO A)" : av == 2 ? " (VFO B)" : " (ni A ni B)")
-                    + ", double veille " + (dwStatus != 0 ? "active (" + dwStatus + ")" : "inactive")
-                    + (inRx ? ", réception" : ""));
+            listener.onLog(Tr.t("État du poste : canal ") + (ch + 1) + " " + channelName(ch)
+                    + (av == 1 ? " (VFO A)" : av == 2 ? " (VFO B)" : Tr.t(" (ni A ni B)"))
+                    + Tr.t(", double veille ") + (dwStatus != 0 ? Tr.t("active (") + dwStatus + ")" : Tr.t("inactive"))
+                    + (inRx ? Tr.t(", réception") : ""));
         lastStatusCh = ch;
         lastDwStatus = dwStatus;
         activeVfo = av;
@@ -467,7 +473,7 @@ final class Radio {
         if (currRegion != -1 && region != currRegion) readAllChannels(); // autre zone = autres canaux
         currRegion = region;
         currCh = ch;
-        if (!powerOn) listener.onStatus("Poste éteint");
+        if (!powerOn) listener.onStatus(Tr.t("Poste éteint"));
         fireChannel();
     }
 
@@ -675,13 +681,13 @@ final class Radio {
                 raw[id] = java.util.Arrays.copyOfRange(m, 5, 30);
                 // controle : relire puis reencoder doit redonner le meme enregistrement (sinon modifier ce canal le changerait)
                 if (!java.util.Arrays.equals(raw[id], Channel.parse(raw[id]).toBytes()))
-                    listener.onLog("Canal " + (id + 1) + " : réencodage différent de l'original (" + hexDiff(raw[id], Channel.parse(raw[id]).toBytes()) + ")");
+                    listener.onLog(Tr.t("Canal ") + (id + 1) + Tr.t(" : réencodage différent de l'original (") + hexDiff(raw[id], Channel.parse(raw[id]).toBytes()) + ")");
             }
         }
         synchronized (readQueue) {
             if (pendingRead == id) pendingRead = -1;
             if (readQueue.isEmpty() && pendingRead < 0) {
-                listener.onLog("Canaux lus : " + describeChannels());
+                listener.onLog(Tr.t("Canaux lus : ") + describeChannels());
                 if (nextRegionRead == 0) send(GROUP_BASIC, CMD_READ_REGION_NAME, new byte[]{0}); // puis les noms des groupes
             }
         }
@@ -700,6 +706,10 @@ final class Radio {
             names[i] = (z >= 0 ? n.substring(0, z) : n).trim();
         }
         int next = Math.max(i, nextRegionRead) + 1;
+        if (nextRegionRead < 0) { // relecture d'un seul nom (apres WRITE_REGION_NAME)
+            listener.onChannelsChanged();
+            return;
+        }
         if (next < names.length) {
             nextRegionRead = next;
             send(GROUP_BASIC, CMD_READ_REGION_NAME, new byte[]{(byte) next});
@@ -707,9 +717,32 @@ final class Radio {
             nextRegionRead = -1;
             StringBuilder sb = new StringBuilder();
             for (int k = 0; k < names.length; k++) sb.append(k == 0 ? "" : ", ").append(k + 1).append('=').append(names[k] == null ? "" : names[k]);
-            listener.onLog("Groupes : " + sb);
+            listener.onLog(Tr.t("Groupes : ") + sb);
         }
         listener.onChannelsChanged();
+    }
+
+    /** Renomme un groupe (WRITE_REGION_NAME : n° puis nom GBK sur 10 octets, comme HTCommander), puis le relit. */
+    boolean setRegionName(int region, String name) {
+        String[] names = regionNames;
+        if (region < 0 || region >= names.length) return false;
+        byte[] p = new byte[11];
+        p[0] = (byte) region;
+        byte[] nb = name.getBytes(Charset.forName("GBK"));
+        System.arraycopy(nb, 0, p, 1, Math.min(10, nb.length));
+        names[region] = new String(p, 1, Math.min(10, nb.length), Charset.forName("GBK")).trim();
+        listener.onLog(Tr.t("Groupe ") + (region + 1) + Tr.t(" renommé « ") + names[region] + " »");
+        send(GROUP_BASIC, CMD_WRITE_REGION_NAME, p);
+        listener.onChannelsChanged();
+        return true;
+    }
+
+    /** Premier emplacement memoire vide (lu, sans frequence ni nom) du groupe courant, -1 si aucun. */
+    int firstFreeChannel() {
+        byte[][] raw = channelRaw;
+        for (int i = 0; i < raw.length; i++)
+            if (raw[i] != null && channelRxHz(i) == 0 && channelName(i).isEmpty()) return i;
+        return -1;
     }
 
     int regionCount() { return regionNames.length; }
@@ -725,7 +758,7 @@ final class Radio {
     /** Change de groupe de canaux (SET_REGION, sans reponse) ; le poste renvoie son etat et on relit les canaux. */
     void setRegion(int region) {
         if (region < 0 || region >= regionNames.length) return;
-        listener.onLog("Groupe " + (region + 1) + (regionName(region).isEmpty() ? "" : " (" + regionName(region) + ")"));
+        listener.onLog(Tr.t("Groupe ") + (region + 1) + (regionName(region).isEmpty() ? "" : " (" + regionName(region) + ")"));
         send(GROUP_BASIC, CMD_SET_REGION, new byte[]{(byte) region});
         send(GROUP_BASIC, CMD_GET_HT_STATUS, null);
     }
@@ -745,7 +778,7 @@ final class Radio {
             data[0] = (byte) ((data[0] & 0xF0) | (ch & 0x0F));
             data[9] = (byte) ((data[9] & 0xF0) | ((ch >> 4) & 0x0F));
         }
-        listener.onLog("VFO " + (vfo == 1 ? "A" : "B") + " → canal " + (ch + 1) + (channelName(ch).isEmpty() ? "" : " " + channelName(ch)));
+        listener.onLog("VFO " + (vfo == 1 ? "A" : "B") + Tr.t(" → canal ") + (ch + 1) + (channelName(ch).isEmpty() ? "" : " " + channelName(ch)));
         send(GROUP_BASIC, CMD_WRITE_SETTINGS, data);
         return true;
     }
@@ -804,9 +837,9 @@ final class Radio {
         a.symbol = ascii(m, 43, 2);
         a.callsign = ascii(m, 45, 6).toUpperCase(java.util.Locale.ROOT);
         bss = a;
-        listener.onLog("Réglages APRS du poste : " + (a.source().isEmpty() ? "pas d'indicatif" : a.source()) + ", symbole « " + a.symbol
-                + " », intervalle " + a.intervalS + " s, format " + (a.packetFormat == 1 ? "APRS" : "BSS")
-                + (a.beacon.isEmpty() ? "" : ", commentaire « " + a.beacon + " »"));
+        listener.onLog(Tr.t("Réglages APRS du poste : ") + (a.source().isEmpty() ? Tr.t("pas d'indicatif") : a.source()) + Tr.t(", symbole « ") + a.symbol
+                + Tr.t(" », intervalle ") + a.intervalS + Tr.t(" s, format ") + (a.packetFormat == 1 ? "APRS" : "BSS")
+                + (a.beacon.isEmpty() ? "" : Tr.t(", commentaire « ") + a.beacon + " »"));
         listener.onAprsSettings();
     }
 
@@ -883,7 +916,7 @@ final class Radio {
             }
         }
         if (next == null) {
-            listener.onLog("APRS : canal occupé depuis 30 s, trame abandonnée");
+            listener.onLog(Tr.t("APRS : canal occupé depuis 30 s, trame abandonnée"));
             listener.onTncSent(false);
             return;
         }
@@ -900,7 +933,7 @@ final class Radio {
             done = txQueue.isEmpty();
         }
         if (!ok) {
-            listener.onLog("APRS : le poste a refusé la trame");
+            listener.onLog(Tr.t("APRS : le poste a refusé la trame"));
             listener.onTncSent(false);
         } else if (done) {
             listener.onTncSent(true);
@@ -979,11 +1012,11 @@ final class Radio {
             if (s.isEmpty() || s.equals("AUCUN") || s.equals("OFF") || s.equals("0")) return 0;
             if (s.startsWith("D")) {
                 String d = s.replaceAll("[^0-9]", "");
-                if (d.isEmpty() || d.length() > 3) throw new IllegalArgumentException("Code DCS invalide : " + s);
+                if (d.isEmpty() || d.length() > 3) throw new IllegalArgumentException(Tr.t("Code DCS invalide : ") + s);
                 return Integer.parseInt(d);
             }
             double hz = Double.parseDouble(s.replace("HZ", "").trim());
-            if (hz < 60 || hz > 260) throw new IllegalArgumentException("CTCSS hors plage (60–260 Hz) : " + s);
+            if (hz < 60 || hz > 260) throw new IllegalArgumentException(Tr.t("CTCSS hors plage (60–260 Hz) : ") + s);
             return (int) Math.round(hz * 100);
         }
     }
@@ -991,7 +1024,7 @@ final class Radio {
     private static String hexDiff(byte[] a, byte[] b) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < Math.min(a.length, b.length); i++)
-            if (a[i] != b[i]) sb.append(sb.length() > 0 ? ", " : "octet ").append(i).append(String.format(" %02X→%02X", a[i] & 0xFF, b[i] & 0xFF));
+            if (a[i] != b[i]) sb.append(sb.length() > 0 ? ", " : Tr.t("octet ")).append(i).append(String.format(" %02X→%02X", a[i] & 0xFF, b[i] & 0xFF));
         return sb.toString();
     }
 
@@ -1006,7 +1039,7 @@ final class Radio {
     /** Ecrit un canal memoire dans le poste (WRITE_RF_CH), puis le relit. */
     void writeChannel(Channel c) {
         pendingWrite = c.id;
-        listener.onLog("Écriture du canal " + (c.id + 1) + " (" + c.name + ", " + String.format(java.util.Locale.ROOT, "%.4f", c.rxHz / 1e6) + " MHz)");
+        listener.onLog(Tr.t("Écriture du canal ") + (c.id + 1) + " (" + c.name + ", " + String.format(java.util.Locale.ROOT, "%.4f", c.rxHz / 1e6) + " MHz)");
         send(GROUP_BASIC, CMD_WRITE_RF_CH, c.toBytes());
     }
 
@@ -1023,7 +1056,7 @@ final class Radio {
             if (sb.length() > 0) sb.append(", ");
             sb.append(i + 1).append('=').append(ch[i]);
         }
-        return sb.length() == 0 ? "(aucun nom)" : sb.toString();
+        return sb.length() == 0 ? Tr.t("(aucun nom)") : sb.toString();
     }
 
     private void tickLoop() {

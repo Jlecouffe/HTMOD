@@ -43,7 +43,7 @@ final class Updater {
                 .header("Accept", "application/vnd.github+json").header("User-Agent", "HTMod/" + App.VERSION)
                 .timeout(Duration.ofSeconds(20)).GET().build();
         HttpResponse<String> resp = http.send(r, HttpResponse.BodyHandlers.ofString());
-        if (resp.statusCode() == 404) throw new IOException("aucune version publiée");
+        if (resp.statusCode() == 404) throw new IOException(Tr.t("aucune version publiée"));
         if (resp.statusCode() != 200) throw new IOException("GitHub HTTP " + resp.statusCode());
         return parse(resp.body());
     }
@@ -119,17 +119,17 @@ final class Updater {
 
     /** Telecharge l'installateur et verifie son empreinte ; progress recoit 0..100. */
     File download(Release r, IntConsumer progress) throws IOException, InterruptedException {
-        if (r.setupUrl == null) throw new IOException(SETUP + " absent de la version " + r.version);
-        if (r.shaUrl == null) throw new IOException("empreinte " + SETUP + ".sha256 absente de la version " + r.version);
+        if (r.setupUrl == null) throw new IOException(SETUP + Tr.t(" absent de la version ") + r.version);
+        if (r.shaUrl == null) throw new IOException(Tr.t("empreinte ") + SETUP + Tr.t(".sha256 absente de la version ") + r.version);
         String expected = text(r.shaUrl).trim().split("\\s+")[0].toLowerCase(Locale.ROOT);
-        if (!expected.matches("[0-9a-f]{64}")) throw new IOException("empreinte SHA-256 illisible");
+        if (!expected.matches("[0-9a-f]{64}")) throw new IOException(Tr.t("empreinte SHA-256 illisible"));
         File dir = new File(System.getProperty("java.io.tmpdir"), "htmod-maj");
         dir.mkdirs();
         File out = new File(dir, "HTMod-Setup-" + r.version.replaceAll("[^0-9A-Za-z.]", "") + ".exe");
         HttpResponse<InputStream> resp = http.send(HttpRequest.newBuilder(URI.create(r.setupUrl))
                 .header("User-Agent", "HTMod/" + App.VERSION).timeout(Duration.ofMinutes(10)).GET().build(),
                 HttpResponse.BodyHandlers.ofInputStream());
-        if (resp.statusCode() != 200) throw new IOException("téléchargement HTTP " + resp.statusCode());
+        if (resp.statusCode() != 200) throw new IOException(Tr.t("téléchargement HTTP ") + resp.statusCode());
         long total = resp.headers().firstValueAsLong("Content-Length").orElse(r.size);
         MessageDigest sha;
         try { sha = MessageDigest.getInstance("SHA-256"); } catch (Exception e) { throw new IOException(e); }
@@ -149,7 +149,7 @@ final class Updater {
         for (byte b : sha.digest()) got.append(String.format("%02x", b));
         if (!got.toString().equals(expected)) {
             out.delete();
-            throw new IOException("empreinte SHA-256 différente : fichier corrompu ou modifié, installation annulée");
+            throw new IOException(Tr.t("empreinte SHA-256 différente : fichier corrompu ou modifié, installation annulée"));
         }
         return out;
     }
@@ -165,13 +165,35 @@ final class Updater {
      * Lance l'installateur dans le dossier de l'installation actuelle ; l'appelant quitte HTMod juste apres.
      * Installation « pour tous » (Program Files, demande de droits administrateur) ou « pour moi ».
      */
-    static void install(File setup, File exe) throws IOException {
+    static void install(File setup, File exe) throws IOException, InterruptedException {
         File appDir = exe.getParentFile();
         String pf = System.getenv("ProgramFiles"), pf86 = System.getenv("ProgramFiles(x86)");
         String dir = appDir.getAbsolutePath();
         boolean allUsers = (pf != null && dir.toLowerCase(Locale.ROOT).startsWith(pf.toLowerCase(Locale.ROOT)))
                 || (pf86 != null && dir.toLowerCase(Locale.ROOT).startsWith(pf86.toLowerCase(Locale.ROOT)));
-        new ProcessBuilder(setup.getAbsolutePath(), "/SILENT", "/SUPPRESSMSGBOXES", "/CLOSEAPPLICATIONS", "/NORESTART",
-                allUsers ? "/ALLUSERS" : "/CURRENTUSER", "/DIR=" + dir, "/UPDATE=1").start();
+        File log = new File(setup.getParentFile(), "installation.log");
+        String cmd = "\"" + setup.getAbsolutePath() + "\" /SILENT /SUPPRESSMSGBOXES /CLOSEAPPLICATIONS /NORESTART "
+                + (allUsers ? "/ALLUSERS" : "/CURRENTUSER") + " \"/DIR=" + dir + "\" \"/LOG=" + log.getAbsolutePath() + "\" /UPDATE=1";
+        runDetached(cmd);
+    }
+
+    /** Relance HTMod (changement de langue) ; l'appelant quitte juste apres, la nouvelle instance met plusieurs secondes a demarrer. */
+    static void relaunch(File exe) throws IOException, InterruptedException {
+        runDetached("\"" + exe.getAbsolutePath() + "\"");
+    }
+
+    private static void runDetached(String cmd) throws IOException, InterruptedException {
+        // Le lanceur jpackage (HTMod.exe) place l'appli dans un « job » Windows qui tue tous ses processus a sa
+        // fermeture : un installateur lance directement mourrait avec HTMod. WMI (Win32_Process.Create) le cree
+        // hors de ce job, sous le service WMI.
+        String ps = "$ProgressPreference = 'SilentlyContinue'; $r = Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{ CommandLine = '"
+                + cmd.replace("'", "''") + "' }; exit [int]$r.ReturnValue";
+        String enc = java.util.Base64.getEncoder().encodeToString(ps.getBytes(java.nio.charset.StandardCharsets.UTF_16LE));
+        Process p = new ProcessBuilder("powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-EncodedCommand", enc)
+                .redirectErrorStream(true).start();
+        String out = new String(p.getInputStream().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8).trim();
+        if (!p.waitFor(60, java.util.concurrent.TimeUnit.SECONDS)) { p.destroy(); throw new IOException(Tr.t("lancement de l'installateur trop long")); }
+        if (p.exitValue() != 0)
+            throw new IOException(Tr.t("installateur non lancé (WMI ") + p.exitValue() + (out.isEmpty() ? "" : " : " + out) + ")");
     }
 }

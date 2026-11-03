@@ -64,10 +64,10 @@ final class Bandscope extends JPanel {
     private Thread worker;
 
     private final Spectrum spectrum = new Spectrum();
-    private final Shack.Key startKey = new Shack.Key("BALAYER").primary().font(Shack.bold(12.5f));
-    private final Shack.Key backKey = new Shack.Key("RETOUR AU CANAL").font(Shack.bold(11.5f));
+    private final Shack.Key startKey = new Shack.Key(Tr.t("BALAYER")).primary().font(Shack.bold(12.5f));
+    private final Shack.Key backKey = new Shack.Key(Tr.t("RETOUR AU CANAL")).font(Shack.bold(11.5f));
     private final JLabel centerLbl = Shack.label("—", Shack.display(26f), Shack.TEXT);
-    private final JLabel infoLbl = Shack.label("Arrêté", Shack.mono(11f), Shack.MUTED);
+    private final JLabel infoLbl = Shack.label(Tr.t("Arrêté"), Shack.mono(11f), Shack.MUTED);
     private final Shack.Key[] spanKeys, stepKeys;
     private static final int[] SPANS = {100_000, 250_000, 500_000, 1_000_000};
     private static final int[] STEPS = {6_250, 8_333, 12_500, 25_000}; // 8,33 kHz = 25 / 3 kHz (bande aviation)
@@ -84,14 +84,14 @@ final class Bandscope extends JPanel {
         JPanel left = new JPanel();
         left.setOpaque(false);
         left.setLayout(new javax.swing.BoxLayout(left, javax.swing.BoxLayout.Y_AXIS));
-        left.add(Shack.label("BANDSCOPE · FRÉQUENCE CENTRALE", Shack.tracked(Shack.mono(10f), 0.16f), Shack.MUTED));
+        left.add(Shack.label(Tr.t("BANDSCOPE · FRÉQUENCE CENTRALE"), Shack.tracked(Shack.mono(10f), 0.16f), Shack.MUTED));
         left.add(centerLbl);
         left.add(infoLbl);
         head.add(left, BorderLayout.WEST);
 
         JPanel ctl = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 6));
         ctl.setOpaque(false);
-        ctl.add(Shack.label("LARGEUR ±", Shack.tracked(Shack.mono(10f), 0.12f), Shack.MUTED));
+        ctl.add(Shack.label(Tr.t("LARGEUR ±"), Shack.tracked(Shack.mono(10f), 0.12f), Shack.MUTED));
         spanKeys = new Shack.Key[SPANS.length];
         for (int i = 0; i < SPANS.length; i++) {
             int v = SPANS[i];
@@ -101,7 +101,7 @@ final class Bandscope extends JPanel {
             ctl.add(k);
         }
         ctl.add(Box.createHorizontalStrut(10));
-        ctl.add(Shack.label("PAS", Shack.tracked(Shack.mono(10f), 0.12f), Shack.MUTED));
+        ctl.add(Shack.label(Tr.t("PAS"), Shack.tracked(Shack.mono(10f), 0.12f), Shack.MUTED));
         stepKeys = new Shack.Key[STEPS.length];
         for (int i = 0; i < STEPS.length; i++) {
             int v = STEPS[i];
@@ -138,12 +138,12 @@ final class Bandscope extends JPanel {
     private void refreshKeys() {
         for (int i = 0; i < SPANS.length; i++) spanKeys[i].setSelected(SPANS[i] == halfSpanHz);
         for (int i = 0; i < STEPS.length; i++) stepKeys[i].setSelected(STEPS[i] == stepHz);
-        startKey.setText(running ? "ARRÊTER" : "BALAYER");
+        startKey.setText(running ? Tr.t("ARRÊTER") : Tr.t("BALAYER"));
         backKey.setVisible(!running && parkedHz != 0);
         int n = 2 * halfSpanHz / stepHz + 1;
         if (!running) infoLbl.setText(parkedHz != 0
-                ? "Calé sur " + mhz(parkedHz) + " MHz (mode fréquence) · " + n + " pas par balayage"
-                : "Arrêté · " + n + " pas, ~" + Math.round(n * 0.19) + " s par balayage");
+                ? Tr.t("Calé sur ") + mhz(parkedHz) + Tr.t(" MHz (mode fréquence) · ") + n + Tr.t(" pas par balayage")
+                : Tr.t("Arrêté · ") + n + Tr.t(" pas, ~") + Math.round(n * 0.19) + Tr.t(" s par balayage"));
     }
 
     private void setSpan(int v) { halfSpanHz = v; prefs.putInt("bsHalfSpan", v); restartIfRunning(); }
@@ -172,9 +172,9 @@ final class Bandscope extends JPanel {
 
     void start() {
         Radio r = host.radio();
-        if (!r.isRunning()) { host.log("Bandscope : connectez d'abord le poste."); return; }
+        if (!r.isRunning()) { host.log(Tr.t("Bandscope : connectez d'abord le poste.")); return; }
         long c = parkedHz != 0 ? centerHz : r.currentRxHz();
-        if (c <= 0) { host.log("Bandscope : fréquence du canal encore inconnue (lecture des canaux en cours)."); return; }
+        if (c <= 0) { host.log(Tr.t("Bandscope : fréquence du canal encore inconnue (lecture des canaux en cours).")); return; }
         centerHz = c;
         parkedHz = 0;
         int n = 2 * halfSpanHz / stepHz + 1;
@@ -188,7 +188,7 @@ final class Bandscope extends JPanel {
         host.sweeping(true);
         centerLbl.setText(mhz(c) + " MHz");
         refreshKeys();
-        host.log("Bandscope : balayage de " + mhz(c - halfSpanHz) + " à " + mhz(c + halfSpanHz) + " MHz, pas " + stepHz + " Hz");
+        host.log(Tr.t("Bandscope : balayage de ") + mhz(c - halfSpanHz) + Tr.t(" à ") + mhz(c + halfSpanHz) + Tr.t(" MHz, pas ") + stepHz + " Hz");
         final int fHalf = halfSpanHz, fStep = stepHz;
         worker = new Thread(() -> loop(c, fHalf, fStep, n), "htmod-bandscope");
         worker.setDaemon(true);
@@ -226,8 +226,8 @@ final class Bandscope extends JPanel {
                 // decroissance lente de la crete maintenue
                 int[] pk = peaks;
                 if (sweeps % 3 == 0) for (int i = 0; i < pk.length; i++) pk[i] = Math.max(lv[i], pk[i] - 1);
-                SwingUtilities.invokeLater(() -> infoLbl.setText("Balayage n° " + sweeps + " · " + n + " pas en "
-                        + String.format(Locale.ROOT, "%.1f", sweepMs / 1000.0) + " s · décodages SARSAT/sondes en pause"));
+                SwingUtilities.invokeLater(() -> infoLbl.setText(Tr.t("Balayage n° ") + sweeps + " · " + n + Tr.t(" pas en ")
+                        + String.format(Locale.ROOT, "%.1f", sweepMs / 1000.0) + Tr.t(" s · décodages SARSAT/sondes en pause")));
             }
         } catch (InterruptedException ignore) {
         } finally {
@@ -245,7 +245,7 @@ final class Bandscope extends JPanel {
         if (backToChannel && host.radio().isRunning()) host.radio().restoreAfterSweep(); // canal, ou frequence de l'onglet VFO
         host.sweeping(false);
         SwingUtilities.invokeLater(this::refreshKeys);
-        host.log("Bandscope : arrêté" + (backToChannel ? ", retour au canal" : ""));
+        host.log(Tr.t("Bandscope : arrêté") + (backToChannel ? Tr.t(", retour au canal") : ""));
     }
 
     /** Liaison perdue : rien a envoyer au poste. */
@@ -268,7 +268,7 @@ final class Bandscope extends JPanel {
         if (was) host.sweeping(false);
         r.tuneVfo(f, centerHz, false);
         parkedHz = f;
-        host.log("Bandscope : écoute de " + mhz(f) + " MHz (RETOUR AU CANAL pour revenir)");
+        host.log(Tr.t("Bandscope : écoute de ") + mhz(f) + Tr.t(" MHz (RETOUR AU CANAL pour revenir)"));
         refreshKeys();
     }
 
@@ -282,7 +282,7 @@ final class Bandscope extends JPanel {
     private void backToChannel() {
         parkedHz = 0;
         if (host.radio().isRunning()) host.radio().restoreAfterSweep();
-        host.log("Bandscope : retour au canal");
+        host.log(Tr.t("Bandscope : retour au canal"));
         refreshKeys();
         refreshCenter();
     }
@@ -358,7 +358,7 @@ final class Bandscope extends JPanel {
             };
             addMouseListener(m);
             addMouseMotionListener(m);
-            setToolTipText("Double-clic : écouter cette fréquence");
+            setToolTipText(Tr.t("Double-clic : écouter cette fréquence"));
         }
 
         void repaintSoon() {
@@ -415,7 +415,7 @@ final class Bandscope extends JPanel {
             } else {
                 g.setFont(Shack.body(13f));
                 g.setColor(Shack.MUTED);
-                g.drawString("Connectez le poste puis cliquez sur BALAYER : le bandscope se centre sur la fréquence du canal.", x0 + 10, specTop + 30);
+                g.drawString(Tr.t("Connectez le poste puis cliquez sur BALAYER : le bandscope se centre sur la fréquence du canal."), x0 + 10, specTop + 30);
             }
 
             // barres de niveau (une par pas)
@@ -444,7 +444,7 @@ final class Bandscope extends JPanel {
                 g.drawLine(xc, specTop - 6, xc, h - 4);
                 g.setStroke(new BasicStroke(1f));
                 g.setFont(Shack.monoBold(11f));
-                String l = (parkedHz != 0 ? "canal " : "") + mhz(c);
+                String l = (parkedHz != 0 ? Tr.t("canal ") : "") + mhz(c);
                 g.drawString(l, xc + 6, specTop + 4);
             }
             // position du balayage
@@ -468,7 +468,7 @@ final class Bandscope extends JPanel {
             g.drawRect(x0, wfTop, pw, wfH);
             g.setFont(Shack.tracked(Shack.mono(9.5f), 0.14f));
             g.setColor(Shack.MUTED);
-            g.drawString("CASCADE DES BALAYAGES", x0, wfTop - 6);
+            g.drawString(Tr.t("CASCADE DES BALAYAGES"), x0, wfTop - 6);
             int rowH = 6; // une ligne par balayage, la plus recente en haut
             BufferedImage row = null;
             synchronized (history) {

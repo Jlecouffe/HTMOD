@@ -78,7 +78,7 @@ final class Ax25 {
         addrs.add(dst);
         addrs.add(src);
         for (String p : path) if (!p.trim().isEmpty()) addrs.add(p.trim());
-        if (addrs.size() > 10) throw new IllegalArgumentException("chemin trop long (8 relais au plus)");
+        if (addrs.size() > 10) throw new IllegalArgumentException(Tr.t("chemin trop long (8 relais au plus)"));
         byte[] body = info.getBytes(StandardCharsets.ISO_8859_1);
         byte[] d = new byte[addrs.size() * 7 + 2 + body.length];
         for (int a = 0; a < addrs.size(); a++) {
@@ -89,7 +89,7 @@ final class Ax25 {
                 cs = cs.substring(0, dash);
             }
             if (cs.isEmpty() || cs.length() > 6 || !cs.matches("[A-Z0-9]+") || ssid < 0 || ssid > 15)
-                throw new IllegalArgumentException("indicatif invalide : " + addrs.get(a));
+                throw new IllegalArgumentException(Tr.t("indicatif invalide : ") + addrs.get(a));
             for (int k = 0; k < 6; k++) d[a * 7 + k] = (byte) ((k < cs.length() ? cs.charAt(k) : ' ') << 1);
             // bits reserves a 1 ; bit C de la destination a 1 (commande, AX.25 v2) ; bit d'extension sur la derniere
             d[a * 7 + 6] = (byte) ((a == 0 ? 0x80 : 0) | 0x60 | (ssid << 1) | (a == addrs.size() - 1 ? 1 : 0));

@@ -45,18 +45,18 @@ final class Firewall {
     /** Cree la regle (une demande d'autorisation Windows s'affiche) ; resultat dans le journal. */
     static void add(File bridgeExe, Consumer<String> log, Runnable done) {
         String exe = exePath();
-        if (exe.isEmpty() || !bridgeExe.isFile()) { log.accept("Pare-feu : btbridge.exe ou HTMod.exe introuvable"); return; }
+        if (exe.isEmpty() || !bridgeExe.isFile()) { log.accept(Tr.t("Pare-feu : btbridge.exe ou HTMod.exe introuvable")); return; }
         Thread t = new Thread(() -> {
             try {
-                log.accept("Pare-feu : autorisation de " + exe + " sur les réseaux privés (confirmez la demande de Windows)…");
+                log.accept(Tr.t("Pare-feu : autorisation de ") + exe + Tr.t(" sur les réseaux privés (confirmez la demande de Windows)…"));
                 Process p = new ProcessBuilder(bridgeExe.getAbsolutePath(), "firewall", exe).redirectErrorStream(true).start();
                 p.getOutputStream().close();
                 p.getInputStream().readAllBytes();
                 p.waitFor(180, TimeUnit.SECONDS);
-                log.accept(exists() ? "Pare-feu : règle « " + RULE + " » ajoutée"
-                        : "Pare-feu : règle non ajoutée (autorisation refusée ?)");
+                log.accept(exists() ? Tr.t("Pare-feu : règle « ") + RULE + Tr.t(" » ajoutée")
+                        : Tr.t("Pare-feu : règle non ajoutée (autorisation refusée ?)"));
             } catch (Exception e) {
-                log.accept("Pare-feu : " + e.getMessage());
+                log.accept(Tr.t("Pare-feu : ") + e.getMessage());
             } finally {
                 if (done != null) done.run();
             }

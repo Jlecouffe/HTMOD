@@ -124,7 +124,7 @@ final class WindLayer implements MapPanel.Overlay {
             float[] u = new float[n], v = new float[n];
             double max = 0;
             for (int i = 0; i < n; i++) {
-                if (!ms.find() || !md.find()) throw new Exception("réponse incomplète (" + i + "/" + n + " points)");
+                if (!ms.find() || !md.find()) throw new Exception(Tr.t("réponse incomplète (") + i + "/" + n + Tr.t(" points)"));
                 double s = Double.parseDouble(ms.group(1)), d = Math.toRadians(Double.parseDouble(md.group(1)));
                 // direction meteo = d'ou vient le vent : il souffle vers d + 180
                 u[i] = (float) (-s * Math.sin(d));
@@ -139,8 +139,8 @@ final class WindLayer implements MapPanel.Overlay {
             status = String.format(Locale.ROOT, "max %.0f km/h", max);
         } catch (Exception e) {
             failures++;
-            status = "indisponible";
-            if (failures == 1) log.accept("Vent (Open-Meteo) : " + e.getMessage());
+            status = Tr.t("indisponible");
+            if (failures == 1) log.accept(Tr.t("Vent (Open-Meteo) : ") + e.getMessage());
         } finally {
             fetching = false;
         }
@@ -250,7 +250,7 @@ final class WindLayer implements MapPanel.Overlay {
     }
 
     private void legend(Graphics2D g, MapPanel m, Grid gr) {
-        String s = "VENT 10 m · " + (gr == null ? (fetching ? "chargement…" : status.isEmpty() ? "…" : status) : status)
+        String s = Tr.t("VENT 10 m · ") + (gr == null ? (fetching ? Tr.t("chargement…") : status.isEmpty() ? "…" : status) : status)
                 + " · Open-Meteo";
         g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         g.setFont(Shack.mono(11f));

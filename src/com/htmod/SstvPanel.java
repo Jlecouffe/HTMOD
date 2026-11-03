@@ -63,14 +63,14 @@ final class SstvPanel extends JPanel {
     private final ArrayBlockingQueue<short[]> rx = new ArrayBlockingQueue<>(512);
     private volatile Sstv.Decoder decoder;
 
-    private final View rxView = new View("En attente d'une image SSTV…");
-    private final View txView = new View("Aucune image");
-    private final JLabel rxState = Shack.label("En écoute · détection VIS automatique", Shack.mono(11.5f), Shack.CYAN);
+    private final View rxView = new View(Tr.t("En attente d'une image SSTV…"));
+    private final View txView = new View(Tr.t("Aucune image"));
+    private final JLabel rxState = Shack.label(Tr.t("En écoute · détection VIS automatique"), Shack.mono(11.5f), Shack.CYAN);
     private final JLabel rxMode = Shack.label(" ", Shack.mono(11f), Shack.MUTED);
     private final JPanel gallery = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
     private final JLabel txInfo = Shack.label(" ", Shack.mono(11.5f), Shack.MUTED);
     private final JLabel txFreq = Shack.label(" ", Shack.mono(11.5f), Shack.MUTED);
-    private final Shack.Key sendKey = new Shack.Key("ÉMETTRE L'IMAGE").primary().font(Shack.bold(13f));
+    private final Shack.Key sendKey = new Shack.Key(Tr.t("ÉMETTRE L'IMAGE")).primary().font(Shack.bold(13f));
     private final JTextField overlay;
     private BufferedImage source;
     private Sstv.Mode txMode;
@@ -96,7 +96,7 @@ final class SstvPanel extends JPanel {
         JPanel ht = new JPanel();
         ht.setOpaque(false);
         ht.setLayout(new BoxLayout(ht, BoxLayout.Y_AXIS));
-        ht.add(left(Shack.label("ROBOT 36 / 72 · MARTIN M1 / M2 · SCOTTIE S1 / S2 / DX · PD 90 À 240", Shack.tracked(Shack.mono(10f), 0.1f), Shack.MUTED)));
+        ht.add(left(Shack.label(Tr.t("ROBOT 36 / 72 · MARTIN M1 / M2 · SCOTTIE S1 / S2 / DX · PD 90 À 240"), Shack.tracked(Shack.mono(10f), 0.1f), Shack.MUTED)));
         ht.add(Box.createVerticalStrut(6));
         ht.add(left(rxState));
         ht.add(Box.createVerticalStrut(2));
@@ -105,11 +105,11 @@ final class SstvPanel extends JPanel {
         head.add(ht, BorderLayout.CENTER);
         JPanel top = new JPanel(new BorderLayout(12, 0));
         top.setOpaque(false);
-        JLabel title = Shack.label("RÉCEPTION SSTV", Shack.tracked(Shack.mono(11f), 0.16f), Shack.MUTED);
+        JLabel title = Shack.label(Tr.t("RÉCEPTION SSTV"), Shack.tracked(Shack.mono(11f), 0.16f), Shack.MUTED);
         top.add(title, BorderLayout.WEST);
         JPanel hk = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         hk.setOpaque(false);
-        Shack.Switch auto = autoSw = new Shack.Switch("Réception", rxOn);
+        Shack.Switch auto = autoSw = new Shack.Switch(Tr.t("Réception"), rxOn);
         auto.setPreferredSize(new Dimension(150, 34));
         auto.addActionListener(e -> {
             rxOn = auto.isOn();
@@ -118,10 +118,10 @@ final class SstvPanel extends JPanel {
             refreshStatus();
         });
         hk.add(auto);
-        Shack.Key stop = new Shack.Key("TERMINER").font(Shack.bold(11.5f));
+        Shack.Key stop = new Shack.Key(Tr.t("TERMINER")).font(Shack.bold(11.5f));
         stop.addActionListener(e -> { Sstv.Decoder d = decoder; if (d != null) d.stop(); });
         hk.add(stop);
-        Shack.Key open = new Shack.Key("DOSSIER").font(Shack.bold(11.5f));
+        Shack.Key open = new Shack.Key(Tr.t("DOSSIER")).font(Shack.bold(11.5f));
         open.addActionListener(e -> openDir());
         hk.add(open);
         top.add(hk, BorderLayout.EAST);
@@ -145,7 +145,7 @@ final class SstvPanel extends JPanel {
         Shack.Card tx = new Shack.Card(16);
         tx.setLayout(new BoxLayout(tx, BoxLayout.Y_AXIS));
         tx.setPreferredSize(new Dimension(420, 100));
-        tx.add(left(Shack.label("ÉMISSION", Shack.tracked(Shack.mono(11f), 0.16f), Shack.MUTED)));
+        tx.add(left(Shack.label(Tr.t("ÉMISSION"), Shack.tracked(Shack.mono(11f), 0.16f), Shack.MUTED)));
         tx.add(Box.createVerticalStrut(8));
         Shack.Well pw = new Shack.Well(12);
         pw.setLayout(new BorderLayout());
@@ -157,15 +157,15 @@ final class SstvPanel extends JPanel {
         tx.add(Box.createVerticalStrut(8));
         JPanel ik = new JPanel(new GridLayout(1, 2, 8, 0));
         ik.setOpaque(false);
-        Shack.Key pick = new Shack.Key("CHOISIR UNE IMAGE…").font(Shack.bold(11.5f));
+        Shack.Key pick = new Shack.Key(Tr.t("CHOISIR UNE IMAGE…")).font(Shack.bold(11.5f));
         pick.addActionListener(e -> chooseImage());
-        Shack.Key card = new Shack.Key("MIRE DE TEST").font(Shack.bold(11.5f));
+        Shack.Key card = new Shack.Key(Tr.t("MIRE DE TEST")).font(Shack.bold(11.5f));
         card.addActionListener(e -> { source = null; prefs.remove("sstvImage"); rebuildPreview(); });
         ik.add(pick);
         ik.add(card);
         ik.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
         tx.add(left(ik));
-        tx.add(left(caption("Mode")));
+        tx.add(left(caption(Tr.t("Mode"))));
         JPanel mk = new JPanel(new GridLayout(0, 4, 6, 6));
         mk.setOpaque(false);
         String[] names = new String[Sstv.MODES.length];
@@ -182,7 +182,7 @@ final class SstvPanel extends JPanel {
         for (Shack.Key k : modeKeys) k.setPreferredSize(new Dimension(80, 34));
         mk.setMaximumSize(new Dimension(Integer.MAX_VALUE, 3 * 40));
         tx.add(left(mk));
-        tx.add(left(caption("Texte incrusté (indicatif)")));
+        tx.add(left(caption(Tr.t("Texte incrusté (indicatif)"))));
         overlay = Shack.field(prefs.get("sstvText", ""), 16);
         overlay.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
         overlay.addActionListener(e -> rebuildPreview());
@@ -190,7 +190,7 @@ final class SstvPanel extends JPanel {
             @Override public void focusLost(java.awt.event.FocusEvent e) { rebuildPreview(); }
         });
         tx.add(left(overlay));
-        tx.add(left(caption("Niveau audio")));
+        tx.add(left(caption(Tr.t("Niveau audio"))));
         JPanel lv = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
         lv.setOpaque(false);
         Shack.choice(lv, new String[]{"40 %", "60 %", "80 %", "100 %"}, levelIdx, i -> { levelIdx = i; prefs.putInt("sstvLevelIdx", i); });
@@ -205,9 +205,9 @@ final class SstvPanel extends JPanel {
         sendKey.addActionListener(e -> send());
         tx.add(left(sendKey));
         tx.add(Box.createVerticalStrut(8));
-        JLabel note = new JLabel("<html><body style='width:290px'>Émission sur la fréquence du canal ou celle accordée dans "
-                + "l'onglet VFO, réservée aux radioamateurs (ex. 145,500 MHz puis dégagement, 433,400 MHz…). Pensez au "
-                + "temps d'émission du poste (TOT) pour les modes longs.</body></html>");
+        JLabel note = new JLabel(Tr.t("<html><body style='width:290px'>Émission sur la fréquence du canal ou celle accordée dans ")
+                + Tr.t("l'onglet VFO, réservée aux radioamateurs (ex. 145,500 MHz puis dégagement, 433,400 MHz…). Pensez au ")
+                + Tr.t("temps d'émission du poste (TOT) pour les modes longs.</body></html>"));
         note.setFont(Shack.body(11.5f));
         note.setForeground(Shack.MUTED);
         tx.add(left(note));
@@ -240,7 +240,7 @@ final class SstvPanel extends JPanel {
     private void startDecoder() {
         decoder = new Sstv.Decoder(Decoders.SAMPLE_RATE, new Sstv.Decoder.Listener() {
             @Override public void onStart(Sstv.Mode m) {
-                host.log("SSTV : réception " + m.name + " (VIS " + m.vis + ")");
+                host.log(Tr.t("SSTV : réception ") + m.name + " (VIS " + m.vis + ")");
                 SwingUtilities.invokeLater(() -> { rxView.set(null); refreshStatus(); });
             }
 
@@ -259,7 +259,7 @@ final class SstvPanel extends JPanel {
                 } catch (InterruptedException e) {
                     return;
                 } catch (Throwable t2) {
-                    host.log("SSTV : " + t2);
+                    host.log(Tr.t("SSTV : ") + t2);
                 }
             }
         }, "htmod-sstv");
@@ -281,7 +281,7 @@ final class SstvPanel extends JPanel {
         if (!complete) {
             rows = lastRows(img);
             if (rows < 16) {
-                host.log("SSTV : " + m.name + " interrompue trop tôt, image ignorée");
+                host.log(Tr.t("SSTV : ") + m.name + Tr.t(" interrompue trop tôt, image ignorée"));
                 SwingUtilities.invokeLater(this::refreshStatus);
                 return;
             }
@@ -292,12 +292,12 @@ final class SstvPanel extends JPanel {
             dir.mkdirs();
             ImageIO.write(img, "png", f);
         } catch (Exception e) {
-            host.log("SSTV : enregistrement impossible : " + e.getMessage());
+            host.log(Tr.t("SSTV : enregistrement impossible : ") + e.getMessage());
         }
-        String what = m.name + (complete ? "" : " (partielle, " + rows + " lignes)");
-        host.log("SSTV : image reçue " + what + " → " + f.getName());
-        host.csv("SSTV", m.name, f.getName() + (complete ? "" : " / partielle"));
-        host.notify("Image SSTV reçue", what);
+        String what = m.name + (complete ? "" : Tr.t(" (partielle, ") + rows + Tr.t(" lignes)"));
+        host.log(Tr.t("SSTV : image reçue ") + what + " → " + f.getName());
+        host.csv("SSTV", m.name, f.getName() + (complete ? "" : Tr.t(" / partielle")));
+        host.notify(Tr.t("Image SSTV reçue"), what);
         SwingUtilities.invokeLater(() -> {
             rxView.set(img);
             addThumb(f, img, true);
@@ -346,7 +346,7 @@ final class SstvPanel extends JPanel {
         l.addMouseListener(new MouseAdapter() {
             @Override public void mouseClicked(MouseEvent e) {
                 if (e.getClickCount() == 2) {
-                    try { Desktop.getDesktop().open(f); } catch (Exception ex) { host.log("SSTV : " + ex.getMessage()); }
+                    try { Desktop.getDesktop().open(f); } catch (Exception ex) { host.log(Tr.t("SSTV : ") + ex.getMessage()); }
                 } else {
                     rxView.set(im);
                     rxMode.setText(f.getName());
@@ -364,26 +364,26 @@ final class SstvPanel extends JPanel {
             dir.mkdirs();
             Desktop.getDesktop().open(dir);
         } catch (Exception e) {
-            host.log("SSTV : " + e.getMessage());
+            host.log(Tr.t("SSTV : ") + e.getMessage());
         }
     }
 
     private void refreshStatus() {
         Sstv.Decoder d = decoder;
-        if (!rxOn) { rxState.setText("Réception coupée"); rxState.setForeground(Shack.MUTED); }
-        else if (host.sweeping()) { rxState.setText("Réception en pause (balayage bandscope)"); rxState.setForeground(Shack.MUTED); }
+        if (!rxOn) { rxState.setText(Tr.t("Réception coupée")); rxState.setForeground(Shack.MUTED); }
+        else if (host.sweeping()) { rxState.setText(Tr.t("Réception en pause (balayage bandscope)")); rxState.setForeground(Shack.MUTED); }
         else if (d != null && d.busy()) {
             Sstv.Mode m = d.mode();
             if (m != null) {
-                rxState.setText("Réception " + m.name + " · " + d.rowsDone() + " / " + m.height + " lignes");
+                rxState.setText(Tr.t("Réception ") + m.name + " · " + d.rowsDone() + " / " + m.height + Tr.t(" lignes"));
                 rxState.setForeground(Shack.AMBER);
             }
-        } else { rxState.setText("En écoute · détection VIS automatique"); rxState.setForeground(Shack.CYAN); }
+        } else { rxState.setText(Tr.t("En écoute · détection VIS automatique")); rxState.setForeground(Shack.CYAN); }
         if (host.transmitter().isBusy()) return;
         Radio r = host.radio();
         long hz = r.isRunning() ? r.currentTxHz() : 0;
-        txFreq.setText(!r.isRunning() ? "Poste non connecté"
-                : "Fréquence d'émission : " + (hz > 0 ? Bandscope.mhz(hz) + " MHz" + (PocsagPanel.amateur(hz) ? "" : "  (hors bande radioamateur)") : "inconnue"));
+        txFreq.setText(!r.isRunning() ? Tr.t("Poste non connecté")
+                : Tr.t("Fréquence d'émission : ") + (hz > 0 ? Bandscope.mhz(hz) + " MHz" + (PocsagPanel.amateur(hz) ? "" : Tr.t("  (hors bande radioamateur)")) : Tr.t("inconnue")));
         txFreq.setForeground(hz > 0 && !PocsagPanel.amateur(hz) ? Shack.RED : Shack.MUTED);
     }
 
@@ -391,18 +391,18 @@ final class SstvPanel extends JPanel {
 
     private void chooseImage() {
         JFileChooser fc = new JFileChooser(prefs.get("sstvDir", System.getProperty("user.home")));
-        fc.setFileFilter(new FileNameExtensionFilter("Images (PNG, JPEG, GIF, BMP)", "png", "jpg", "jpeg", "gif", "bmp"));
+        fc.setFileFilter(new FileNameExtensionFilter(Tr.t("Images (PNG, JPEG, GIF, BMP)"), "png", "jpg", "jpeg", "gif", "bmp"));
         if (fc.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) return;
         File f = fc.getSelectedFile();
         try {
             BufferedImage im = ImageIO.read(f);
-            if (im == null) throw new Exception("format non reconnu");
+            if (im == null) throw new Exception(Tr.t("format non reconnu"));
             source = im;
             prefs.put("sstvImage", f.getAbsolutePath());
             prefs.put("sstvDir", f.getParent());
             rebuildPreview();
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Image illisible : " + e.getMessage(), "SSTV", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, Tr.t("Image illisible : ") + e.getMessage(), "SSTV", JOptionPane.WARNING_MESSAGE);
         }
     }
 
@@ -420,7 +420,7 @@ final class SstvPanel extends JPanel {
     }
 
     private void send() {
-        send(msg -> JOptionPane.showConfirmDialog(this, msg, "Émettre l'image SSTV ?", JOptionPane.OK_CANCEL_OPTION,
+        send(msg -> JOptionPane.showConfirmDialog(this, msg, Tr.t("Émettre l'image SSTV ?"), JOptionPane.OK_CANCEL_OPTION,
                 JOptionPane.WARNING_MESSAGE) == JOptionPane.OK_OPTION, this::warn);
     }
 
@@ -429,48 +429,48 @@ final class SstvPanel extends JPanel {
         Radio r = host.radio();
         Transmitter t = host.transmitter();
         if (t.isBusy()) { t.cancel(); return; }
-        if (!r.isRunning() || !r.audioOpen()) { warn.accept("Connectez d'abord le poste (canal audio ouvert)."); return; }
-        if (host.sweeping()) { warn.accept("Arrêtez d'abord le balayage du bandscope."); return; }
+        if (!r.isRunning() || !r.audioOpen()) { warn.accept(Tr.t("Connectez d'abord le poste (canal audio ouvert).")); return; }
+        if (host.sweeping()) { warn.accept(Tr.t("Arrêtez d'abord le balayage du bandscope.")); return; }
         long hz = r.currentTxHz();
-        if (hz <= 0) { warn.accept("Fréquence d'émission inconnue (lecture des canaux en cours, ou émission interdite sur ce canal)."); return; }
+        if (hz <= 0) { warn.accept(Tr.t("Fréquence d'émission inconnue (lecture des canaux en cours, ou émission interdite sur ce canal).")); return; }
         if (!PocsagPanel.amateur(hz)) {
-            warn.accept("Émission refusée : " + Bandscope.mhz(hz) + " MHz n'est pas dans une bande radioamateur (144–146 ou 430–440 MHz).");
+            warn.accept(Tr.t("Émission refusée : ") + Bandscope.mhz(hz) + Tr.t(" MHz n'est pas dans une bande radioamateur (144–146 ou 430–440 MHz)."));
             return;
         }
         Sstv.Mode m = txMode;
         BufferedImage img = txImage();
         short[] pcm = Sstv.encode(img, m, Decoders.SAMPLE_RATE, LEVELS[levelIdx] / 100.0);
         double secs = pcm.length / (double) Decoders.SAMPLE_RATE;
-        if (!confirm.test(m.name + " · " + String.format(Locale.ROOT, "%.0f", secs) + " s d'émission continue\nFréquence : "
-                        + Bandscope.mhz(hz) + " MHz\n\nJe confirme être radioamateur et émettre sur une fréquence autorisée.")) return;
+        if (!confirm.test(m.name + " · " + String.format(Locale.ROOT, "%.0f", secs) + Tr.t(" s d'émission continue\nFréquence : ")
+                        + Bandscope.mhz(hz) + Tr.t(" MHz\n\nJe confirme être radioamateur et émettre sur une fréquence autorisée."))) return;
         long t0 = System.currentTimeMillis();
         Timer progress = new Timer(1000, e -> {
             if (!t.isBusy()) return;
             long el = (System.currentTimeMillis() - t0) / 1000;
-            txInfo.setText("Émission " + m.name + " : " + el + " / " + Math.round(secs) + " s");
+            txInfo.setText(Tr.t("Émission ") + m.name + " : " + el + " / " + Math.round(secs) + " s");
         });
         boolean started = t.transmit(pcm, true, new Transmitter.Listener() {
             @Override public void onTxStart(double seconds) {
                 SwingUtilities.invokeLater(() -> {
-                    sendKey.setText("ARRÊTER L'ÉMISSION");
+                    sendKey.setText(Tr.t("ARRÊTER L'ÉMISSION"));
                     txInfo.setForeground(Shack.AMBER);
                     progress.start();
                 });
-                host.log("SSTV : émission " + m.name + " sur " + Bandscope.mhz(hz) + " MHz ("
+                host.log(Tr.t("SSTV : émission ") + m.name + Tr.t(" sur ") + Bandscope.mhz(hz) + " MHz ("
                         + String.format(Locale.ROOT, "%.0f", seconds) + " s)");
             }
 
             @Override public void onTxEnd(boolean cancelled) {
                 SwingUtilities.invokeLater(() -> {
                     progress.stop();
-                    sendKey.setText("ÉMETTRE L'IMAGE");
-                    txInfo.setText(cancelled ? "Émission interrompue." : "Image émise (" + m.name + ").");
+                    sendKey.setText(Tr.t("ÉMETTRE L'IMAGE"));
+                    txInfo.setText(cancelled ? Tr.t("Émission interrompue.") : Tr.t("Image émise (") + m.name + ").");
                     txInfo.setForeground(cancelled ? Shack.RED : Shack.GREEN);
                 });
-                host.log("SSTV : " + (cancelled ? "émission interrompue" : "image émise"));
+                host.log(Tr.t("SSTV : ") + (cancelled ? Tr.t("émission interrompue") : Tr.t("image émise")));
             }
         });
-        if (!started) warn.accept("Émission impossible : une émission est déjà en cours ou le canal audio est fermé.");
+        if (!started) warn.accept(Tr.t("Émission impossible : une émission est déjà en cours ou le canal audio est fermé."));
     }
 
     // ------------------------------------------------------------------ Interface web
@@ -508,13 +508,13 @@ final class SstvPanel extends JPanel {
     String webUpload(byte[] data) {
         try {
             BufferedImage im = ImageIO.read(new java.io.ByteArrayInputStream(data));
-            if (im == null) return "Format d'image non reconnu (PNG, JPEG, GIF, BMP).";
+            if (im == null) return Tr.t("Format d'image non reconnu (PNG, JPEG, GIF, BMP).");
             source = im;
             prefs.remove("sstvImage");
             rebuildPreview();
             return null;
         } catch (Exception e) {
-            return "Image illisible : " + e.getMessage();
+            return Tr.t("Image illisible : ") + e.getMessage();
         }
     }
 

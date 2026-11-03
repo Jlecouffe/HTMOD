@@ -46,9 +46,9 @@ final class SatCatalog {
         long[] orig;
 
         String label() {
-            if (downHz <= 0) return (name.isEmpty() ? "FM" : name) + " · fréquence à régler (MODIFIER)";
+            if (downHz <= 0) return (name.isEmpty() ? "FM" : name) + Tr.t(" · fréquence à régler (MODIFIER)");
             return (name.isEmpty() ? "FM" : name) + " · ↓ " + mhz(downHz) + (upHz > 0 ? "  ↑ " + mhz(upHz) : "")
-                    + (upTone > 0 ? String.format(Locale.ROOT, "  CTCSS %.1f", upTone / 100.0) : "") + (orig != null ? "  (modifié)" : "");
+                    + (upTone > 0 ? String.format(Locale.ROOT, "  CTCSS %.1f", upTone / 100.0) : "") + (orig != null ? Tr.t("  (modifié)") : "");
         }
     }
 
@@ -251,9 +251,9 @@ final class SatCatalog {
             byte[] b = fetchBenshi();
             Files.write(new File(dir, "benshi.grpc").toPath(), b);
             int n = mergeBenshi(b);
-            msg.append("Serveur Benshi : ").append(n).append(" satellite(s)");
+            msg.append(Tr.t("Serveur Benshi : ")).append(n).append(Tr.t(" satellite(s)"));
         } catch (Exception e) {
-            msg.append("Serveur Benshi injoignable (").append(e.getMessage()).append(")");
+            msg.append(Tr.t("Serveur Benshi injoignable (")).append(e.getMessage()).append(")");
         }
         File cf = new File(dir, "celestrak-amateur.tle");
         if (!cf.isFile() || System.currentTimeMillis() - cf.lastModified() > 2 * 3600_000L) {
@@ -261,10 +261,10 @@ final class SatCatalog {
                 String t = get("https://celestrak.org/NORAD/elements/gp.php?GROUP=amateur&FORMAT=TLE");
                 if (t.contains("\n1 ")) {
                     Files.write(cf.toPath(), t.getBytes(StandardCharsets.UTF_8));
-                    msg.append(" · CelesTrak : ").append(mergeTles(t, false)).append(" TLE");
+                    msg.append(Tr.t(" · CelesTrak : ")).append(mergeTles(t, false)).append(" TLE");
                 }
             } catch (Exception e) {
-                msg.append(" · CelesTrak injoignable");
+                msg.append(Tr.t(" · CelesTrak injoignable"));
             }
         }
         loadUser(); // les satellites perso gardent leurs propres TLE
@@ -291,9 +291,9 @@ final class SatCatalog {
         HttpResponse<byte[]> resp = http.send(r, HttpResponse.BodyHandlers.ofByteArray());
         byte[] b = resp.body();
         if (resp.statusCode() != 200 || b.length < 5) throw new IOException("HTTP " + resp.statusCode());
-        if (b[0] != 0) throw new IOException("reponse compressee non geree");
+        if (b[0] != 0) throw new IOException(Tr.t("reponse compressee non geree"));
         int len = ((b[1] & 0xFF) << 24) | ((b[2] & 0xFF) << 16) | ((b[3] & 0xFF) << 8) | (b[4] & 0xFF);
-        if (len < 0 || 5 + len > b.length) throw new IOException("reponse tronquee");
+        if (len < 0 || 5 + len > b.length) throw new IOException(Tr.t("reponse tronquee"));
         byte[] msg = new byte[len];
         System.arraycopy(b, 5, msg, 0, len);
         return msg;
@@ -567,7 +567,7 @@ final class SatCatalog {
         for (int i = 0; i + 1 < l.length; i++)
             if (l[i].startsWith("1 ") && l[i + 1].startsWith("2 "))
                 return new String[]{i > 0 ? l[i - 1].trim() : "NORAD " + norad, l[i].trim(), l[i + 1].trim()};
-        throw new IOException("aucun TLE pour NORAD " + norad);
+        throw new IOException(Tr.t("aucun TLE pour NORAD ") + norad);
     }
 
     private static byte[] read(File f) {

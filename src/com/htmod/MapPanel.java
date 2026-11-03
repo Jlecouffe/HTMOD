@@ -383,7 +383,7 @@ final class MapPanel extends JComponent {
                 int code = c.getResponseCode();
                 if (code != 200 && !tileErrorLogged) {
                     tileErrorLogged = true;
-                    logSink.accept("Carte : le serveur de tuiles répond " + code + " (" + tileUrl(topo, z, x, y) + ")");
+                    logSink.accept(Tr.t("Carte : le serveur de tuiles répond ") + code + " (" + tileUrl(topo, z, x, y) + ")");
                 }
                 if (code == 200) {
                     f.getParentFile().mkdirs();
@@ -399,7 +399,7 @@ final class MapPanel extends JComponent {
         } catch (Exception e) {
             if (!tileErrorLogged) {
                 tileErrorLogged = true;
-                logSink.accept("Carte : téléchargement des tuiles impossible (" + e + ")");
+                logSink.accept(Tr.t("Carte : téléchargement des tuiles impossible (") + e + ")");
             }
             try { return f.isFile() ? ImageIO.read(f) : null; } catch (Exception ignore) { return null; } // hors ligne : cache
         }
@@ -545,7 +545,7 @@ final class MapPanel extends JComponent {
         }
 
         // attribution (obligatoire)
-        String attr = topo ? "© OpenStreetMap, SRTM · © OpenTopoMap (CC-BY-SA)" : "© contributeurs OpenStreetMap";
+        String attr = topo ? "© OpenStreetMap, SRTM · © OpenTopoMap (CC-BY-SA)" : Tr.t("© contributeurs OpenStreetMap");
         g.setFont(Shack.body(11f));
         FontMetrics fm = g.getFontMetrics();
         int aw = fm.stringWidth(attr) + 12;

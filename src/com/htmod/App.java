@@ -76,7 +76,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.table.AbstractTableModel;
 
 public final class App implements Radio.Listener, Decoders.Listener {
-    static final String VERSION = "1.1";
+    static final String VERSION = "1.4";
 
     private final Preferences prefs = Preferences.userRoot().node("htmod");
     private final File bridgeExe;
@@ -91,13 +91,16 @@ public final class App implements Radio.Listener, Decoders.Listener {
     private Shack.Key connectKey, autoKey, sarsatKey, sondeKey;
     private Shack.Switch listenSw, wavSw, muteAprsSw, webSw;
     private final JLabel webInfo = new JLabel();
-    private final Shack.Key fwKey = new Shack.Key("AUTORISER DANS LE PARE-FEU").font(Shack.bold(11.5f));
+    private final Shack.Key fwKey = new Shack.Key(Tr.t("AUTORISER DANS LE PARE-FEU")).font(Shack.bold(11.5f));
     private WebServer web;
     private final AprsMute aprsMute = new AprsMute(Decoders.SAMPLE_RATE), webMute = new AprsMute(Decoders.SAMPLE_RATE);
     private Bandscope bandscope;
     private PocsagPanel pocsag;
     private SstvPanel sstv;
     private AprsTxPanel aprsTx;
+    private KissPanel kiss;
+    private Shack.Key[] connModeKeys;
+    private int connMode;
     private VfoPanel vfo;
     private SatPanel sats;
     private Transmitter transmitter;
@@ -128,11 +131,12 @@ public final class App implements Radio.Listener, Decoders.Listener {
 
     public static void main(String[] args) {
         System.setProperty("awt.useSystemAAFontSettings", "on");
+        Tr.lang(); // langue choisie avant toute creation de composant Swing
         SwingUtilities.invokeLater(() -> {
             Shack.install();
             App app = new App();
-            BootSplash.show(VERSION, new String[]{"Pont Bluetooth", "Décodeur SBC", "Balises SARSAT 406", "Radiosondes",
-                    "APRS · AFSK 1200", "Carte OpenStreetMap", "Prêt"}, 1800, app::show);
+            BootSplash.show(VERSION, new String[]{Tr.t("Pont Bluetooth"), Tr.t("Décodeur SBC"), Tr.t("Balises SARSAT 406"), Tr.t("Radiosondes"),
+                    "APRS · AFSK 1200", Tr.t("Carte OpenStreetMap"), Tr.t("Prêt")}, 1800, app::show);
         });
     }
 
@@ -162,8 +166,8 @@ public final class App implements Radio.Listener, Decoders.Listener {
     // ------------------------------------------------------------------ Construction de l'interface
 
     private void show() {
-        frame = new JFrame("HTMod – SARSAT, radiosondes & APRS");
-        frame.setIconImages(java.util.Arrays.asList(icon(16), icon(32), icon(64)));
+        frame = new JFrame(Tr.t("HTMod – SARSAT, radiosondes & APRS"));
+        frame.setIconImages(Logo.windowImages());
         frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         frame.addWindowListener(new WindowAdapter() {
             @Override public void windowClosing(WindowEvent e) { quit(); }
@@ -181,10 +185,10 @@ public final class App implements Radio.Listener, Decoders.Listener {
 
         setupTray();
         applyWeb();
-        updateLink(false, "HORS LIGNE");
+        updateLink(false, Tr.t("HORS LIGNE"));
         updateMode();
-        log("HTMod " + VERSION + " – résultats dans " + outDir.getAbsolutePath());
-        if (!bridgeExe.isFile()) log("ATTENTION : btbridge.exe introuvable (" + bridgeExe.getAbsolutePath() + ")");
+        log("HTMod " + VERSION + Tr.t(" – résultats dans ") + outDir.getAbsolutePath());
+        if (!bridgeExe.isFile()) log(Tr.t("ATTENTION : btbridge.exe introuvable (") + bridgeExe.getAbsolutePath() + ")");
         refreshDevices(false);
         restoreAprs();
         new Timer(1000, e -> refreshCounters()).start();
@@ -195,15 +199,28 @@ public final class App implements Radio.Listener, Decoders.Listener {
         bar.setOpaque(false);
         bar.setLayout(new BoxLayout(bar, BoxLayout.X_AXIS));
         bar.setBorder(new EmptyBorder(12, 20, 6, 18));
-        bar.add(new IconView(Shack.GLOBE, Shack.AMBER, 28));
+        JComponent logo = new JComponent() {
+            @Override protected void paintComponent(Graphics g) { Logo.paint((Graphics2D) g, 0, 0, 32); }
+        };
+        Dimension ld = new Dimension(32, 32);
+        logo.setPreferredSize(ld);
+        logo.setMaximumSize(ld);
+        bar.add(logo);
         bar.add(Box.createHorizontalStrut(12));
         bar.add(new Brand());
         bar.add(Box.createHorizontalStrut(16));
-        JLabel sub = Shack.label("SARSAT · RADIOSONDES · APRS", Shack.tracked(Shack.mono(11f), 0.12f), Shack.MUTED);
+        JLabel sub = Shack.label(Tr.t("SARSAT · RADIOSONDES · APRS"), Shack.tracked(Shack.mono(11f), 0.12f), Shack.MUTED);
         bar.add(sub);
         bar.add(Box.createHorizontalGlue());
+        Shack.Key lang = new Shack.Key(Tr.lang().toUpperCase(Locale.ROOT)).icon(Flags.keyIcon(Tr.lang()), Shack.TEXT2).font(Shack.bold(12f));
+        lang.setToolTipText(Tr.t("Changer la langue"));
+        fix(lang, 78, 44);
+        lang.setMaximumSize(new Dimension(78, 44));
+        lang.addActionListener(e -> languageMenu().show(lang, 0, lang.getHeight()));
+        bar.add(lang);
+        bar.add(Box.createHorizontalStrut(8));
         Shack.Key settings = new Shack.Key("").icon(Shack.SLIDERS, Shack.TEXT2);
-        settings.setToolTipText("Réglages et outils");
+        settings.setToolTipText(Tr.t("Réglages et outils"));
         fix(settings, 44, 44);
         settings.setMaximumSize(new Dimension(44, 44));
         settings.addActionListener(e -> settingsMenu().show(settings, 0, settings.getHeight()));
@@ -225,7 +242,7 @@ public final class App implements Radio.Listener, Decoders.Listener {
         title.setOpaque(false);
         title.setLayout(new BoxLayout(title, BoxLayout.Y_AXIS));
         title.add(Shack.label("RADIO", Shack.tracked(Shack.mono(10f), 0.16f), Shack.MUTED));
-        modelLbl = Shack.label("Aucun poste", Shack.display(22f), Shack.TEXT);
+        modelLbl = Shack.label(Tr.t("Aucun poste"), Shack.display(22f), Shack.TEXT);
         title.add(modelLbl);
         top.add(title, BorderLayout.CENTER);
         linkChip = new Shack.Chip();
@@ -245,31 +262,59 @@ public final class App implements Radio.Listener, Decoders.Listener {
         radioCard.add(specWell);
         radioCard.add(Box.createVerticalStrut(10));
         JPanel bottom = row();
-        deviceLbl = Shack.label("Poste ›", Shack.mono(12f), Shack.AMBER);
+        deviceLbl = Shack.label(Tr.t("Poste ›"), Shack.mono(12f), Shack.AMBER);
         deviceLbl.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        deviceLbl.setToolTipText("Choisir le poste parmi les appareils Bluetooth appairés");
+        deviceLbl.setToolTipText(Tr.t("Choisir le poste parmi les appareils Bluetooth appairés"));
         deviceLbl.addMouseListener(new MouseAdapter() {
             @Override public void mouseClicked(MouseEvent e) { devicesMenu().show(deviceLbl, 0, deviceLbl.getHeight()); }
         });
         bottom.add(deviceLbl, BorderLayout.CENTER);
-        connectKey = new Shack.Key("SE CONNECTER").primary().radius(12).font(Shack.bold(12.5f));
+        connectKey = new Shack.Key(Tr.t("SE CONNECTER")).primary().radius(12).font(Shack.bold(12.5f));
         fix(connectKey, 150, 42);
         connectKey.addActionListener(e -> toggleConnect());
         bottom.add(connectKey, BorderLayout.EAST);
         radioCard.add(bottom);
-        statusLbl = Shack.label("Déconnecté", Shack.mono(11f), Shack.MUTED);
+        // Liaison : poste en Bluetooth, ou TNC KISS sur port COM (reception APRS)
+        radioCard.add(Box.createVerticalStrut(8));
+        JPanel modeRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+        modeRow.setOpaque(false);
+        modeRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+        connModeKeys = Shack.choice(modeRow, new String[]{"BLUETOOTH", Tr.t("PORT COM")}, prefs.getInt("connMode", 0), this::setConnMode);
+        connModeKeys[0].setToolTipText(Tr.t("Le poste en Bluetooth (commandes, audio, TNC du poste)"));
+        connModeKeys[1].setToolTipText(Tr.t("Un TNC externe en mode KISS sur port série : réception APRS"));
+        for (Shack.Key k : connModeKeys) { k.setPreferredSize(new Dimension(120, 34)); k.font(Shack.bold(11.5f)); }
+        modeRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
+        radioCard.add(modeRow);
+        kiss = new KissPanel(bridgeExe, new KissPanel.Host() {
+            @Override public void frame(byte[] f) { onAx25(f, "KISS"); }
+            @Override public void log(String s) { App.this.log(s); }
+            @Override public void kissStatus(String text, boolean on) {
+                if (connMode != 1) return;
+                statusLbl.setText(text);
+                linkChip.set(on ? "KISS · " + kiss.port() : kiss.isActive() ? Tr.t("OUVERTURE…") : Tr.t("HORS LIGNE"), on ? Shack.CYAN : Shack.MUTED,
+                        on ? Shack.TEXT2 : Shack.MUTED);
+                connectKey.setText(on || kiss.isActive() ? Tr.t("DÉCONNECTER") : Tr.t("SE CONNECTER"));
+            }
+        });
+        kiss.setAlignmentX(Component.LEFT_ALIGNMENT);
+        kiss.setBorder(new EmptyBorder(8, 0, 0, 0));
+        radioCard.add(kiss);
+        statusLbl = Shack.label(Tr.t("Déconnecté"), Shack.mono(11f), Shack.MUTED);
         statusLbl.setBorder(new EmptyBorder(8, 2, 0, 0));
         JPanel st = row();
         st.add(statusLbl);
         radioCard.add(st);
         add(col, radioCard);
+        connMode = -1;
+        setConnMode(prefs.getInt("connMode", 0));
+        if (connMode == 1 && prefs.getBoolean("kissOn", false)) SwingUtilities.invokeLater(this::toggleConnect); // port ouvert a la fermeture
 
         // Reception
-        col.add(left(Shack.section("Réception")));
+        col.add(left(Shack.section(Tr.t("Réception"))));
         Shack.Card rx = new Shack.Card(16);
         rx.setLayout(new BoxLayout(rx, BoxLayout.Y_AXIS));
         JPanel r1 = row();
-        r1.add(Shack.label("CANAL", Shack.tracked(Shack.mono(10f), 0.16f), Shack.MUTED), BorderLayout.WEST);
+        r1.add(Shack.label(Tr.t("CANAL"), Shack.tracked(Shack.mono(10f), 0.16f), Shack.MUTED), BorderLayout.WEST);
         rx.add(r1);
         JPanel r2 = row();
         channelLbl = Shack.label("–", Shack.display(26f), Shack.TEXT);
@@ -285,15 +330,15 @@ public final class App implements Radio.Listener, Decoders.Listener {
         add(col, rx);
 
         // Mode de decodage
-        col.add(left(Shack.section("Décodage SARSAT / sondes")));
+        col.add(left(Shack.section(Tr.t("Décodage SARSAT / sondes"))));
         JPanel modes = new JPanel(new GridLayout(1, 3, 8, 0));
         modes.setOpaque(false);
         autoKey = new Shack.Key("AUTO").font(Shack.bold(12f));
         sarsatKey = new Shack.Key("SARSAT").font(Shack.bold(12f)).selectedColor(Shack.RED);
-        sondeKey = new Shack.Key("SONDE").font(Shack.bold(12f)).selectedColor(Shack.GREEN);
-        autoKey.setToolTipText("Décode quand le canal en réception s'appelle SARSAT ou Radiosonde");
-        sarsatKey.setToolTipText("Décoder l'audio en SARSAT quel que soit le canal");
-        sondeKey.setToolTipText("Décoder l'audio en radiosonde quel que soit le canal");
+        sondeKey = new Shack.Key(Tr.t("SONDE")).font(Shack.bold(12f)).selectedColor(Shack.GREEN);
+        autoKey.setToolTipText(Tr.t("Décode quand le canal en réception s'appelle SARSAT ou Radiosonde"));
+        sarsatKey.setToolTipText(Tr.t("Décoder l'audio en SARSAT quel que soit le canal"));
+        sondeKey.setToolTipText(Tr.t("Décoder l'audio en radiosonde quel que soit le canal"));
         autoKey.addActionListener(e -> setForced(Decoders.MODE_NONE));
         sarsatKey.addActionListener(e -> setForced(Decoders.MODE_SARSAT));
         sondeKey.addActionListener(e -> setForced(Decoders.MODE_SONDE));
@@ -303,22 +348,22 @@ public final class App implements Radio.Listener, Decoders.Listener {
         decoders.forcedMode = prefs.getInt("forcedMode", Decoders.MODE_NONE);
 
         // Options
-        col.add(left(Shack.section("Options")));
+        col.add(left(Shack.section(Tr.t("Options"))));
         Shack.Card opts = new Shack.Card(16);
         opts.setLayout(new BoxLayout(opts, BoxLayout.Y_AXIS));
         opts.setBorder(new EmptyBorder(8, 16, 8, 14));
-        listenSw = new Shack.Switch("Écouter sur le PC", prefs.getBoolean("listen", false));
+        listenSw = new Shack.Switch(Tr.t("Écouter sur le PC"), prefs.getBoolean("listen", false));
         listenSw.addActionListener(e -> { prefs.putBoolean("listen", listenSw.isOn()); if (!listenSw.isOn()) closeSpeaker(); });
         // une sortie audio Windows privee de donnees rejoue son tampon en boucle : on la ferme des que le flux s'arrete
         new Timer(200, e -> { if (System.currentTimeMillis() - lastPlayMs > 400) closeSpeaker(); }).start();
-        wavSw = new Shack.Switch("Enregistrer les WAV", prefs.getBoolean("saveWav", true));
+        wavSw = new Shack.Switch(Tr.t("Enregistrer les WAV"), prefs.getBoolean("saveWav", true));
         decoders.saveWav = wavSw.isOn();
         wavSw.addActionListener(e -> { decoders.saveWav = wavSw.isOn(); prefs.putBoolean("saveWav", wavSw.isOn()); });
-        muteAprsSw = new Shack.Switch("Couper le son des trames APRS", prefs.getBoolean("muteAprs", true));
+        muteAprsSw = new Shack.Switch(Tr.t("Couper le son des trames APRS"), prefs.getBoolean("muteAprs", true));
         muteAprsSw.addActionListener(e -> prefs.putBoolean("muteAprs", muteAprsSw.isOn()));
-        muteAprsSw.setToolTipText("Les trames restent reçues et décodées ; seul le haut-parleur du PC est coupé pendant la trame");
-        webSw = new Shack.Switch("Serveur web (réseau local)", prefs.getBoolean("webOn", false));
-        webSw.setToolTipText("Toute l'application dans un navigateur du réseau local (PC, tablette, téléphone)");
+        muteAprsSw.setToolTipText(Tr.t("Les trames restent reçues et décodées ; seul le haut-parleur du PC est coupé pendant la trame"));
+        webSw = new Shack.Switch(Tr.t("Serveur web (réseau local)"), prefs.getBoolean("webOn", false));
+        webSw.setToolTipText(Tr.t("Toute l'application dans un navigateur du réseau local (PC, tablette, téléphone)"));
         webSw.addActionListener(e -> { prefs.putBoolean("webOn", webSw.isOn()); applyWeb(); });
         for (Shack.Switch s : new Shack.Switch[]{listenSw, muteAprsSw, wavSw, webSw}) {
             s.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -330,7 +375,7 @@ public final class App implements Radio.Listener, Decoders.Listener {
         webInfo.setForeground(Shack.CYAN);
         webInfo.setBorder(new EmptyBorder(2, 2, 6, 0));
         opts.add(webInfo);
-        fwKey.setToolTipText("Autoriser les connexions du réseau local vers HTMod (Windows demande confirmation)");
+        fwKey.setToolTipText(Tr.t("Autoriser les connexions du réseau local vers HTMod (Windows demande confirmation)"));
         fwKey.setAlignmentX(Component.LEFT_ALIGNMENT);
         fwKey.setPreferredSize(new Dimension(260, 36));
         fwKey.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
@@ -342,7 +387,7 @@ public final class App implements Radio.Listener, Decoders.Listener {
         updateLbl.setFont(Shack.mono(11.5f));
         updateLbl.setForeground(Shack.MUTED);
         updateLbl.setBorder(new EmptyBorder(8, 2, 4, 0));
-        setUpdateStatus("Version " + VERSION, Shack.MUTED);
+        setUpdateStatus(Tr.t("Version ") + VERSION, Shack.MUTED);
         opts.add(updateLbl);
         updateKey.setAlignmentX(Component.LEFT_ALIGNMENT);
         updateKey.setPreferredSize(new Dimension(260, 36));
@@ -353,7 +398,7 @@ public final class App implements Radio.Listener, Decoders.Listener {
             else checkUpdate(true);
         });
         opts.add(updateKey);
-        Shack.Switch autoUpd = new Shack.Switch("Vérifier les mises à jour au démarrage", prefs.getBoolean("autoUpdate", true));
+        Shack.Switch autoUpd = new Shack.Switch(Tr.t("Vérifier les mises à jour au démarrage"), prefs.getBoolean("autoUpdate", true));
         autoUpd.addActionListener(e -> prefs.putBoolean("autoUpdate", autoUpd.isOn()));
         autoUpd.setAlignmentX(Component.LEFT_ALIGNMENT);
         autoUpd.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
@@ -364,11 +409,11 @@ public final class App implements Radio.Listener, Decoders.Listener {
         add(col, opts);
 
         // Compteurs
-        col.add(left(Shack.section("Station")));
+        col.add(left(Shack.section(Tr.t("Station"))));
         JPanel counts = new JPanel(new GridLayout(1, 3, 8, 0));
         counts.setOpaque(false);
         aprsCount = new Counter("APRS", Shack.CYAN);
-        sondeCount = new Counter("SONDES", Shack.GREEN);
+        sondeCount = new Counter(Tr.t("SONDES"), Shack.GREEN);
         sarsatCount = new Counter("SARSAT", Shack.RED);
         counts.add(aprsCount); counts.add(sondeCount); counts.add(sarsatCount);
         fix(counts, 328, 78);
@@ -409,7 +454,7 @@ public final class App implements Radio.Listener, Decoders.Listener {
         int[] aw = {96, 130, 110, 180, 560};
         for (int i = 0; i < aw.length; i++) aprsTable.getColumnModel().getColumn(i).setPreferredWidth(aw[i]);
         aprsTable.getColumnModel().getColumn(0).setMinWidth(90);
-        aprsTable.setToolTipText("Double-clic : voir la station sur la carte");
+        aprsTable.setToolTipText(Tr.t("Double-clic : voir la station sur la carte"));
         aprsTable.addMouseListener(new MouseAdapter() {
             @Override public void mouseClicked(MouseEvent e) {
                 int r = aprsTable.getSelectedRow();
@@ -419,15 +464,15 @@ public final class App implements Radio.Listener, Decoders.Listener {
                 if (e.getClickCount() == 2 && row.hasPos) { selectTab("CARTE"); map.focus(row.mapKey); }
             }
         });
-        aprsHeader = Shack.label("0 paquet", Shack.mono(11f), Shack.MUTED);
+        aprsHeader = Shack.label(Tr.t("0 paquet"), Shack.mono(11f), Shack.MUTED);
         aprsTx = new AprsTxPanel(new AprsTxPanel.Host() {
             @Override public Radio radio() { return radio; }
             @Override public void log(String s) { App.this.log(s); }
-            @Override public void sent(byte[] f) { onAx25(f, "ÉMIS"); }
+            @Override public void sent(byte[] f) { onAx25(f, Tr.t("ÉMIS")); }
         });
         JPanel aprsView = new JPanel(new BorderLayout(14, 0));
         aprsView.setOpaque(false);
-        aprsView.add(tableView("TRAFIC APRS", aprsHeader, aprsTable), BorderLayout.CENTER);
+        aprsView.add(tableView(Tr.t("TRAFIC APRS"), aprsHeader, aprsTable), BorderLayout.CENTER);
         aprsView.add(aprsTx, BorderLayout.EAST);
         addView(tabBar, "APRS", Shack.LIST, aprsView);
 
@@ -437,7 +482,7 @@ public final class App implements Radio.Listener, Decoders.Listener {
         detTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         int[] dw = {150, 90, 170, 90, 90, 520};
         for (int i = 0; i < dw.length; i++) detTable.getColumnModel().getColumn(i).setPreferredWidth(dw[i]);
-        detTable.setToolTipText("Double-clic : voir la position sur la carte");
+        detTable.setToolTipText(Tr.t("Double-clic : voir la position sur la carte"));
         detTable.addMouseListener(new MouseAdapter() {
             @Override public void mouseClicked(MouseEvent e) {
                 int r = detTable.getSelectedRow();
@@ -447,7 +492,7 @@ public final class App implements Radio.Listener, Decoders.Listener {
                 }
             }
         });
-        addView(tabBar, "DÉCODAGES", Shack.TARGET, tableView("SARSAT & RADIOSONDES", Shack.label("", Shack.mono(11f), Shack.MUTED), detTable));
+        addView(tabBar, "DÉCODAGES", Shack.TARGET, tableView(Tr.t("SARSAT & RADIOSONDES"), Shack.label("", Shack.mono(11f), Shack.MUTED), detTable));
 
         // Spectre audio : calcule en coulisse pour le mini-spectre de la carte RADIO
         waterfall = new WaterfallPanel();
@@ -527,7 +572,7 @@ public final class App implements Radio.Listener, Decoders.Listener {
     }
 
     private void addView(JPanel tabBar, String name, Shack.Icon icon, JComponent view) {
-        Shack.Key k = new Shack.Key(name).icon(icon, Shack.TEXT2).font(Shack.tracked(Shack.bold(11f), 0.04f));
+        Shack.Key k = new Shack.Key(Tr.t(name)).icon(icon, Shack.TEXT2).font(Shack.tracked(Shack.bold(11f), 0.04f));
         k.setPreferredSize(new Dimension(k.getPreferredSize().width - 4, 40));
         k.addActionListener(e -> selectTab(name));
         tabs.put(name, k);
@@ -563,23 +608,23 @@ public final class App implements Radio.Listener, Decoders.Listener {
             }
         };
         layers.add(map, JLayeredPane.DEFAULT_LAYER);
-        Shack.Key plus = smallKey("+", "Zoom avant");
+        Shack.Key plus = smallKey("+", Tr.t("Zoom avant"));
         plus.addActionListener(e -> map.zoomIn());
-        Shack.Key minus = smallKey("−", "Zoom arrière");
+        Shack.Key minus = smallKey("−", Tr.t("Zoom arrière"));
         minus.addActionListener(e -> map.zoomOut());
-        Shack.Key fit = smallKey("", "Cadrer toutes les positions").icon(Shack.TARGET, Shack.TEXT2);
+        Shack.Key fit = smallKey("", Tr.t("Cadrer toutes les positions")).icon(Shack.TARGET, Shack.TEXT2);
         fit.addActionListener(e -> map.fitAll());
-        Shack.Key night = smallKey("NUIT", "Carte en couleurs inversées (mode nuit)");
+        Shack.Key night = smallKey(Tr.t("NUIT"), Tr.t("Carte en couleurs inversées (mode nuit)"));
         night.setPreferredSize(new Dimension(70, 42));
         night.setSelected(map.isNight());
         night.addActionListener(e -> { map.setNight(!map.isNight()); night.setSelected(map.isNight()); });
-        Shack.Key topo = smallKey("TOPO", "Fond OpenTopoMap (relief)");
+        Shack.Key topo = smallKey("TOPO", Tr.t("Fond OpenTopoMap (relief)"));
         topo.setPreferredSize(new Dimension(70, 42));
         topo.setSelected(map.isTopo());
         topo.addActionListener(e -> { map.setTopo(!map.isTopo()); topo.setSelected(map.isTopo()); });
         WindLayer wind = new WindLayer(map, this::log);
         map.setUnderlay(wind);
-        Shack.Key windKey = smallKey("VENT", "Vent animé (Open-Meteo, 10 m)");
+        Shack.Key windKey = smallKey(Tr.t("VENT"), Tr.t("Vent animé (Open-Meteo, 10 m)"));
         windKey.setPreferredSize(new Dimension(70, 42));
         windKey.addActionListener(e -> {
             wind.setOn(!wind.isOn());
@@ -643,32 +688,73 @@ public final class App implements Radio.Listener, Decoders.Listener {
 
     private JPopupMenu settingsMenu() {
         JPopupMenu m = new JPopupMenu();
-        m.add(item("Décoder un WAV SARSAT…", () -> decodeWav(Decoders.MODE_SARSAT)));
-        m.add(item("Décoder un WAV radiosonde…", () -> decodeWav(Decoders.MODE_SONDE)));
-        m.add(item("Décoder un WAV APRS…", () -> decodeWav(-1)));
-        m.add(item("Décoder un WAV POCSAG…", () -> decodeWav(-2)));
+        m.add(item(Tr.t("Décoder un WAV SARSAT…"), () -> decodeWav(Decoders.MODE_SARSAT)));
+        m.add(item(Tr.t("Décoder un WAV radiosonde…"), () -> decodeWav(Decoders.MODE_SONDE)));
+        m.add(item(Tr.t("Décoder un WAV APRS…"), () -> decodeWav(-1)));
+        m.add(item(Tr.t("Décoder un WAV POCSAG…"), () -> decodeWav(-2)));
         m.addSeparator();
-        m.add(item("Ouvrir le dossier des résultats", () -> {
+        m.add(item(Tr.t("Ouvrir le dossier des résultats"), () -> {
             try {
                 outDir.mkdirs();
                 Desktop.getDesktop().open(outDir);
             } catch (Exception ex) {
-                log("Ouverture du dossier impossible : " + ex.getMessage());
+                log(Tr.t("Ouverture du dossier impossible : ") + ex.getMessage());
             }
         }));
-        m.add(item("Effacer la carte et les tableaux", () -> {
+        m.add(item(Tr.t("Effacer la carte et les tableaux"), () -> {
             map.clear();
             aprsModel.clear();
             detections.clear();
             refreshCounters();
         }));
-        JCheckBoxMenuItem tnc = new JCheckBoxMenuItem("APRS : démodulateur logiciel en plus du TNC", prefs.getBoolean("swAprs", true));
+        JCheckBoxMenuItem tnc = new JCheckBoxMenuItem(Tr.t("APRS : démodulateur logiciel en plus du TNC"), prefs.getBoolean("swAprs", true));
         tnc.addActionListener(e -> prefs.putBoolean("swAprs", tnc.isSelected()));
         m.add(tnc);
         m.addSeparator();
-        m.add(item("Mode d'emploi", this::help));
-        m.add(item("Quitter", this::quit));
+        m.add(item(Tr.t("Mode d'emploi"), this::help));
+        m.add(item(Tr.t("Quitter"), this::quit));
         return m;
+    }
+
+    private JPopupMenu languageMenu() {
+        JPopupMenu m = new JPopupMenu();
+        for (String[] l : Tr.LANGS) {
+            JMenuItem i = item(l[1], () -> changeLanguage(l[0]));
+            i.setIcon(Flags.menuIcon(l[0]));
+            if (l[0].equals(Tr.lang())) i.setForeground(Shack.AMBER);
+            m.add(i);
+        }
+        return m;
+    }
+
+    private void changeLanguage(String code) {
+        if (code.equals(Tr.lang())) return;
+        if (Updater.installedExe() != null && JOptionPane.showConfirmDialog(frame, Tr.t("HTMod va redémarrer pour appliquer la langue (la liaison avec le poste sera rouverte).\nContinuer ?"),
+                "HTMod", JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE) != JOptionPane.OK_OPTION) return;
+        String msg = applyLanguage(code);
+        if (msg != null) JOptionPane.showMessageDialog(frame, msg, "HTMod", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    /** Enregistre la langue et relance HTMod (la table des textes est lue au demarrage) ; renvoie un message, ou null si la relance est lancee. */
+    private String applyLanguage(String code) {
+        if (!Tr.known(code)) return Tr.t("Langue inconnue.");
+        if (code.equals(Tr.lang())) return null;
+        if (transmitter != null && transmitter.isBusy()) return Tr.t("Une émission est en cours : réessayez une fois terminée.");
+        Tr.save(code);
+        File exe = Updater.installedExe();
+        if (exe == null) return Tr.t("La langue sera appliquée au prochain démarrage de HTMod.");
+        prefs.putBoolean("reconnect", connMode == 0 && (radio.isRunning() || reconnectTimer != null));
+        log(Tr.t("HTMod redémarre…"));
+        new Thread(() -> {
+            try {
+                Updater.relaunch(exe);
+                SwingUtilities.invokeLater(this::quit);
+            } catch (Exception ex) {
+                log(Tr.t("Redémarrage impossible : relancez HTMod pour appliquer la langue."));
+                prefs.remove("reconnect");
+            }
+        }, "htmod-relance").start();
+        return null;
     }
 
     private static JMenuItem item(String text, Runnable r) {
@@ -681,7 +767,7 @@ public final class App implements Radio.Listener, Decoders.Listener {
     private JPopupMenu devicesMenu() {
         JPopupMenu m = new JPopupMenu();
         if (devices.isEmpty()) {
-            JMenuItem none = new JMenuItem("Aucun appareil appairé dans Windows");
+            JMenuItem none = new JMenuItem(Tr.t("Aucun appareil appairé dans Windows"));
             none.setEnabled(false);
             m.add(none);
         }
@@ -691,8 +777,8 @@ public final class App implements Radio.Listener, Decoders.Listener {
             m.add(i);
         }
         m.addSeparator();
-        m.add(item("Actualiser la liste", () -> refreshDevices(true)));
-        m.add(item("Ouvrir les paramètres Bluetooth de Windows", () -> {
+        m.add(item(Tr.t("Actualiser la liste"), () -> refreshDevices(true)));
+        m.add(item(Tr.t("Ouvrir les paramètres Bluetooth de Windows"), () -> {
             try { Desktop.getDesktop().browse(new URI("ms-settings:bluetooth")); } catch (Exception ignore) {}
         }));
         return m;
@@ -700,19 +786,19 @@ public final class App implements Radio.Listener, Decoders.Listener {
 
     private void help() {
         JOptionPane.showMessageDialog(frame,
-                "1. Appairez le poste dans Paramètres Windows > Bluetooth (une seule fois).\n"
-                        + "2. Coupez le Bluetooth du téléphone : le poste n'accepte qu'une connexion.\n"
-                        + "3. Choisissez le poste (Poste ›) et cliquez sur SE CONNECTER.\n"
-                        + "   RT-660 : commandes en BLE et audio en Bluetooth classique, comme Radtel Tools.\n"
-                        + "4. SARSAT / radiosondes : canal nommé SARSAT ou Radiosonde, ou mode forcé.\n"
-                        + "   APRS : toujours actif (TNC du poste + démodulateur logiciel).\n"
-                        + "5. BANDSCOPE : le poste balaie ±100 kHz à ±1 MHz autour du canal (S-mètre à chaque pas,\n"
-                        + "   rien n'est écrit en mémoire). Double-clic pour écouter une fréquence. Pendant le\n"
-                        + "   balayage, le poste n'écoute plus le canal : SARSAT et sondes sont en pause.\n"
-                        + "6. POCSAG : décodage permanent ; émission (radioamateurs, bandes 2 m / 70 cm) depuis l'onglet.\n"
-                        + "7. VFO : double veille (écoute des 2 VFO) et accord sur une fréquence libre.\n\n"
-                        + "Carte : glisser pour déplacer, molette pour zoomer, clic sur une épingle.\n"
-                        + "Résultats (CSV, WAV, journal APRS, tuiles) : " + outDir.getAbsolutePath(),
+                Tr.t("1. Appairez le poste dans Paramètres Windows > Bluetooth (une seule fois).\n")
+                        + Tr.t("2. Coupez le Bluetooth du téléphone : le poste n'accepte qu'une connexion.\n")
+                        + Tr.t("3. Choisissez le poste (Poste ›) et cliquez sur SE CONNECTER.\n")
+                        + Tr.t("   RT-660 : commandes en BLE et audio en Bluetooth classique, comme Radtel Tools.\n")
+                        + Tr.t("4. SARSAT / radiosondes : canal nommé SARSAT ou Radiosonde, ou mode forcé.\n")
+                        + Tr.t("   APRS : toujours actif (TNC du poste + démodulateur logiciel).\n")
+                        + Tr.t("5. BANDSCOPE : le poste balaie ±100 kHz à ±1 MHz autour du canal (S-mètre à chaque pas,\n")
+                        + Tr.t("   rien n'est écrit en mémoire). Double-clic pour écouter une fréquence. Pendant le\n")
+                        + Tr.t("   balayage, le poste n'écoute plus le canal : SARSAT et sondes sont en pause.\n")
+                        + Tr.t("6. POCSAG : décodage permanent ; émission (radioamateurs, bandes 2 m / 70 cm) depuis l'onglet.\n")
+                        + Tr.t("7. VFO : double veille (écoute des 2 VFO) et accord sur une fréquence libre.\n\n")
+                        + Tr.t("Carte : glisser pour déplacer, molette pour zoomer, clic sur une épingle.\n")
+                        + Tr.t("Résultats (CSV, WAV, journal APRS, tuiles) : ") + outDir.getAbsolutePath(),
                 "HTMod " + VERSION, JOptionPane.INFORMATION_MESSAGE);
     }
 
@@ -730,21 +816,21 @@ public final class App implements Radio.Listener, Decoders.Listener {
         sarsatKey.setSelected(f == Decoders.MODE_SARSAT);
         sondeKey.setSelected(f == Decoders.MODE_SONDE);
         int m = decoders.effectiveMode(channelName);
-        if (sweeping) modeChip.set("BALAYAGE BANDSCOPE · DÉCODAGES EN PAUSE", Shack.AMBER, Shack.TEXT);
-        else if (m == Decoders.MODE_NONE) modeChip.set("APRS SEUL · SARSAT/SONDES EN ATTENTE", Shack.CYAN, Shack.TEXT2);
-        else if (m == Decoders.MODE_SARSAT) modeChip.set("DÉCODAGE SARSAT" + (f != 0 ? " (FORCÉ)" : ""), Shack.RED, Shack.TEXT);
-        else modeChip.set("DÉCODAGE RADIOSONDE" + (f != 0 ? " (FORCÉ)" : ""), Shack.GREEN, Shack.TEXT);
+        if (sweeping) modeChip.set(Tr.t("BALAYAGE BANDSCOPE · DÉCODAGES EN PAUSE"), Shack.AMBER, Shack.TEXT);
+        else if (m == Decoders.MODE_NONE) modeChip.set(Tr.t("APRS SEUL · SARSAT/SONDES EN ATTENTE"), Shack.CYAN, Shack.TEXT2);
+        else if (m == Decoders.MODE_SARSAT) modeChip.set(Tr.t("DÉCODAGE SARSAT") + (f != 0 ? Tr.t(" (FORCÉ)") : ""), Shack.RED, Shack.TEXT);
+        else modeChip.set(Tr.t("DÉCODAGE RADIOSONDE") + (f != 0 ? Tr.t(" (FORCÉ)") : ""), Shack.GREEN, Shack.TEXT);
     }
 
     private void updateLink(boolean on, String text) {
         linkChip.set(text, on ? Shack.CYAN : Shack.MUTED, on ? Shack.TEXT2 : Shack.MUTED);
-        connectKey.setText(on || reconnectTimer != null || radio.isRunning() ? "DÉCONNECTER" : "SE CONNECTER");
+        connectKey.setText(on || reconnectTimer != null || radio.isRunning() ? Tr.t("DÉCONNECTER") : Tr.t("SE CONNECTER"));
     }
 
     private void selectDevice(Radio.Device d) {
         device = d;
         prefs.put("mac", d.mac);
-        modelLbl.setText(d.name);
+        if (connMode != 1) modelLbl.setText(d.name);
         deviceLbl.setText(d.mac + "  ›");
     }
 
@@ -761,11 +847,15 @@ public final class App implements Radio.Listener, Decoders.Listener {
                         else if (sel == null && looksLikeRadio(d.name)) sel = d;
                     }
                     if (sel != null) selectDevice(sel);
-                    if (list.isEmpty()) log("Aucun appareil Bluetooth appairé : appairez le poste dans les paramètres Windows.");
-                    else if (verbose) log(list.size() + " appareil(s) Bluetooth appairé(s)");
+                    if (prefs.getBoolean("reconnect", false)) { // relance pour changer de langue : on rouvre la liaison
+                        prefs.remove("reconnect");
+                        if (connMode == 0 && device != null && !radio.isRunning()) toggleConnect();
+                    }
+                    if (list.isEmpty()) log(Tr.t("Aucun appareil Bluetooth appairé : appairez le poste dans les paramètres Windows."));
+                    else if (verbose) log(list.size() + Tr.t(" appareil(s) Bluetooth appairé(s)"));
                 });
             } catch (Exception e) {
-                log("Liste Bluetooth impossible : " + e.getMessage());
+                log(Tr.t("Liste Bluetooth impossible : ") + e.getMessage());
             }
         }, "htmod-list").start();
     }
@@ -776,13 +866,47 @@ public final class App implements Radio.Listener, Decoders.Listener {
                 || s.contains("DB50");
     }
 
+    /** Liaison choisie dans la carte RADIO : 0 = poste en Bluetooth, 1 = TNC KISS sur port COM. */
+    private void setConnMode(int m) {
+        if (m == connMode) return;
+        // on ferme la liaison de l'autre mode
+        if (m == 1 && (radio.isRunning() || reconnectTimer != null)) toggleConnect();
+        if (m == 0 && kiss.isActive()) { kiss.disconnect(); prefs.putBoolean("kissOn", false); }
+        connMode = m;
+        prefs.putInt("connMode", m);
+        for (int i = 0; i < connModeKeys.length; i++) connModeKeys[i].setSelected(i == m);
+        deviceLbl.setVisible(m == 0);
+        kiss.setVisible(m == 1);
+        if (m == 1) {
+            modelLbl.setText("TNC KISS");
+            kiss.refreshPorts();
+            statusLbl.setText(Tr.t("Déconnecté"));
+            linkChip.set(Tr.t("HORS LIGNE"), Shack.MUTED, Shack.MUTED);
+            connectKey.setText(Tr.t("SE CONNECTER"));
+        } else {
+            modelLbl.setText(device != null ? device.name : Tr.t("Aucun poste"));
+            onStatus(Tr.t("Déconnecté"));
+            updateLink(false, Tr.t("HORS LIGNE"));
+        }
+        modelLbl.getParent().revalidate();
+        kiss.getParent().revalidate();
+        kiss.getParent().repaint();
+    }
+
     private void toggleConnect() {
+        if (connMode == 1) {
+            if (kiss.isActive()) { kiss.disconnect(); prefs.putBoolean("kissOn", false); return; }
+            String err = kiss.connect();
+            if (err != null) JOptionPane.showMessageDialog(frame, err, "TNC KISS", JOptionPane.WARNING_MESSAGE);
+            else { prefs.putBoolean("kissOn", true); connectKey.setText(Tr.t("DÉCONNECTER")); }
+            return;
+        }
         if (radio.isRunning() || reconnectTimer != null) {
             userDisconnect = true;
             stopReconnect();
             radio.disconnect();
-            onStatus("Déconnecté");
-            updateLink(false, "HORS LIGNE");
+            onStatus(Tr.t("Déconnecté"));
+            updateLink(false, Tr.t("HORS LIGNE"));
             return;
         }
         if (device == null) {
@@ -796,9 +920,9 @@ public final class App implements Radio.Listener, Decoders.Listener {
     private void doConnect(String mac) {
         try {
             radio.connect(mac);
-            updateLink(false, "CONNEXION…");
+            updateLink(false, Tr.t("CONNEXION…"));
         } catch (Exception e) {
-            log("Connexion impossible : " + e.getMessage());
+            log(Tr.t("Connexion impossible : ") + e.getMessage());
         }
     }
 
@@ -807,7 +931,7 @@ public final class App implements Radio.Listener, Decoders.Listener {
     }
 
     private void decodeWav(int mode) {
-        FileDialog fd = new FileDialog(frame, "Choisir un fichier WAV", FileDialog.LOAD);
+        FileDialog fd = new FileDialog(frame, Tr.t("Choisir un fichier WAV"), FileDialog.LOAD);
         fd.setDirectory(prefs.get("wavDir", outDir.getAbsolutePath()));
         fd.setFile("*.wav");
         fd.setVisible(true);
@@ -822,7 +946,7 @@ public final class App implements Radio.Listener, Decoders.Listener {
     private String decodeWavFile(File f, int mode) {
         try {
             Wav w = Wav.read(f);
-            log("Fichier " + f.getName() + " : " + w.pcm.length + " échantillons à " + w.rate + " Hz, décodage "
+            log(Tr.t("Fichier ") + f.getName() + " : " + w.pcm.length + Tr.t(" échantillons à ") + w.rate + Tr.t(" Hz, décodage ")
                     + (mode == -2 ? "POCSAG" : mode < 0 ? "APRS" : Decoders.modeName(mode)) + "…");
             if (w.rate == Decoders.SAMPLE_RATE) waterfall.feed(w.pcm, 0, Math.min(w.pcm.length, Decoders.SAMPLE_RATE * 8));
             if (mode == -2) {
@@ -832,14 +956,14 @@ public final class App implements Radio.Listener, Decoders.Listener {
                     int[] n = {0};
                     Afsk1200 dec = new Afsk1200(w.rate, fr -> { n[0]++; onAx25(fr, "fichier"); });
                     dec.process(w.pcm, 0, w.pcm.length);
-                    log("Fichier : " + n[0] + " trame(s) AX.25");
+                    log(Tr.t("Fichier : ") + n[0] + Tr.t(" trame(s) AX.25"));
                 }, "htmod-aprs-file").start();
             } else {
                 decoders.decodeFile(mode, w.pcm, w.rate);
             }
             return null;
         } catch (Exception e) {
-            return "Lecture impossible : " + e.getMessage();
+            return Tr.t("Lecture impossible : ") + e.getMessage();
         }
     }
 
@@ -847,7 +971,7 @@ public final class App implements Radio.Listener, Decoders.Listener {
 
     private final Updater updater = new Updater();
     private final JLabel updateLbl = new JLabel();
-    private final Shack.Key updateKey = new Shack.Key("RECHERCHER UNE MISE À JOUR").font(Shack.bold(11.5f));
+    private final Shack.Key updateKey = new Shack.Key(Tr.t("RECHERCHER UNE MISE À JOUR")).font(Shack.bold(11.5f));
     private volatile Updater.Release availableUpdate;
     private volatile String updateStatus = "";
     private volatile boolean updateBusy, updateOffered;
@@ -862,29 +986,29 @@ public final class App implements Radio.Listener, Decoders.Listener {
     private void checkUpdate(boolean manual) {
         if (updateBusy) return;
         updateBusy = true;
-        if (manual) setUpdateStatus("Recherche d'une mise à jour…", Shack.MUTED);
+        if (manual) setUpdateStatus(Tr.t("Recherche d'une mise à jour…"), Shack.MUTED);
         new Thread(() -> {
             try {
                 Updater.Release r = updater.latest();
                 SwingUtilities.invokeLater(() -> {
                     if (Updater.newer(r)) {
                         availableUpdate = r;
-                        setUpdateStatus("Version " + r.version + " disponible (installée : " + VERSION + ")", Shack.AMBER);
-                        updateKey.setText("INSTALLER LA VERSION " + r.version);
-                        log("Mise à jour : version " + r.version + " disponible");
+                        setUpdateStatus(Tr.t("Version ") + r.version + Tr.t(" disponible (installée : ") + VERSION + ")", Shack.AMBER);
+                        updateKey.setText(Tr.t("INSTALLER LA VERSION ") + r.version);
+                        log(Tr.t("Mise à jour : version ") + r.version + Tr.t(" disponible"));
                         if (manual || !updateOffered) { updateOffered = true; offerUpdate(r); }
                     } else {
-                        setUpdateStatus("Version " + VERSION + " · à jour", Shack.GREEN);
-                        if (manual) JOptionPane.showMessageDialog(frame, "HTMod " + VERSION + " est la dernière version.", "Mise à jour",
+                        setUpdateStatus(Tr.t("Version ") + VERSION + Tr.t(" · à jour"), Shack.GREEN);
+                        if (manual) JOptionPane.showMessageDialog(frame, "HTMod " + VERSION + Tr.t(" est la dernière version."), Tr.t("Mise à jour"),
                                 JOptionPane.INFORMATION_MESSAGE);
                     }
                 });
             } catch (Exception e) {
                 String m = e.getMessage() == null ? e.toString() : e.getMessage();
-                log("Mise à jour : vérification impossible (" + m + ")");
+                log(Tr.t("Mise à jour : vérification impossible (") + m + ")");
                 SwingUtilities.invokeLater(() -> {
-                    setUpdateStatus("Version " + VERSION + " · vérification impossible", Shack.MUTED);
-                    if (manual) JOptionPane.showMessageDialog(frame, "Vérification impossible : " + m, "Mise à jour", JOptionPane.WARNING_MESSAGE);
+                    setUpdateStatus(Tr.t("Version ") + VERSION + Tr.t(" · vérification impossible"), Shack.MUTED);
+                    if (manual) JOptionPane.showMessageDialog(frame, Tr.t("Vérification impossible : ") + m, Tr.t("Mise à jour"), JOptionPane.WARNING_MESSAGE);
                 });
             } finally {
                 updateBusy = false;
@@ -893,7 +1017,7 @@ public final class App implements Radio.Listener, Decoders.Listener {
     }
 
     private void offerUpdate(Updater.Release r) {
-        JTextArea notes = new JTextArea(r.notes.isEmpty() ? "(pas de notes de version)" : r.notes, 12, 52);
+        JTextArea notes = new JTextArea(r.notes.isEmpty() ? Tr.t("(pas de notes de version)") : r.notes, 12, 52);
         notes.setEditable(false);
         notes.setLineWrap(true);
         notes.setWrapStyleWord(true);
@@ -901,10 +1025,10 @@ public final class App implements Radio.Listener, Decoders.Listener {
         notes.setBorder(new EmptyBorder(8, 10, 8, 10));
         JPanel p = new JPanel(new BorderLayout(0, 10));
         p.setOpaque(false);
-        p.add(Shack.label("HTMod " + r.version + " est disponible (installée : " + VERSION + ").", Shack.body(13.5f), Shack.TEXT), BorderLayout.NORTH);
+        p.add(Shack.label("HTMod " + r.version + Tr.t(" est disponible (installée : ") + VERSION + ").", Shack.body(13.5f), Shack.TEXT), BorderLayout.NORTH);
         p.add(Shack.scroll(notes), BorderLayout.CENTER);
-        String[] opts = {"METTRE À JOUR", "PLUS TARD"};
-        int c = JOptionPane.showOptionDialog(frame, p, "Mise à jour de HTMod", JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE,
+        String[] opts = {Tr.t("METTRE À JOUR"), Tr.t("PLUS TARD")};
+        int c = JOptionPane.showOptionDialog(frame, p, Tr.t("Mise à jour de HTMod"), JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE,
                 null, opts, opts[0]);
         if (c == 0) installUpdate(r);
     }
@@ -913,18 +1037,18 @@ public final class App implements Radio.Listener, Decoders.Listener {
         File exe = Updater.installedExe();
         if (exe == null) { // lance depuis les sources : pas d'installation a remplacer
             try { Desktop.getDesktop().browse(URI.create(r.page)); } catch (Exception ignore) {}
-            JOptionPane.showMessageDialog(frame, "HTMod n'est pas lancé depuis une installation : téléchargez la version " + r.version
-                    + " sur\n" + r.page, "Mise à jour", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(frame, Tr.t("HTMod n'est pas lancé depuis une installation : téléchargez la version ") + r.version
+                    + Tr.t(" sur\n") + r.page, Tr.t("Mise à jour"), JOptionPane.INFORMATION_MESSAGE);
             return;
         }
         if (transmitter != null && transmitter.isBusy()) {
-            JOptionPane.showMessageDialog(frame, "Une émission est en cours : réessayez une fois terminée.", "Mise à jour", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(frame, Tr.t("Une émission est en cours : réessayez une fois terminée."), Tr.t("Mise à jour"), JOptionPane.WARNING_MESSAGE);
             return;
         }
-        JDialog d = new JDialog(frame, "Mise à jour de HTMod", false);
+        JDialog d = new JDialog(frame, Tr.t("Mise à jour de HTMod"), false);
         JProgressBar bar = new JProgressBar(0, 100);
         bar.setStringPainted(true);
-        bar.setString("Téléchargement de la version " + r.version + "…");
+        bar.setString(Tr.t("Téléchargement de la version ") + r.version + "…");
         bar.setForeground(Shack.AMBER);
         bar.setBackground(Shack.WELL);
         JPanel p = new JPanel(new BorderLayout());
@@ -937,25 +1061,26 @@ public final class App implements Radio.Listener, Decoders.Listener {
         d.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
         d.setVisible(true);
         updateKey.setEnabled(false);
-        log("Mise à jour : téléchargement de la version " + r.version);
+        log(Tr.t("Mise à jour : téléchargement de la version ") + r.version);
         new Thread(() -> {
             try {
                 File setup = updater.download(r, pct -> SwingUtilities.invokeLater(() -> {
                     bar.setValue(pct);
-                    bar.setString("Téléchargement de la version " + r.version + " : " + pct + " %");
+                    bar.setString(Tr.t("Téléchargement de la version ") + r.version + " : " + pct + " %");
                 }));
-                log("Mise à jour : installateur vérifié (SHA-256), installation puis redémarrage de HTMod");
-                SwingUtilities.invokeLater(() -> bar.setString("Installation… HTMod va redémarrer"));
+                log(Tr.t("Mise à jour : installateur vérifié (SHA-256), installation puis redémarrage de HTMod"));
+                SwingUtilities.invokeLater(() -> bar.setString(Tr.t("Installation… HTMod va redémarrer")));
                 Updater.install(setup, exe);
+                log(Tr.t("Mise à jour : installateur lancé (journal : ") + new File(setup.getParentFile(), "installation.log") + ")");
                 Thread.sleep(800);
                 SwingUtilities.invokeLater(this::quit);
             } catch (Exception e) {
                 String m = e.getMessage() == null ? e.toString() : e.getMessage();
-                log("Mise à jour impossible : " + m);
+                log(Tr.t("Mise à jour impossible : ") + m);
                 SwingUtilities.invokeLater(() -> {
                     d.dispose();
                     updateKey.setEnabled(true);
-                    JOptionPane.showMessageDialog(frame, "Mise à jour impossible : " + m, "Mise à jour", JOptionPane.WARNING_MESSAGE);
+                    JOptionPane.showMessageDialog(frame, Tr.t("Mise à jour impossible : ") + m, Tr.t("Mise à jour"), JOptionPane.WARNING_MESSAGE);
                 });
             }
         }, "htmod-maj-installation").start();
@@ -968,6 +1093,7 @@ public final class App implements Radio.Listener, Decoders.Listener {
             try { Thread.sleep(300); } catch (InterruptedException ignore) {}
         }
         radio.disconnect();
+        if (kiss != null) kiss.tnc().disconnect();
         if (tray != null) SystemTray.getSystemTray().remove(tray);
         System.exit(0);
     }
@@ -998,7 +1124,7 @@ public final class App implements Radio.Listener, Decoders.Listener {
         Aprs.Report r = Aprs.parse(p);
         logAprs(origin, r.tnc2);
         showReport(r, origin, now);
-        if (r.message != null && !"Accusé".equals(r.type) && tray != null) {
+        if (r.message != null && !Tr.t("Accusé").equals(r.type) && tray != null) {
             String title = "APRS " + r.source + " → " + r.addressee;
             SwingUtilities.invokeLater(() -> tray.displayMessage(title, r.message, TrayIcon.MessageType.INFO));
         }
@@ -1038,9 +1164,9 @@ public final class App implements Radio.Listener, Decoders.Listener {
                     ok.add(new Object[]{r, origin, t});
                 }
                 for (Object[] o : ok) showReport((Aprs.Report) o[0], (String) o[1], (Long) o[2]);
-                if (!ok.isEmpty()) log("APRS : " + ok.size() + " trame(s) des dernières 24 h rechargée(s) depuis aprs.txt");
+                if (!ok.isEmpty()) log("APRS : " + ok.size() + Tr.t(" trame(s) des dernières 24 h rechargée(s) depuis aprs.txt"));
             } catch (Exception e) {
-                log("APRS : relecture de aprs.txt impossible (" + e.getMessage() + ")");
+                log(Tr.t("APRS : relecture de aprs.txt impossible (") + e.getMessage() + ")");
             }
         }, "htmod-aprs-restauration").start();
     }
@@ -1061,14 +1187,14 @@ public final class App implements Radio.Listener, Decoders.Listener {
         SwingUtilities.invokeLater(() -> {
             aprsModel.add(row);
             if (r.hasPos && !r.killed) {
-                String sub = r.symbolName() + (row.via.isEmpty() ? "" : " · par " + row.via) + " · " + r.type;
+                String sub = r.symbolName() + (row.via.isEmpty() ? "" : Tr.t(" · par ") + row.via) + " · " + r.type;
                 StringBuilder det = new StringBuilder(Aprs.fmtPos(r.lat, r.lon));
                 String s = r.summary();
                 if (!s.isEmpty()) det.append("\n").append(s);
                 det.append("\n").append(r.tnc2);
                 map.put(row.mapKey, MapPanel.KIND_APRS, r.name, sub, det.toString(), r.lat, r.lon, r.symTable, r.symCode, now);
             }
-            aprsHeader.setText(aprsModel.getRowCount() + " paquet(s) · " + map.count(MapPanel.KIND_APRS) + " station(s) sur la carte");
+            aprsHeader.setText(aprsModel.getRowCount() + Tr.t(" paquet(s) · ") + map.count(MapPanel.KIND_APRS) + Tr.t(" station(s) sur la carte"));
             refreshCounters();
         });
     }
@@ -1086,7 +1212,7 @@ public final class App implements Radio.Listener, Decoders.Listener {
         try (Writer w = new OutputStreamWriter(new FileOutputStream(new File(outDir, "aprs.txt"), true), StandardCharsets.UTF_8)) {
             w.write(utcFmt.format(new Date()) + " [" + origin + "] " + tnc2 + "\r\n");
         } catch (IOException e) {
-            log("Journal APRS : " + e.getMessage());
+            log(Tr.t("Journal APRS : ") + e.getMessage());
         }
     }
 
@@ -1110,15 +1236,7 @@ public final class App implements Radio.Listener, Decoders.Listener {
         }
     }
 
-    static Image icon(int size) {
-        BufferedImage img = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g = Shack.smooth(img.getGraphics());
-        g.setColor(Shack.BG);
-        g.fillRoundRect(0, 0, size, size, size / 3, size / 3);
-        Shack.GLOBE.paint(g, Math.round(size * 0.14f), Math.round(size * 0.14f), Math.round(size * 0.72f), Shack.AMBER);
-        g.dispose();
-        return img;
-    }
+    static Image icon(int size) { return Logo.image(size); }
 
     private static String mapKey(Decoders.Detection d) {
         if ("SARSAT".equals(d.kind)) return "S:" + d.id;
@@ -1131,7 +1249,7 @@ public final class App implements Radio.Listener, Decoders.Listener {
         try {
             Desktop.getDesktop().browse(new URI(url));
         } catch (Exception e) {
-            log("Ouverture de la carte impossible : " + e.getMessage());
+            log(Tr.t("Ouverture de la carte impossible : ") + e.getMessage());
         }
     }
 
@@ -1141,9 +1259,9 @@ public final class App implements Radio.Listener, Decoders.Listener {
     public void onStatus(String text) {
         SwingUtilities.invokeLater(() -> {
             statusLbl.setText(text);
-            if (text.startsWith("Connecté") || text.startsWith("Commandes ouvertes")) {
+            if (text.startsWith(Tr.t("Connecté")) || text.startsWith(Tr.t("Commandes ouvertes"))) {
                 stopReconnect();
-                updateLink(true, "CONNECTÉ");
+                updateLink(true, Tr.t("CONNECTÉ"));
             }
         });
     }
@@ -1220,7 +1338,7 @@ public final class App implements Radio.Listener, Decoders.Listener {
             channelName = "";
             updateMode();
             if (!userDisconnect && reconnectTimer == null) {
-                log("Liaison perdue, nouvel essai toutes les 15 s (DÉCONNECTER pour arrêter).");
+                log(Tr.t("Liaison perdue, nouvel essai toutes les 15 s (DÉCONNECTER pour arrêter)."));
                 reconnectTimer = new Timer(15000, e -> {
                     if (radio.isRunning() || userDisconnect) return;
                     String mac = prefs.get("mac", "");
@@ -1228,7 +1346,7 @@ public final class App implements Radio.Listener, Decoders.Listener {
                 });
                 reconnectTimer.start();
             }
-            updateLink(false, reconnectTimer != null ? "NOUVEL ESSAI…" : "HORS LIGNE");
+            updateLink(false, reconnectTimer != null ? Tr.t("NOUVEL ESSAI…") : Tr.t("HORS LIGNE"));
         });
         closeSpeaker();
     }
@@ -1284,7 +1402,7 @@ public final class App implements Radio.Listener, Decoders.Listener {
             if (speaker.available() >= b.length) speaker.write(b, 0, b.length); // en retard : on saute
             lastPlayMs = System.currentTimeMillis();
         } catch (Exception e) {
-            log("Sortie audio impossible : " + e.getMessage());
+            log(Tr.t("Sortie audio impossible : ") + e.getMessage());
             SwingUtilities.invokeLater(() -> listenSw.setOn(false));
             prefs.putBoolean("listen", false);
         }
@@ -1305,11 +1423,12 @@ public final class App implements Radio.Listener, Decoders.Listener {
                     "mac", device == null ? "" : device.mac, "link", linkChip.text(), "linkDot", linkChip.dot(), "linkFg", linkChip.fg(),
                     "connectKey", connectKey.getText(), "status", statusLbl.getText(), "channel", channelLbl.getText(),
                     "channelColor", channelLbl.getForeground(), "mode", modeChip.text(), "modeDot", modeChip.dot(), "modeFg", modeChip.fg(),
-                    "forced", decoders.forcedMode, "running", radio.isRunning()));
+                    "forced", decoders.forcedMode, "running", radio.isRunning(),
+                    "connMode", connMode, "kissPort", kiss.port().isEmpty() ? "" : kiss.port() + " · " + kiss.baud() + Tr.t(" bauds")));
             s.put("options", Json.obj("listen", listenSw.isOn(), "muteAprs", muteAprsSw.isOn(), "wav", wavSw.isOn(), "web", webSw.isOn(),
                     "swAprs", prefs.getBoolean("swAprs", true), "night", map.webNight(), "topo", map.webTopo(),
                     "wind", prefs.getBoolean("mapWind", false), "outDir", outDir.getAbsolutePath(), "version", VERSION,
-                    "update", updateStatus, "updateColor", updateLbl.getForeground()));
+                    "lang", Tr.lang(), "update", updateStatus, "updateColor", updateLbl.getForeground()));
             s.put("counters", new int[]{map.count(MapPanel.KIND_APRS), map.count(MapPanel.KIND_SONDE), map.count(MapPanel.KIND_SARSAT)});
             float[] sp;
             synchronized (spectrum.v) { sp = spectrum.v.clone(); }
@@ -1353,18 +1472,31 @@ public final class App implements Radio.Listener, Decoders.Listener {
                     case "sstv": return sstv.webCmd(act, p);
                     case "vfo": return vfo.webCmd(act, p);
                     case "sats": return sats.webCmd(act, p);
-                    default: return "Commande inconnue : " + a;
+                    default: return Tr.t("Commande inconnue : ") + a;
                 }
             }
             switch (a) {
                 case "connect":
-                    if (!radio.isRunning() && reconnectTimer == null && device == null) return "Choisissez d'abord le poste (liste des appareils).";
+                    if (connMode == 1) {
+                        if (kiss.isActive()) { kiss.disconnect(); prefs.putBoolean("kissOn", false); return null; }
+                        String err = kiss.connect();
+                        if (err == null) prefs.putBoolean("kissOn", true);
+                        return err;
+                    }
+                    if (!radio.isRunning() && reconnectTimer == null && device == null) return Tr.t("Choisissez d'abord le poste (liste des appareils).");
                     toggleConnect();
                     return null;
                 case "device":
                     for (Radio.Device d : devices) if (d.mac.equals(p.get("mac"))) selectDevice(d);
                     return null;
                 case "devices": refreshDevices(true); return null;
+                case "connMode": {
+                    int m = "1".equals(p.get("v")) ? 1 : 0;
+                    if (m == 1 && kiss.port().isEmpty()) return Tr.t("Choisissez d'abord le port COM sur le PC.");
+                    setConnMode(m);
+                    return null;
+                }
+                case "language": return applyLanguage(p.getOrDefault("v", ""));
                 case "updateCheck": checkUpdate(false); return null; // l'installation se fait sur le PC
                 case "forced": setForced(Integer.parseInt(p.get("v"))); return null;
                 case "option": {
@@ -1384,9 +1516,9 @@ public final class App implements Radio.Listener, Decoders.Listener {
                     aprsModel.clear();
                     detections.clear();
                     refreshCounters();
-                    aprsHeader.setText("0 paquet");
+                    aprsHeader.setText(Tr.t("0 paquet"));
                     return null;
-                default: return "Commande inconnue : " + a;
+                default: return Tr.t("Commande inconnue : ") + a;
             }
         }
 
@@ -1425,10 +1557,10 @@ public final class App implements Radio.Listener, Decoders.Listener {
                     java.nio.file.Files.write(tmp.toPath(), data);
                     return decodeWavFile(tmp, Integer.parseInt(p.getOrDefault("mode", "-1")));
                 } catch (Exception e) {
-                    return "Fichier illisible : " + e.getMessage();
+                    return Tr.t("Fichier illisible : ") + e.getMessage();
                 }
             }
-            return "Envoi inconnu";
+            return Tr.t("Envoi inconnu");
         }
     }
 
@@ -1446,12 +1578,12 @@ public final class App implements Radio.Listener, Decoders.Listener {
             if (web == null) web = new WebServer(frame, new WebBackend(), pin, this::log);
             try {
                 web.start(prefs.getInt("webPort", 8080));
-                webInfo.setText("<html>" + String.join("<br>", web.urls()) + "<br>code d'accès : <b>" + pin + "</b></html>");
+                webInfo.setText("<html>" + String.join("<br>", web.urls()) + Tr.t("<br>code d'accès : <b>") + pin + "</b></html>");
                 webInfo.setForeground(Shack.CYAN);
                 checkFirewall(); // touche AUTORISER DANS LE PARE-FEU si la regle manque (rien d'automatique)
             } catch (Exception e) {
-                log("Serveur web impossible sur le port " + prefs.getInt("webPort", 8080) + " : " + e.getMessage());
-                webInfo.setText("Port " + prefs.getInt("webPort", 8080) + " indisponible");
+                log(Tr.t("Serveur web impossible sur le port ") + prefs.getInt("webPort", 8080) + " : " + e.getMessage());
+                webInfo.setText(Tr.t("Port ") + prefs.getInt("webPort", 8080) + Tr.t(" indisponible"));
                 webInfo.setForeground(Shack.RED);
             }
         } else {
@@ -1633,13 +1765,13 @@ public final class App implements Radio.Listener, Decoders.Listener {
             add(details, BorderLayout.CENTER);
             JPanel actions = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
             actions.setOpaque(false);
-            JLabel web = Shack.label("Ouvrir sur OpenStreetMap ›", Shack.mono(11.5f), Shack.AMBER);
+            JLabel web = Shack.label(Tr.t("Ouvrir sur OpenStreetMap ›"), Shack.mono(11.5f), Shack.AMBER);
             web.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             web.addMouseListener(new MouseAdapter() {
                 @Override public void mouseClicked(MouseEvent e) { if (marker != null) openMapWeb(marker.lat, marker.lon); }
             });
             actions.add(web);
-            JLabel close = Shack.label("     Fermer ×", Shack.mono(11.5f), Shack.MUTED);
+            JLabel close = Shack.label(Tr.t("     Fermer ×"), Shack.mono(11.5f), Shack.MUTED);
             close.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             close.addMouseListener(new MouseAdapter() {
                 @Override public void mouseClicked(MouseEvent e) { InfoCard.this.setVisible(false); }
@@ -1679,7 +1811,7 @@ public final class App implements Radio.Listener, Decoders.Listener {
     }
 
     private static final class AprsModel extends AbstractTableModel {
-        private static final String[] COLS = {"Heure", "Indicatif", "Type", "Position", "Informations"};
+        private static final String[] COLS = {Tr.t("Heure"), Tr.t("Indicatif"), Tr.t("Type"), Tr.t("Position"), Tr.t("Informations")};
         private final List<AprsRow> rows = new ArrayList<>();
         private final SimpleDateFormat tf = new SimpleDateFormat("HH:mm:ss", Locale.ROOT);
 
@@ -1709,7 +1841,7 @@ public final class App implements Radio.Listener, Decoders.Listener {
     }
 
     private static final class DetectionModel extends AbstractTableModel {
-        private static final String[] COLS = {"Reçu (local)", "Type", "Identifiant", "Latitude", "Longitude", "Détails"};
+        private static final String[] COLS = {Tr.t("Reçu (local)"), Tr.t("Type"), Tr.t("Identifiant"), Tr.t("Latitude"), Tr.t("Longitude"), Tr.t("Détails")};
         private final List<Decoders.Detection> rows = new ArrayList<>();
         private final SimpleDateFormat tf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ROOT);
 

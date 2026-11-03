@@ -89,7 +89,7 @@ final class Decoders {
     }
 
     static String modeName(int mode) {
-        return mode == MODE_SARSAT ? "SARSAT" : mode == MODE_SONDE ? "Radiosonde" : "aucun";
+        return mode == MODE_SARSAT ? "SARSAT" : mode == MODE_SONDE ? "Radiosonde" : Tr.t("aucun");
     }
 
     /** Appele pour chaque bloc PCM recu (le tableau peut etre reutilise par l'appelant). */
@@ -102,7 +102,7 @@ final class Decoders {
         }
         if (lastMode != mode) {
             lastMode = mode;
-            listener.onLog("Canal " + modeName(mode) + " détecté, décodage actif");
+            listener.onLog(Tr.t("Canal ") + modeName(mode) + Tr.t(" détecté, décodage actif"));
         }
         ensureWorker();
         queue.offer(new Chunk(mode, Arrays.copyOfRange(pcm, off, off + len)));
@@ -114,15 +114,15 @@ final class Decoders {
             try {
                 if (mode == MODE_SARSAT) {
                     List<Sarsat.Frame> frames = new Sarsat(rate, 1400).decode(pcm, pcm.length);
-                    listener.onLog("Fichier : " + frames.size() + " trame(s) SARSAT");
+                    listener.onLog(Tr.t("Fichier : ") + frames.size() + Tr.t(" trame(s) SARSAT"));
                     for (Sarsat.Frame f : frames) onSarsat(f);
                 } else {
                     List<Sondes.Fix> fixes = new Sondes(rate).decode(pcm, pcm.length);
-                    listener.onLog("Fichier : " + fixes.size() + " position(s) de radiosonde");
+                    listener.onLog(Tr.t("Fichier : ") + fixes.size() + Tr.t(" position(s) de radiosonde"));
                     for (Sondes.Fix f : fixes) onSonde(f);
                 }
             } catch (Throwable e) {
-                listener.onLog("Décodage du fichier impossible : " + e);
+                listener.onLog(Tr.t("Décodage du fichier impossible : ") + e);
             }
         }, "htmod-file");
         t.setDaemon(true);
@@ -168,7 +168,7 @@ final class Decoders {
                 int max = SAMPLE_RATE * (bufMode == MODE_SARSAT ? 5 : 6);
                 if (bufLen >= max) flush();
             } catch (Throwable t) {
-                listener.onLog("Erreur de décodage : " + t);
+                listener.onLog(Tr.t("Erreur de décodage : ") + t);
                 bufLen = 0;
             }
         }
@@ -189,8 +189,8 @@ final class Decoders {
             if (sarsat == null) sarsat = new Sarsat(SAMPLE_RATE, 1400);
             long t0 = System.currentTimeMillis();
             List<Sarsat.Frame> frames = sarsat.decode(buf, n);
-            listener.onLog("SARSAT : rafale de " + (n * 1000 / SAMPLE_RATE) + " ms analysée en "
-                    + (System.currentTimeMillis() - t0) + " ms, " + frames.size() + " trame(s)");
+            listener.onLog(Tr.t("SARSAT : rafale de ") + (n * 1000 / SAMPLE_RATE) + Tr.t(" ms analysée en ")
+                    + (System.currentTimeMillis() - t0) + " ms, " + frames.size() + Tr.t(" trame(s)"));
             saveWav("sarsat", buf, n);
             for (Sarsat.Frame f : frames) onSarsat(f);
         } else if (bufMode == MODE_SONDE) {
@@ -198,8 +198,8 @@ final class Decoders {
             if (sondes == null) sondes = new Sondes(SAMPLE_RATE);
             long t0 = System.currentTimeMillis();
             List<Sondes.Fix> fixes = sondes.decode(buf, n);
-            listener.onLog("Radiosonde : " + (n * 1000 / SAMPLE_RATE) + " ms analysés en "
-                    + (System.currentTimeMillis() - t0) + " ms, " + fixes.size() + " position(s)");
+            listener.onLog(Tr.t("Radiosonde : ") + (n * 1000 / SAMPLE_RATE) + Tr.t(" ms analysés en ")
+                    + (System.currentTimeMillis() - t0) + " ms, " + fixes.size() + Tr.t(" position(s)"));
             if (!sondeWavSaved) {
                 saveWav("radiosonde", buf, n);
                 sondeWavSaved = true;
@@ -228,21 +228,21 @@ final class Decoders {
         d.id = f.hexId;
         d.count = count;
         d.alert = !f.isTest;
-        d.title = (f.isTest ? "SARSAT (auto-test) " : "SARSAT 406 ") + f.hexId + (count > 1 ? " ×" + count : "");
+        d.title = (f.isTest ? Tr.t("SARSAT (auto-test) ") : "SARSAT 406 ") + f.hexId + (count > 1 ? " ×" + count : "");
         StringBuilder text = new StringBuilder();
         text.append(countryTxt).append(" – ").append(f.protocolName());
         if (f.identification != null && !f.identification.isEmpty()) text.append("\n").append(f.identification);
-        if (f.hasPosition) text.append("\nPosition : ").append(fmt(f.latitude, 5)).append(", ").append(fmt(f.longitude, 5));
-        else text.append("\nPas de position");
+        if (f.hasPosition) text.append(Tr.t("\nPosition : ")).append(fmt(f.latitude, 5)).append(", ").append(fmt(f.longitude, 5));
+        else text.append(Tr.t("\nPas de position"));
         text.append("\nBCH1 ").append(f.crc1Ok ? "OK" : "KO");
         if (f.length == 144) text.append(", BCH2 ").append(f.crc2Ok ? "OK" : "KO");
-        text.append(" – trame ").append(f.rawHex());
+        text.append(Tr.t(" – trame ")).append(f.rawHex());
         d.text = text.toString();
         d.hasPos = f.hasPosition;
         d.lat = f.latitude;
         d.lon = f.longitude;
         logCsv("SARSAT", f.hexId, f.hasPosition, f.latitude, f.longitude, Double.NaN, Double.NaN, Double.NaN, Double.NaN, -1,
-                null, countryTxt + " / " + f.protocolName() + " / " + f.identification + (f.isTest ? " / auto-test" : "")
+                null, countryTxt + " / " + f.protocolName() + " / " + f.identification + (f.isTest ? Tr.t(" / auto-test") : "")
                         + " / " + f.rawHex());
         listener.onLog(d.title + " | " + d.text.replace('\n', ' '));
         listener.onDetection(d);

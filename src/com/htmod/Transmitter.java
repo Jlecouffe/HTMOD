@@ -95,7 +95,7 @@ final class Transmitter {
             mic = javax.sound.sampled.AudioSystem.getTargetDataLine(fmt);
             mic.open(fmt, RATE / 5);
         } catch (Exception e) {
-            throw new IllegalStateException("micro indisponible : " + e.getMessage());
+            throw new IllegalStateException(Tr.t("micro indisponible : ") + e.getMessage());
         }
         busy = true;
         cancel = false;

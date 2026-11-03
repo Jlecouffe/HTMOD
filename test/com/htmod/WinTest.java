@@ -45,6 +45,10 @@ public class WinTest {
         // Notification HT_STATUS_CHANGED : passage au canal 0 (nom inconnu)
         radio.onCtrlData(gaia(0x0009, new byte[]{1, (byte) 0x80, 0x00, 0, 0}));
         check("changement de canal par notification", radio.currentChannelName().isEmpty());
+        // canal libre : canaux 0 et 1 lus vides, canal 2 = SARSAT
+        radio.onCtrlData(gaia(0x800D, channelPayload(0, "")));
+        radio.onCtrlData(gaia(0x800D, channelPayload(1, "")));
+        check("premier canal libre = 1 (" + (radio.firstFreeChannel() + 1) + ")", radio.firstFreeChannel() == 0);
 
         System.out.println("Chaine complete WAV -> SBC -> trames 0x7E -> Radio -> Decoders :");
         List<Decoders.Detection> got = new ArrayList<>();
@@ -84,6 +88,9 @@ public class WinTest {
         AprsTest.run();
         AprsTxTest.run();
         UpdaterTest.run();
+        KissTest.run();
+
+        TrTest.run();
         PocsagTest.run();
         SstvTest.run();
         ChannelTest.run();

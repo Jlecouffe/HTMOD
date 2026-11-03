@@ -11,7 +11,7 @@ let currentTab = null;
 function buildTabs() {
   const bar = $('#tabs'), host = $('#views');
   for (const [name, ic] of TABS) {
-    const k = key(name, () => selectTab(name), { icon: ic, cls: 'tab' });
+    const k = key(_t(name), () => selectTab(name), { icon: ic, cls: 'tab' });
     tabKeys[name] = k;
     bar.append(k);
     const v = h('div', { class: 'view' });
@@ -35,48 +35,55 @@ function selectTab(name) {
 function buildSide() {
   const side = $('#side');
   // carte RADIO
-  const model = h('div', { class: 'model' }, 'Aucun poste'), link = chip();
-  const spec = h('canvas'), device = h('div', { class: 'device', title: 'Choisir le poste parmi les appareils Bluetooth appairés' }, 'Poste ›');
-  const connect = key('SE CONNECTER', () => cmd('connect'), { primary: true });
+  const model = h('div', { class: 'model' }, _t('Aucun poste')), link = chip();
+  const spec = h('canvas'), device = h('div', { class: 'device', title: _t('Choisir le poste parmi les appareils Bluetooth appairés') }, _t('Poste ›'));
+  const connect = key(_t('SE CONNECTER'), () => cmd('connect'), { primary: true });
   connect.style.width = '150px'; connect.style.height = '42px';
-  const status = h('div', { class: 'status' }, 'Déconnecté');
+  const status = h('div', { class: 'status' }, _t('Déconnecté'));
   device.addEventListener('click', () => devicesMenu(device));
+  const connMode = choice(['BLUETOOTH', _t('PORT COM')], 0, i => cmd('connMode', { v: i }), { keyCls: 'small' });
+  connMode.style.marginTop = '8px';
+  const kissPort = h('div', { class: 'mono muted', style: { fontSize: '11.5px', marginTop: '6px' } }, ' ');
   side.append(h('div', { class: 'card r18' },
     h('div', { class: 'radio-top' }, h('div', null, label('RADIO'), model), link),
     h('div', { class: 'well spec-well' }, spec),
-    h('div', { class: 'radio-bottom' }, device, connect), status));
+    h('div', { class: 'radio-bottom' }, device, connect), connMode, kissPort, status));
   // reception
   const channel = h('div', { class: 'channel' }, '–'), mode = chip();
-  side.append(section('Réception'), h('div', { class: 'card' }, label('CANAL'), channel, mode));
+  side.append(section(_t('Réception')), h('div', { class: 'card' }, label(_t('CANAL')), channel, mode));
   // mode de decodage
-  const kAuto = key('AUTO', () => cmd('forced', { v: 0 }), { title: 'Décode quand le canal en réception s\'appelle SARSAT ou Radiosonde' });
-  const kSarsat = key('SARSAT', () => cmd('forced', { v: 1 }), { sel: C.red, title: 'Décoder l\'audio en SARSAT quel que soit le canal' });
-  const kSonde = key('SONDE', () => cmd('forced', { v: 2 }), { sel: C.green, title: 'Décoder l\'audio en radiosonde quel que soit le canal' });
-  side.append(section('Décodage SARSAT / sondes'), h('div', { class: 'mode-keys' }, kAuto, kSarsat, kSonde));
+  const kAuto = key('AUTO', () => cmd('forced', { v: 0 }), { title: _t('Décode quand le canal en réception s\'appelle SARSAT ou Radiosonde') });
+  const kSarsat = key('SARSAT', () => cmd('forced', { v: 1 }), { sel: C.red, title: _t('Décoder l\'audio en SARSAT quel que soit le canal') });
+  const kSonde = key(_t('SONDE'), () => cmd('forced', { v: 2 }), { sel: C.green, title: _t('Décoder l\'audio en radiosonde quel que soit le canal') });
+  side.append(section(_t('Décodage SARSAT / sondes')), h('div', { class: 'mode-keys' }, kAuto, kSarsat, kSonde));
   // options
   const opt = (name, text) => toggle(text, false, v => {
     if (name === 'web' && !v) {
-      confirmBox('Serveur web', 'Arrêter le serveur web ? Cette page ne sera plus accessible.', 'ARRÊTER').then(ok => { if (ok) cmd('option', { name, on: 0 }); else sw.web.set(true); });
+      confirmBox(_t('Serveur web'), _t('Arrêter le serveur web ? Cette page ne sera plus accessible.'), _t('ARRÊTER')).then(ok => { if (ok) cmd('option', { name, on: 0 }); else sw.web.set(true); });
       return;
     }
     cmd('option', { name, on: v ? 1 : 0 });
   });
-  const sw = { listen: opt('listen', 'Écouter sur le PC'), muteAprs: opt('muteAprs', 'Couper le son des trames APRS'), wav: opt('wav', 'Enregistrer les WAV'),
-    web: opt('web', 'Serveur web (réseau local)') };
+  const sw = { listen: opt('listen', _t('Écouter sur le PC')), muteAprs: opt('muteAprs', _t('Couper le son des trames APRS')), wav: opt('wav', _t('Enregistrer les WAV')),
+    web: opt('web', _t('Serveur web (réseau local)')) };
   const upd = h('div', { class: 'mono', style: { fontSize: '11.5px', margin: '8px 0 6px' } }, ' ');
-  const browser = toggle('Écouter dans ce navigateur', false, v => setAudio(v));
+  const browser = toggle(_t('Écouter dans ce navigateur'), false, v => setAudio(v));
   audioUi.push(on => browser.set(on));
-  side.append(section('Options'), h('div', { class: 'card options' }, sw.listen, sw.muteAprs, sw.wav, sw.web,
-    h('div', { class: 'web-info' }, location.host + ' · interface web'), browser, upd,
-    key('RECHERCHER UNE MISE À JOUR', () => { cmd('updateCheck'); toast('Recherche… une mise à jour s\'installe depuis le PC.'); }, { cls: 'small' })));
+  side.append(section(_t('Options')), h('div', { class: 'card options' }, sw.listen, sw.muteAprs, sw.wav, sw.web,
+    h('div', { class: 'web-info' }, location.host + _t(' · interface web')), browser, upd,
+    key(_t('RECHERCHER UNE MISE À JOUR'), () => { cmd('updateCheck'); toast(_t('Recherche… une mise à jour s\'installe depuis le PC.')); }, { cls: 'small' })));
   // compteurs
-  const cnt = ['APRS', 'SONDES', 'SARSAT'].map(n => { const b = h('b', null, '0'); return { el: h('div', { class: 'counter' }, b, h('span', null, n)), b }; });
-  side.append(section('Station'), h('div', { class: 'counters' }, cnt.map(c => c.el)));
+  const cnt = ['APRS', _t('SONDES'), 'SARSAT'].map(n => { const b = h('b', null, '0'); return { el: h('div', { class: 'counter' }, b, h('span', null, n)), b }; });
+  side.append(section(_t('Station')), h('div', { class: 'counters' }, cnt.map(c => c.el)));
 
   onState('radio', d => {
     setText(model, d.model);
     link.set(d.link, d.linkDot, d.linkFg);
     setText(device, d.device);
+    connMode.set(d.connMode);
+    device.style.display = d.connMode === 1 ? 'none' : '';
+    kissPort.style.display = d.connMode === 1 ? '' : 'none';
+    setText(kissPort, d.kissPort ? _t('TNC KISS · ') + d.kissPort + _t(' (port choisi sur le PC)') : _t('Port COM à choisir sur le PC'));
     connect.setText(d.connectKey);
     setText(status, d.status);
     setText(channel, d.channel); channel.style.color = d.channelColor;
@@ -130,43 +137,52 @@ function buildSide() {
 function devicesMenu(anchor) {
   const d = S.radio || { devices: [] };
   const items = d.devices.length ? d.devices.map(x => ({ text: x.name + '   ' + x.mac, current: x.mac === d.mac, run: () => cmd('device', { mac: x.mac }) }))
-    : [{ text: 'Aucun appareil appairé dans Windows', disabled: true }];
-  items.push('-', { text: 'Actualiser la liste', run: () => cmd('devices') });
+    : [{ text: _t('Aucun appareil appairé dans Windows'), disabled: true }];
+  items.push('-', { text: _t('Actualiser la liste'), run: () => cmd('devices') });
   menu(anchor, items);
 }
 
 function settingsMenu(anchor) {
   const o = S.options || {};
-  const wav = (mode, what) => pickFile('.wav,audio/wav', f => upload('wav', f, { mode }).then(ok => { if (ok) toast('Décodage ' + what + ' lancé (voir le JOURNAL)'); }));
+  const wav = (mode, what) => pickFile('.wav,audio/wav', f => upload('wav', f, { mode }).then(ok => { if (ok) toast(_t('Décodage ') + what + _t(' lancé (voir le JOURNAL)')); }));
   menu(anchor, [
-    { text: 'Décoder un WAV SARSAT…', run: () => wav(1, 'SARSAT') },
-    { text: 'Décoder un WAV radiosonde…', run: () => wav(2, 'radiosonde') },
-    { text: 'Décoder un WAV APRS…', run: () => wav(-1, 'APRS') },
-    { text: 'Décoder un WAV POCSAG…', run: () => wav(-2, 'POCSAG') },
+    { text: _t('Décoder un WAV SARSAT…'), run: () => wav(1, 'SARSAT') },
+    { text: _t('Décoder un WAV radiosonde…'), run: () => wav(2, 'radiosonde') },
+    { text: _t('Décoder un WAV APRS…'), run: () => wav(-1, 'APRS') },
+    { text: _t('Décoder un WAV POCSAG…'), run: () => wav(-2, 'POCSAG') },
     '-',
-    { text: 'Dossier des résultats : ' + (o.outDir || ''), disabled: true },
-    { text: 'Effacer la carte et les tableaux', run: () => confirmBox('HTMod', 'Effacer la carte et les tableaux APRS et décodages ?', 'EFFACER').then(ok => ok && cmd('clear')) },
-    { text: 'APRS : démodulateur logiciel en plus du TNC', check: !!o.swAprs, run: () => cmd('option', { name: 'swAprs', on: o.swAprs ? 0 : 1 }) },
+    { text: _t('Dossier des résultats : ') + (o.outDir || ''), disabled: true },
+    { text: _t('Effacer la carte et les tableaux'), run: () => confirmBox('HTMod', _t('Effacer la carte et les tableaux APRS et décodages ?'), _t('EFFACER')).then(ok => ok && cmd('clear')) },
+    { text: _t('APRS : démodulateur logiciel en plus du TNC'), check: !!o.swAprs, run: () => cmd('option', { name: 'swAprs', on: o.swAprs ? 0 : 1 }) },
     '-',
-    { text: 'Mode d\'emploi', run: help },
-    { text: 'Version d\'écran (image de la fenêtre du PC)', run: () => window.open('/ecran', '_blank') },
+    { text: _t('Mode d\'emploi'), run: help },
+    { text: _t('Version d\'écran (image de la fenêtre du PC)'), run: () => window.open('/ecran', '_blank') },
   ]);
+}
+
+function langMenu(anchor) {
+  menu(anchor, LANGS.map(([code, name]) => ({ text: name, flag: code, current: code === I18N_LANG, run: () => {
+    if (code === I18N_LANG) return;
+    confirmBox('HTMod', _t('HTMod va redémarrer pour appliquer la langue (la liaison avec le poste sera rouverte).\nContinuer ?')).then(ok => {
+      if (ok) cmd('language', { v: code }).then(r => { if (r) toast(_t('HTMod redémarre…')); });
+    });
+  } })));
 }
 
 function help() {
   modal('HTMod ' + ((S.options && S.options.version) || ''),
-    '1. Appairez le poste dans Paramètres Windows > Bluetooth (une seule fois).\n'
-    + '2. Coupez le Bluetooth du téléphone : le poste n\'accepte qu\'une connexion.\n'
-    + '3. Choisissez le poste (Poste ›) et cliquez sur SE CONNECTER.\n'
-    + '4. SARSAT / radiosondes : canal nommé SARSAT ou Radiosonde, ou mode forcé.\n'
-    + '   APRS : toujours actif (TNC du poste + démodulateur logiciel).\n'
-    + '5. BANDSCOPE : le poste balaie ±100 kHz à ±1 MHz autour du canal (S-mètre à chaque pas,\n'
-    + '   rien n\'est écrit en mémoire). Double-clic pour écouter une fréquence.\n'
-    + '6. POCSAG et SSTV : décodage permanent ; émission (radioamateurs) depuis l\'onglet.\n'
-    + '7. VFO : double veille, volume, squelch, PTT (micro du PC), groupes et canaux, accord libre.\n'
-    + '8. SATELLITES : passages, carte, suivi Doppler avec le poste.\n\n'
-    + 'Carte : glisser pour déplacer, molette ou pincement pour zoomer, clic sur une épingle.\n'
-    + 'Cette page pilote l\'application du PC : tout ce que vous faites ici s\'applique au poste.');
+    _t('1. Appairez le poste dans Paramètres Windows > Bluetooth (une seule fois).\n')
+    + _t('2. Coupez le Bluetooth du téléphone : le poste n\'accepte qu\'une connexion.\n')
+    + _t('3. Choisissez le poste (Poste ›) et cliquez sur SE CONNECTER.\n')
+    + _t('4. SARSAT / radiosondes : canal nommé SARSAT ou Radiosonde, ou mode forcé.\n')
+    + _t('   APRS : toujours actif (TNC du poste + démodulateur logiciel).\n')
+    + _t('5. BANDSCOPE : le poste balaie ±100 kHz à ±1 MHz autour du canal (S-mètre à chaque pas,\n')
+    + _t('   rien n\'est écrit en mémoire). Double-clic pour écouter une fréquence.\n')
+    + _t('6. POCSAG et SSTV : décodage permanent ; émission (radioamateurs) depuis l\'onglet.\n')
+    + _t('7. VFO : double veille, volume, squelch, PTT (micro du PC), groupes et canaux, accord libre.\n')
+    + _t('8. SATELLITES : passages, carte, suivi Doppler avec le poste.\n\n')
+    + _t('Carte : glisser pour déplacer, molette ou pincement pour zoomer, clic sur une épingle.\n')
+    + _t('Cette page pilote l\'application du PC : tout ce que vous faites ici s\'applique au poste.'));
 }
 
 /* ---------------------------------------------------------------- son dans le navigateur (PCM 16 kHz) */
@@ -183,11 +199,11 @@ async function startAudio() {
     actx = new (window.AudioContext || window.webkitAudioContext)();
     // les navigateurs demarrent le son « suspendu » : reprise explicite pendant le clic
     if (actx.state === 'suspended') await actx.resume();
-  } catch (e) { actx = null; showAudio(false); alertBox('Lecture audio impossible dans ce navigateur.'); return; }
-  if (actx.state !== 'running') { toast('Touchez encore SON pour autoriser le son', true); }
+  } catch (e) { actx = null; showAudio(false); alertBox(_t('Lecture audio impossible dans ce navigateur.')); return; }
+  if (actx.state !== 'running') { toast(_t('Touchez encore SON pour autoriser le son'), true); }
   showAudio(true);
   nextT = 0;
-  toast('Son du poste : à l\'écoute (le son arrive quand le poste reçoit)');
+  toast(_t('Son du poste : à l\'écoute (le son arrive quand le poste reçoit)'));
   try {
     const r = await fetch('/audio', { cache: 'no-store' });
     if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -211,7 +227,7 @@ async function startAudio() {
       src.start(nextT);
       nextT += buf.duration;
     }
-  } catch (e) { if (actx) toast('Son interrompu : ' + e.message, true); }
+  } catch (e) { if (actx) toast(_t('Son interrompu : ') + e.message, true); }
   if (actx) stopAudio();
 }
 function stopAudio() {
@@ -231,7 +247,7 @@ function connectEvents() {
   }
   es.onopen = () => { if (offlineEl) { offlineEl.remove(); offlineEl = null; } };
   es.onerror = async () => {
-    if (!offlineEl) { offlineEl = h('div', { class: 'offline' }, 'Liaison avec le PC perdue — nouvel essai…'); document.body.append(offlineEl); }
+    if (!offlineEl) { offlineEl = h('div', { class: 'offline' }, _t('Liaison avec le PC perdue — nouvel essai…')); document.body.append(offlineEl); }
     try { const r = await fetch('/api/state', { method: 'GET' }); if (r.status === 401) location.reload(); } catch (e) {}
   };
 }
@@ -253,9 +269,12 @@ function connectEvents() {
   for (const sec of SECTIONS) if (S[sec] !== undefined) render(sec);
   connectEvents();
   $('#settingsBtn').addEventListener('click', e => settingsMenu(e.currentTarget));
+  const lb = $('#langBtn');
+  lb.append(flagIcon(I18N_LANG), h('span', null, I18N_LANG.toUpperCase()));
+  lb.addEventListener('click', e => langMenu(e.currentTarget));
   const sb = $('#soundBtn');
   sb.addEventListener('click', () => setAudio(!audioOn));
-  audioUi.push(on => { sb.classList.toggle('on', on); sb.querySelector('svg').innerHTML = ICONS[on ? 'speaker' : 'mute']; sb.title = on ? 'Couper le son dans ce navigateur' : 'Écouter le son du poste dans ce navigateur'; });
+  audioUi.push(on => { sb.classList.toggle('on', on); sb.querySelector('svg').innerHTML = ICONS[on ? 'speaker' : 'mute']; sb.title = on ? _t('Couper le son dans ce navigateur') : _t('Écouter le son du poste dans ce navigateur'); });
   showAudio(false);
   $('#drawerBtn').addEventListener('click', () => document.body.classList.toggle('drawer'));
   document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeOverlays(); document.body.classList.remove('drawer'); } });

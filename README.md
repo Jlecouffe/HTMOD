@@ -53,6 +53,8 @@ Carte OpenStreetMap avec mode **NUIT**, fond **TOPO** et **VENT** animé (Open-M
 ### APRS
 Trames reçues par le TNC du poste et par le démodulateur AFSK 1200 du PC : positions (Mic-E et format compressé compris), objets, messages, télémétrie. Un double-clic montre la station sur la carte.
 
+**TNC KISS sur port COM** : dans la carte RADIO, sous **SE CONNECTER**, choisissez **PORT COM** au lieu de **BLUETOOTH**. Sélectionnez ensuite le port et le débit, puis cliquez sur **SE CONNECTER**. Cela fonctionne avec un TNC matériel en mode KISS, un adaptateur USB-série, un Bluetooth SPP ou Direwolf via un port virtuel. Si le port était ouvert à la fermeture, HTMod le rouvre au démarrage. Les trames reçues rejoignent le tableau APRS et la carte, avec l'origine « KISS ».
+
 **Émission** : HTMod relit les réglages APRS du poste : indicatif et SSID, symbole, commentaire, intervalle, chemin et position GPS. À défaut de GPS, il utilise la position d'observation de l'onglet Satellites. **ÉMETTRE TRAME** envoie une balise de position, ou le champ d'information saisi (statut, message…). L'interrupteur **Balise automatique** répète la balise à l'intervalle réglé dans le poste. La trame passe par le TNC du poste, qui l'émet en AFSK 1200 dès que le canal est libre. Elle part sur le canal nommé « APRS » s'il existe, sinon sur celui du VFO A, et uniquement en bande radioamateur.
 
 ![APRS](docs/aprs.jpg)
@@ -85,6 +87,8 @@ Réception permanente à 512, 1200 et 2400 bauds avec correction d'erreurs BCH. 
   - **Modifier le canal** (nom, fréquences, CTCSS/DCS, puissance, largeur, FM/AM, scan, émission interdite) et l'écrire dans le poste. Les réglages non modifiés sont recopiés à l'octet près.
   - Mettre le canal sur le VFO A ou B.
   - **Exporter le groupe en CSV**, au format HTCommander.
+- **AJOUTER UNE FRÉQUENCE** : enregistre une nouvelle fréquence dans le premier canal libre du groupe affiché.
+- **RENOMMER LE GROUPE** : change le nom du groupe affiché (10 caractères au plus) dans le poste.
 
 ![VFO](docs/vfo.jpg)
 
@@ -92,6 +96,10 @@ Réception permanente à 512, 1200 et 2400 bauds avec correction d'erreurs BCH. 
 Les satellites viennent de plusieurs sources : le serveur de Benshi, une base FM/SSTV intégrée, les TLE de CelesTrak et vos propres ajouts. L'onglet calcule l'orbite (SGP4/SDP4), les passages sur 24 h, la trace au sol et l'empreinte. On peut filtrer sur la SSTV et sur l'élévation minimale. **SUIVRE AVEC LE POSTE** corrige le Doppler en continu.
 
 ![Satellites](docs/satellites.jpg)
+
+### Langue
+
+Le bouton avec le drapeau, à côté de **Réglages et outils**, propose **Français**, **English** et **Italiano**. HTMod redémarre pour appliquer le choix, qui vaut aussi pour l'interface web. La liaison avec le poste est rouverte automatiquement ; sur l'interface web, il faut ressaisir le code d'accès. Au premier lancement, HTMod prend la langue de Windows (l'anglais si elle n'est pas proposée). Les traductions sont dans `res/com/htmod/i18n.txt`.
 
 ### Journal et options
 - **Écouter sur le PC**, avec une option pour couper le son des trames APRS. Les trames restent décodées.

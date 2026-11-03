@@ -43,19 +43,22 @@ $src = @((Get-ChildItem "$w\src\com\htmod\*.java").FullName) + $shared
 if ($LASTEXITCODE -ne 0) { Fail "javac" }
 & jar --create --file "$out\stage\htmod.jar" --main-class com.htmod.App -C "$out\classes" . -C "$w\res" .
 if ($LASTEXITCODE -ne 0) { Fail "jar" }
+# Icone (logo HT) de HTMod.exe et de l'installateur, dessinee par Logo.java ; apercu des tailles dans out\logo-apercu.png
+& java -cp "$out\classes" com.htmod.Logo "$out\htmod.ico" "$out\logo-apercu.png"
+if ($LASTEXITCODE -ne 0) { Fail "icone" }
 
 # 3. Tests sans poste (SBC, protocole GAIA, chaine de decodage avec les enregistrements de HTCommander).
 if (-not $NoTest) {
     & javac -encoding UTF-8 --release 17 -cp "$out\classes" -d "$out\test-classes" (Get-ChildItem "$w\test\com\htmod\*.java").FullName
     if ($LASTEXITCODE -ne 0) { Fail "javac tests" }
-    & java -cp "$out\classes;$out\test-classes;$w\res" com.htmod.WinTest "$b\htcommander\HTCommander-main\src\test" "$w\test\data"
+    & java "-Dhtmod.lang=fr" -cp "$out\classes;$out\test-classes;$w\res" com.htmod.WinTest "$b\htcommander\HTCommander-main\src\test" "$w\test\data"
     if ($LASTEXITCODE -ne 0) { Fail "tests" }
 }
 
 # 4. Paquet autonome (runtime Java reduit inclus).
 Remove-Item -Recurse -Force "$w\dist" -ErrorAction SilentlyContinue
 & jpackage --type app-image --name HTMod --app-version $Version --vendor HTMod `
-    --input "$out\stage" --main-jar htmod.jar --main-class com.htmod.App `
+    --input "$out\stage" --main-jar htmod.jar --main-class com.htmod.App --icon "$out\htmod.ico" `
     --add-modules java.desktop,java.prefs,java.net.http,jdk.crypto.ec,jdk.charsets,java.naming,jdk.localedata,jdk.httpserver `
     --java-options "-Dsun.java2d.uiScale.enabled=true" `
     --dest "$w\dist"
@@ -66,7 +69,7 @@ Compress-Archive -Force -Path "$w\dist\HTMod" -DestinationPath "$w\dist\HTMod-wi
 $iscc = "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe", "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe",
         "$env:ProgramFiles\Inno Setup 6\ISCC.exe" | Where-Object { Test-Path $_ } | Select-Object -First 1
 if ($iscc) {
-    & $iscc /Q "/DAppDir=$w\dist\HTMod" "/DOutDir=$w" "/DAppVersion=$Version" "$w\installer\HTMod.iss"
+    & $iscc /Q "/DAppDir=$w\dist\HTMod" "/DOutDir=$w" "/DAppVersion=$Version" "/DIconFile=$out\htmod.ico" "$w\installer\HTMod.iss"
     if ($LASTEXITCODE -ne 0) { Fail "Inno Setup" }
     $sha = (Get-FileHash -Algorithm SHA256 "$w\HTMod-Setup.exe").Hash.ToLower()
     [IO.File]::WriteAllText("$w\HTMod-Setup.exe.sha256", "$sha  HTMod-Setup.exe`n")

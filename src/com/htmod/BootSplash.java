@@ -92,8 +92,8 @@ final class BootSplash extends JComponent {
 
         c.setFont(Shack.mono(11 * s * 1.1f));
         c.setColor(Shack.TEXT2);
-        center(c, "Décodeurs portés de Radtel Tools / HTMOD Android", cx, h - 33 * s);
-        center(c, "Protocole et SBC d'après HTCommander", cx, h - 18 * s);
+        center(c, Tr.t("Décodeurs portés de Radtel Tools / HTMOD Android"), cx, h - 33 * s);
+        center(c, Tr.t("Protocole et SBC d'après HTCommander"), cx, h - 18 * s);
         c.dispose();
     }
 
@@ -228,7 +228,7 @@ final class BootSplash extends JComponent {
         center(c, "WINDOWS", cx, y + 28 * s);
         c.setFont(Shack.tracked(Shack.mono(11 * s), 0.12f));
         c.setColor(Shack.MUTED);
-        center(c, "SARSAT · RADIOSONDES · APRS · v" + version, cx, y + 54 * s);
+        center(c, Tr.t("SARSAT · RADIOSONDES · APRS · v") + version, cx, y + 54 * s);
     }
 
     private void drawMeter(Graphics2D c, float w, float y, float s, float t) {

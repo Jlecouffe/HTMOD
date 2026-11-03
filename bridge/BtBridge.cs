@@ -12,6 +12,8 @@
  * Usage :
  *   btbridge list               -> une ligne "MAC<TAB>nom" par appareil appaire
  *   btbridge connect <MAC>      -> relais binaire sur stdin/stdout
+ *   btbridge ports              -> une ligne par port COM (TNC KISS)
+ *   btbridge serial COM3 9600   -> relais du port serie sur le canal 3 (meme format de trames)
  *
  * Trames (dans les deux sens) : [canal:1][longueur:4, big-endian][donnees].
  * Canal 2 (sortie seulement) : evenement texte UTF-8 ("connected 0 ble", "connected 0 gaia",
@@ -92,7 +94,10 @@ static class BtBridge
             if (args.Length >= 1 && args[0] == "list") return List();
             if (args.Length >= 2 && args[0] == "connect") return Connect(ParseMac(args[1]));
             if (args.Length >= 2 && args[0] == "firewall") return Firewall(args[1]);
-            Console.Error.WriteLine("usage : btbridge list | btbridge connect AA:BB:CC:DD:EE:FF | btbridge firewall <chemin de HTMod.exe>");
+            if (args.Length >= 1 && args[0] == "ports") return Ports();
+            if (args.Length >= 3 && args[0] == "serial") return Serial(args[1], int.Parse(args[2]));
+            Console.Error.WriteLine("usage : btbridge list | btbridge connect AA:BB:CC:DD:EE:FF | btbridge firewall <chemin de HTMod.exe>"
+                + " | btbridge ports | btbridge serial COM3 9600");
             return 2;
         }
         catch (Exception e)
@@ -563,6 +568,80 @@ static class BtBridge
         // stdin ferme : l'appli Java s'est arretee.
         foreach (Socket s in Socks) if (s != null) try { s.Close(); } catch { }
         if (bleDevice != null) try { bleDevice.Dispose(); } catch { }
+        return 0;
+    }
+
+    // ------------------------------------------------------------------ Port serie (TNC KISS)
+
+    /** Une ligne par port COM present (« COM3 »), triee. */
+    static int Ports()
+    {
+        string[] names = System.IO.Ports.SerialPort.GetPortNames();
+        Array.Sort(names, (a, b) => {
+            int x, y;
+            bool nx = int.TryParse(a.Substring(3), out x), ny = int.TryParse(b.Substring(3), out y);
+            return nx && ny ? x.CompareTo(y) : string.CompareOrdinal(a, b);
+        });
+        var w = new StreamWriter(Console.OpenStandardOutput(), new UTF8Encoding(false));
+        var seen = new HashSet<string>();
+        foreach (string n in names) if (seen.Add(n)) w.WriteLine(n);
+        w.Flush();
+        return 0;
+    }
+
+    /**
+     * Relais d'un port serie (8N1, sans controle de flux, DTR/RTS actifs) : octets recus -> canal 3,
+     * trames canal 3 sur stdin -> port. Evenements : « connected serial COM3 9600 », « closed serial »,
+     * « error serial ... ».
+     */
+    static int Serial(string port, int baud)
+    {
+        stdout = Console.OpenStandardOutput();
+        var sp = new System.IO.Ports.SerialPort(port, baud, System.IO.Ports.Parity.None, 8, System.IO.Ports.StopBits.One);
+        sp.Handshake = System.IO.Ports.Handshake.None;
+        sp.DtrEnable = true;
+        sp.RtsEnable = true;
+        sp.ReadTimeout = System.IO.Ports.SerialPort.InfiniteTimeout;
+        try { sp.Open(); }
+        catch (Exception e)
+        {
+            Event("error serial " + port + " : " + e.Message);
+            return 1;
+        }
+        Event("connected serial " + port + " " + baud);
+        var t = new Thread(() =>
+        {
+            byte[] buf = new byte[4096];
+            try
+            {
+                while (true)
+                {
+                    int n = sp.BaseStream.Read(buf, 0, buf.Length);
+                    if (n <= 0) break;
+                    Write(3, buf, n);
+                }
+            }
+            catch (Exception e) { Event("error serial lecture : " + e.Message); }
+            Event("closed serial");
+            Environment.Exit(0);
+        });
+        t.IsBackground = true;
+        t.Start();
+
+        Stream stdin = Console.OpenStandardInput();
+        byte[] hdr = new byte[5];
+        while (true)
+        {
+            if (!ReadFully(stdin, hdr, 5)) break;
+            int len = (hdr[1] << 24) | (hdr[2] << 16) | (hdr[3] << 8) | hdr[4];
+            if (len < 0 || len > 1 << 20) break;
+            byte[] data = new byte[len];
+            if (!ReadFully(stdin, data, len)) break;
+            if (hdr[0] != 3) continue;
+            try { sp.BaseStream.Write(data, 0, len); sp.BaseStream.Flush(); }
+            catch (Exception e) { Event("error serial envoi : " + e.Message); }
+        }
+        try { sp.Close(); } catch { }
         return 0;
     }
 

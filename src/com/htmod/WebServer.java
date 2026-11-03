@@ -117,7 +117,7 @@ final class WebServer {
         s.start();
         server = s;
         this.port = port;
-        log.accept("Serveur web : " + String.join("  ", urls()) + "  (code " + pin + ")");
+        log.accept(Tr.t("Serveur web : ") + String.join("  ", urls()) + Tr.t("  (code ") + pin + ")");
     }
 
     synchronized void stop() {
@@ -125,7 +125,7 @@ final class WebServer {
         server.stop(0);
         server = null;
         tokens.clear();
-        log.accept("Serveur web arrêté");
+        log.accept(Tr.t("Serveur web arrêté"));
     }
 
     /** Adresses http du reseau local. */
@@ -165,6 +165,7 @@ final class WebServer {
         try {
             String path = ex.getRequestURI().getPath();
             if (path.equals("/login") && "POST".equals(ex.getRequestMethod())) { login(ex); return; }
+            if (path.equals("/i18n.js")) { send(ex, 200, "text/javascript; charset=utf-8", Tr.webScript().getBytes(StandardCharsets.UTF_8)); return; } // aussi pour la page de connexion
             if (!authorized(ex)) {
                 if (path.equals("/") || path.equals("/index.html")) send(ex, 200, "text/html; charset=utf-8", page("web-login.html"));
                 else send(ex, 401, "text/plain", "code requis".getBytes(StandardCharsets.UTF_8));
@@ -225,7 +226,7 @@ final class WebServer {
             ex.getResponseHeaders().add("Set-Cookie", COOKIE + "=" + t + "; Path=/; HttpOnly; SameSite=Strict; Max-Age=2592000");
             ex.getResponseHeaders().add("Location", "/");
             send(ex, 303, "text/plain", null);
-            log.accept("Serveur web : connexion depuis " + ex.getRemoteAddress().getAddress().getHostAddress());
+            log.accept(Tr.t("Serveur web : connexion depuis ") + ex.getRemoteAddress().getAddress().getHostAddress());
         } else {
             try { Thread.sleep(1000); } catch (InterruptedException ignore) {}
             ex.getResponseHeaders().add("Location", "/?erreur");
@@ -620,10 +621,10 @@ final class WebServer {
                     Object[] out = {null};
                     try {
                         SwingUtilities.invokeAndWait(() -> {
-                            try { out[0] = backend.command(a, q); } catch (RuntimeException e) { out[0] = "Erreur : " + e; }
+                            try { out[0] = backend.command(a, q); } catch (RuntimeException e) { out[0] = Tr.t("Erreur : ") + e; }
                         });
                     } catch (Exception e) {
-                        out[0] = "Erreur : " + e.getMessage();
+                        out[0] = Tr.t("Erreur : ") + e.getMessage();
                     }
                     r = out[0];
                 }
@@ -665,7 +666,7 @@ final class WebServer {
         int n;
         while ((n = in.read(b)) > 0) {
             o.write(b, 0, n);
-            if (o.size() > max) throw new IOException("fichier trop gros");
+            if (o.size() > max) throw new IOException(Tr.t("fichier trop gros"));
         }
         return o.toByteArray();
     }

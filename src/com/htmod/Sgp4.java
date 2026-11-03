@@ -71,11 +71,11 @@ final class Sgp4 {
     /** Elements a deux lignes ; IllegalArgumentException si les lignes sont mal formees. */
     static Sgp4 fromTle(String l1, String l2) {
         if (l1 == null || l2 == null || !l1.startsWith("1 ") || !l2.startsWith("2 ") || l1.length() < 61 || l2.length() < 63)
-            throw new IllegalArgumentException("lignes TLE invalides");
+            throw new IllegalArgumentException(Tr.t("lignes TLE invalides"));
         try {
             return new Sgp4(l1, l2);
         } catch (RuntimeException e) {
-            throw new IllegalArgumentException("lignes TLE invalides : " + e.getMessage());
+            throw new IllegalArgumentException(Tr.t("lignes TLE invalides : ") + e.getMessage());
         }
     }
 

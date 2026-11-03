@@ -76,12 +76,12 @@ final class SatPanel extends JPanel implements MapPanel.Overlay {
     private static final int[] MIN_ELS = {0, 10, 20, 30, 45};
 
     // fiche
-    private final JLabel dName = Shack.label("Aucun satellite", Shack.display(22f), Shack.TEXT);
+    private final JLabel dName = Shack.label(Tr.t("Aucun satellite"), Shack.display(22f), Shack.TEXT);
     private final JLabel dSub = Shack.label(" ", Shack.mono(11f), Shack.MUTED);
     private final JLabel dPos = Shack.label(" ", Shack.mono(12.5f), Shack.TEXT2);
     private final JTextArea dRf = area(), dPasses = area();
-    private final Shack.Switch sstvSw = new Shack.Switch("Satellite SSTV", false);
-    private final Shack.Key trackKey = new Shack.Key("SUIVRE AVEC LE POSTE").primary().font(Shack.bold(12.5f));
+    private final Shack.Switch sstvSw = new Shack.Switch(Tr.t("Satellite SSTV"), false);
+    private final Shack.Key trackKey = new Shack.Key(Tr.t("SUIVRE AVEC LE POSTE")).primary().font(Shack.bold(12.5f));
     private final JPanel rfChoice = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 4));
     private int rfIndex;
 
@@ -122,7 +122,7 @@ final class SatPanel extends JPanel implements MapPanel.Overlay {
             catalog.loadLocal();
             SwingUtilities.invokeLater(this::refilter);
             String m = catalog.refresh();
-            host.log("Satellites : " + m);
+            host.log(Tr.t("Satellites : ") + m);
             SwingUtilities.invokeLater(() -> { status.setText(m); refilter(); });
             computePasses();
         }, "htmod-satellites").start();
@@ -159,7 +159,7 @@ final class SatPanel extends JPanel implements MapPanel.Overlay {
         Shack.Card obs = new Shack.Card(14);
         obs.setLayout(new BoxLayout(obs, BoxLayout.Y_AXIS));
         obs.setBorder(new EmptyBorder(10, 14, 10, 14));
-        obs.add(left(Shack.label("POSITION D'OBSERVATION (LAT / LON EN DEGRÉS)", Shack.tracked(Shack.mono(10f), 0.12f), Shack.MUTED)));
+        obs.add(left(Shack.label(Tr.t("POSITION D'OBSERVATION (LAT / LON EN DEGRÉS)"), Shack.tracked(Shack.mono(10f), 0.12f), Shack.MUTED)));
         JPanel or = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 6));
         or.setOpaque(false);
         or.add(latF);
@@ -173,11 +173,11 @@ final class SatPanel extends JPanel implements MapPanel.Overlay {
 
         JPanel fr = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 8));
         fr.setOpaque(false);
-        Shack.choice(fr, new String[]{"TOUS", "SSTV", "VISIBLES"}, 0, i -> { filter = i; refilter(); });
+        Shack.choice(fr, new String[]{Tr.t("TOUS"), "SSTV", Tr.t("VISIBLES")}, 0, i -> { filter = i; refilter(); });
         top.add(left(fr));
         JPanel er = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
         er.setOpaque(false);
-        JLabel el = Shack.label("ÉLÉV. MIN", Shack.tracked(Shack.mono(10f), 0.12f), Shack.MUTED);
+        JLabel el = Shack.label(Tr.t("ÉLÉV. MIN"), Shack.tracked(Shack.mono(10f), 0.12f), Shack.MUTED);
         el.setBorder(new EmptyBorder(0, 2, 0, 4));
         er.add(el);
         int elSel = 0;
@@ -191,11 +191,11 @@ final class SatPanel extends JPanel implements MapPanel.Overlay {
             if (selected != null) computePassesFor(selected);
         });
         for (Shack.Key k : elKeys) k.setPreferredSize(new Dimension(48, 34));
-        er.setToolTipText("Élévation minimale : satellites au-dessus maintenant, ou dont un passage des 24 h l'atteint");
+        er.setToolTipText(Tr.t("Élévation minimale : satellites au-dessus maintenant, ou dont un passage des 24 h l'atteint"));
         er.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
         top.add(left(er));
         top.add(Box.createVerticalStrut(8));
-        search.setToolTipText("Rechercher un satellite (nom ou n° NORAD)");
+        search.setToolTipText(Tr.t("Rechercher un satellite (nom ou n° NORAD)"));
         search.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
         search.getDocument().addDocumentListener(new DocumentListener() {
             public void insertUpdate(DocumentEvent e) { refilter(); }
@@ -236,18 +236,18 @@ final class SatPanel extends JPanel implements MapPanel.Overlay {
         bottom.setLayout(new BoxLayout(bottom, BoxLayout.Y_AXIS));
         JPanel br = new JPanel(new GridLayout(1, 3, 6, 0));
         br.setOpaque(false);
-        Shack.Key refresh = new Shack.Key("ACTUALISER").font(Shack.bold(11.5f));
-        refresh.setToolTipText("Recharger la liste du serveur Benshi (et les TLE CelesTrak si besoin)");
+        Shack.Key refresh = new Shack.Key(Tr.t("ACTUALISER")).font(Shack.bold(11.5f));
+        refresh.setToolTipText(Tr.t("Recharger la liste du serveur Benshi (et les TLE CelesTrak si besoin)"));
         refresh.addActionListener(e -> new Thread(() -> {
             String m = catalog.refresh();
-            host.log("Satellites : " + m);
+            host.log(Tr.t("Satellites : ") + m);
             SwingUtilities.invokeLater(() -> { status.setText(m); refilter(); });
             computePasses();
         }, "htmod-satellites").start());
-        Shack.Key add = new Shack.Key("AJOUTER…").font(Shack.bold(11.5f));
+        Shack.Key add = new Shack.Key(Tr.t("AJOUTER…")).font(Shack.bold(11.5f));
         add.addActionListener(e -> addDialog());
-        Shack.Key del = new Shack.Key("SUPPRIMER").font(Shack.bold(11.5f));
-        del.setToolTipText("Supprimer un satellite ajouté par vous");
+        Shack.Key del = new Shack.Key(Tr.t("SUPPRIMER")).font(Shack.bold(11.5f));
+        del.setToolTipText(Tr.t("Supprimer un satellite ajouté par vous"));
         del.addActionListener(e -> removeSelected());
         br.add(refresh);
         br.add(add);
@@ -270,7 +270,7 @@ final class SatPanel extends JPanel implements MapPanel.Overlay {
             prefs.put("obsLat", latF.getText().trim());
             prefs.put("obsLon", lonF.getText().trim());
         } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(this, "Position invalide (latitude -90..90, longitude -180..180).");
+            JOptionPane.showMessageDialog(this, Tr.t("Position invalide (latitude -90..90, longitude -180..180)."));
         }
     }
 
@@ -303,7 +303,7 @@ final class SatPanel extends JPanel implements MapPanel.Overlay {
         c.setLayout(new GridLayout(1, 3, 18, 0));
         c.setPreferredSize(new Dimension(800, 250));
         JPanel a = column(), b = column(), d = column();
-        a.add(left(Shack.label("SATELLITE", Shack.tracked(Shack.mono(10f), 0.16f), Shack.MUTED)));
+        a.add(left(Shack.label(Tr.t("SATELLITE"), Shack.tracked(Shack.mono(10f), 0.16f), Shack.MUTED)));
         a.add(left(dName));
         a.add(left(dSub));
         a.add(left(gap(8)));
@@ -314,12 +314,12 @@ final class SatPanel extends JPanel implements MapPanel.Overlay {
             if (selected != null) { catalog.setSstv(selected, sstvSw.isOn()); refilter(); }
         });
         a.add(left(sstvSw));
-        b.add(left(Shack.label("RADIO (DOPPLER CORRIGÉ)", Shack.tracked(Shack.mono(10f), 0.12f), Shack.MUTED)));
+        b.add(left(Shack.label(Tr.t("RADIO (DOPPLER CORRIGÉ)"), Shack.tracked(Shack.mono(10f), 0.12f), Shack.MUTED)));
         rfChoice.setOpaque(false);
         b.add(left(rfChoice));
         b.add(left(dRf));
-        Shack.Key editKey = new Shack.Key("MODIFIER").font(Shack.bold(11f));
-        editKey.setToolTipText("Modifier les fréquences de la configuration choisie");
+        Shack.Key editKey = new Shack.Key(Tr.t("MODIFIER")).font(Shack.bold(11f));
+        editKey.setToolTipText(Tr.t("Modifier les fréquences de la configuration choisie"));
         editKey.setPreferredSize(new Dimension(110, 32));
         editKey.setMaximumSize(new Dimension(110, 32));
         editKey.addActionListener(e -> editDialog());
@@ -329,7 +329,7 @@ final class SatPanel extends JPanel implements MapPanel.Overlay {
         trackKey.setPreferredSize(new Dimension(260, 46));
         trackKey.addActionListener(e -> toggleTracking());
         b.add(left(trackKey));
-        d.add(left(Shack.label("PASSAGES (24 H, HEURE LOCALE)", Shack.tracked(Shack.mono(10f), 0.12f), Shack.MUTED)));
+        d.add(left(Shack.label(Tr.t("PASSAGES (24 H, HEURE LOCALE)"), Shack.tracked(Shack.mono(10f), 0.12f), Shack.MUTED)));
         d.add(left(dPasses));
         c.add(a);
         c.add(b);
@@ -400,23 +400,23 @@ final class SatPanel extends JPanel implements MapPanel.Overlay {
         if (s == null) return;
         dName.setText(s.name);
         dName.setForeground(catalog.isSstv(s) ? Shack.AMBER : Shack.TEXT);
-        dSub.setText("NORAD " + s.norad + " · source " + s.source + (catalog.isSstv(s) ? " · SSTV" : ""));
+        dSub.setText("NORAD " + s.norad + Tr.t(" · source ") + s.source + (catalog.isSstv(s) ? " · SSTV" : ""));
         SatTrack.Look l;
         try { l = SatTrack.look(s.prop(), System.currentTimeMillis(), observer); } catch (RuntimeException e) { l = null; }
-        if (l == null) { dPos.setText("Position incalculable (TLE trop ancien ?)"); dRf.setText(""); return; }
-        dPos.setText(String.format(Locale.ROOT, "<html>Az %.1f°  ·  Él <b>%.1f°</b>  ·  %.0f km<br>Alt %.0f km  ·  %.3f, %.3f<br>%s</html>",
+        if (l == null) { dPos.setText(Tr.t("Position incalculable (TLE trop ancien ?)")); dRf.setText(""); return; }
+        dPos.setText(String.format(Locale.ROOT, Tr.t("<html>Az %.1f°  ·  Él <b>%.1f°</b>  ·  %.0f km<br>Alt %.0f km  ·  %.3f, %.3f<br>%s</html>"),
                 l.azDeg, l.elDeg, l.rangeKm, l.altKm, l.latDeg, l.lonDeg,
-                l.elDeg > 0 ? "<font color='#5FC8E8'>VISIBLE</font>" + String.format(Locale.ROOT, "  ·  vitesse radiale %+.2f km/s", l.rangeRateKms)
-                        : "sous l'horizon"));
+                l.elDeg > 0 ? Tr.t("<font color='#5FC8E8'>VISIBLE</font>") + String.format(Locale.ROOT, Tr.t("  ·  vitesse radiale %+.2f km/s"), l.rangeRateKms)
+                        : Tr.t("sous l'horizon")));
         StringBuilder rf = new StringBuilder();
-        if (s.rf.isEmpty()) rf.append("Aucune configuration radio connue (ajoutez-en une avec AJOUTER…).");
+        if (s.rf.isEmpty()) rf.append(Tr.t("Aucune configuration radio connue (ajoutez-en une avec AJOUTER…)."));
         else {
             SatCatalog.Rf r = s.rf.get(Math.min(rfIndex, s.rf.size() - 1));
             rf.append(r.label()).append('\n');
             if (r.downHz <= 0) { dRf.setText(rf.toString().trim()); return; }
-            rf.append("Réception : ").append(SatCatalog.mhz(l.downlink(r.downHz))).append(" MHz")
+            rf.append(Tr.t("Réception : ")).append(SatCatalog.mhz(l.downlink(r.downHz))).append(" MHz")
                     .append(String.format(Locale.ROOT, " (%+.1f kHz)", (l.downlink(r.downHz) - r.downHz) / 1000.0));
-            if (r.upHz > 0) rf.append("\nÉmission : ").append(SatCatalog.mhz(l.uplink(r.upHz))).append(" MHz")
+            if (r.upHz > 0) rf.append(Tr.t("\nÉmission : ")).append(SatCatalog.mhz(l.uplink(r.upHz))).append(" MHz")
                     .append(String.format(Locale.ROOT, " (%+.1f kHz)", (l.uplink(r.upHz) - r.upHz) / 1000.0));
         }
         dRf.setText(rf.toString());
@@ -434,7 +434,7 @@ final class SatPanel extends JPanel implements MapPanel.Overlay {
                         .append(String.format(Locale.ROOT, "  max %2.0f°  az %3.0f→%3.0f", p.maxElDeg, p.aosAzDeg, p.losAzDeg)).append('\n');
                 if (sb.length() > 1400) break;
             }
-            String txt = ps.isEmpty() ? "Aucun passage au-dessus de l'horizon dans les 24 h." : sb.toString().trim();
+            String txt = ps.isEmpty() ? Tr.t("Aucun passage au-dessus de l'horizon dans les 24 h.") : sb.toString().trim();
             SwingUtilities.invokeLater(() -> { if (selected == s) dPasses.setText(txt); });
         }, "htmod-passages-sat").start();
     }
@@ -488,16 +488,16 @@ final class SatPanel extends JPanel implements MapPanel.Overlay {
         SatCatalog.Sat s = selected;
         Radio r = host.radio();
         if (s == null) return;
-        if (!r.isRunning()) { JOptionPane.showMessageDialog(this, "Connectez d'abord le poste."); return; }
-        if (s.rf.isEmpty()) { JOptionPane.showMessageDialog(this, "Ce satellite n'a pas de configuration radio."); return; }
+        if (!r.isRunning()) { JOptionPane.showMessageDialog(this, Tr.t("Connectez d'abord le poste.")); return; }
+        if (s.rf.isEmpty()) { JOptionPane.showMessageDialog(this, Tr.t("Ce satellite n'a pas de configuration radio.")); return; }
         if (s.rf.get(Math.min(rfIndex, s.rf.size() - 1)).downHz <= 0) {
-            JOptionPane.showMessageDialog(this, "Pas de fréquence pour cette configuration : réglez-la avec MODIFIER.");
+            JOptionPane.showMessageDialog(this, Tr.t("Pas de fréquence pour cette configuration : réglez-la avec MODIFIER."));
             return;
         }
         host.stopSweep();
         tracking = true;
-        trackKey.setText("ARRÊTER LE SUIVI");
-        host.log("Suivi Doppler de " + s.name + " (" + s.rf.get(Math.min(rfIndex, s.rf.size() - 1)).label() + ")");
+        trackKey.setText(Tr.t("ARRÊTER LE SUIVI"));
+        host.log(Tr.t("Suivi Doppler de ") + s.name + " (" + s.rf.get(Math.min(rfIndex, s.rf.size() - 1)).label() + ")");
         doTrack();
     }
 
@@ -520,39 +520,39 @@ final class SatPanel extends JPanel implements MapPanel.Overlay {
     private void stopTracking() {
         if (!tracking) return;
         tracking = false;
-        trackKey.setText("SUIVRE AVEC LE POSTE");
+        trackKey.setText(Tr.t("SUIVRE AVEC LE POSTE"));
         Radio r = host.radio();
         if (r.isRunning()) r.restoreAfterSweep(); // canal, ou frequence de l'onglet VFO
-        host.log("Suivi Doppler arrêté");
+        host.log(Tr.t("Suivi Doppler arrêté"));
     }
 
     /** Liaison perdue. */
     void onDisconnected() {
         tracking = false;
-        SwingUtilities.invokeLater(() -> trackKey.setText("SUIVRE AVEC LE POSTE"));
+        SwingUtilities.invokeLater(() -> trackKey.setText(Tr.t("SUIVRE AVEC LE POSTE")));
     }
 
     // ------------------------------------------------------------------ Modification des frequences
 
     private void editDialog() {
         SatCatalog.Sat s = selected;
-        if (s == null) { JOptionPane.showMessageDialog(this, "Choisissez un satellite."); return; }
-        if (s.rf.isEmpty()) { JOptionPane.showMessageDialog(this, "Ce satellite n'a pas de configuration radio (ajoutez-en une avec AJOUTER…)."); return; }
+        if (s == null) { JOptionPane.showMessageDialog(this, Tr.t("Choisissez un satellite.")); return; }
+        if (s.rf.isEmpty()) { JOptionPane.showMessageDialog(this, Tr.t("Ce satellite n'a pas de configuration radio (ajoutez-en une avec AJOUTER…).")); return; }
         SatCatalog.Rf r = s.rf.get(Math.min(rfIndex, s.rf.size() - 1));
         JTextField down = Shack.field(r.downHz > 0 ? SatCatalog.mhz(r.downHz) : "", 10), up = Shack.field(r.upHz > 0 ? SatCatalog.mhz(r.upHz) : "", 10),
                 tone = Shack.field(r.upTone > 0 ? String.format(Locale.ROOT, "%.1f", r.upTone / 100.0) : "", 6);
         JPanel p = new JPanel();
         p.setOpaque(false);
         p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
-        p.add(left(cap("Réception (descente), MHz")));
+        p.add(left(cap(Tr.t("Réception (descente), MHz"))));
         p.add(left(down));
-        p.add(left(cap("Émission (montée), MHz — vide = pas d'émission")));
+        p.add(left(cap(Tr.t("Émission (montée), MHz — vide = pas d'émission"))));
         p.add(left(up));
-        p.add(left(cap("CTCSS à l'émission, Hz — vide = aucun")));
+        p.add(left(cap(Tr.t("CTCSS à l'émission, Hz — vide = aucun"))));
         p.add(left(tone));
         if (r.orig != null)
-            p.add(left(cap("Origine : ↓ " + SatCatalog.mhz(r.orig[0]) + (r.orig[1] > 0 ? "  ↑ " + SatCatalog.mhz(r.orig[1]) : ""))));
-        String[] opts = r.orig != null ? new String[]{"ENREGISTRER", "RÉTABLIR L'ORIGINE", "ANNULER"} : new String[]{"ENREGISTRER", "ANNULER"};
+            p.add(left(cap(Tr.t("Origine : ↓ ") + SatCatalog.mhz(r.orig[0]) + (r.orig[1] > 0 ? "  ↑ " + SatCatalog.mhz(r.orig[1]) : ""))));
+        String[] opts = r.orig != null ? new String[]{Tr.t("ENREGISTRER"), Tr.t("RÉTABLIR L'ORIGINE"), Tr.t("ANNULER")} : new String[]{Tr.t("ENREGISTRER"), Tr.t("ANNULER")};
         int c = JOptionPane.showOptionDialog(this, p, s.name + " · " + (r.name.isEmpty() ? "FM" : r.name), JOptionPane.DEFAULT_OPTION,
                 JOptionPane.PLAIN_MESSAGE, null, opts, opts[0]);
         String err;
@@ -571,16 +571,16 @@ final class SatPanel extends JPanel implements MapPanel.Overlay {
             u = up.trim().isEmpty() ? 0 : Math.round(Double.parseDouble(up.trim().replace(',', '.')) * 1e6);
             t = tone.trim().isEmpty() ? 0 : (int) Math.round(Double.parseDouble(tone.trim().replace(',', '.')) * 100);
         } catch (NumberFormatException e) {
-            return "Valeur invalide.";
+            return Tr.t("Valeur invalide.");
         }
-        if (d < 1_000_000L || d > 6_000_000_000L || u < 0 || u > 6_000_000_000L) return "Fréquence hors plage.";
-        if (t != 0 && (t < 6000 || t > 26000)) return "CTCSS hors plage (60–260 Hz).";
+        if (d < 1_000_000L || d > 6_000_000_000L || u < 0 || u > 6_000_000_000L) return Tr.t("Fréquence hors plage.");
+        if (t != 0 && (t < 6000 || t > 26000)) return Tr.t("CTCSS hors plage (60–260 Hz).");
         try {
             catalog.editRf(s, r, d, u, t);
         } catch (IOException e) {
-            return "Enregistrement impossible : " + e.getMessage();
+            return Tr.t("Enregistrement impossible : ") + e.getMessage();
         }
-        host.log("Satellites : " + s.name + " " + r.label());
+        host.log(Tr.t("Satellites : ") + s.name + " " + r.label());
         updateDetail();
         if (tracking) doTrack();
         return null;
@@ -590,9 +590,9 @@ final class SatPanel extends JPanel implements MapPanel.Overlay {
         try {
             catalog.resetRf(s, r);
         } catch (IOException e) {
-            return "Enregistrement impossible : " + e.getMessage();
+            return Tr.t("Enregistrement impossible : ") + e.getMessage();
         }
-        host.log("Satellites : " + s.name + " fréquences d'origine " + r.label());
+        host.log(Tr.t("Satellites : ") + s.name + Tr.t(" fréquences d'origine ") + r.label());
         updateDetail();
         if (tracking) doTrack();
         return null;
@@ -601,7 +601,7 @@ final class SatPanel extends JPanel implements MapPanel.Overlay {
     // ------------------------------------------------------------------ Ajout / suppression
 
     private void addDialog() {
-        JDialog d = new JDialog(SwingUtilities.getWindowAncestor(this), "Ajouter un satellite");
+        JDialog d = new JDialog(SwingUtilities.getWindowAncestor(this), Tr.t("Ajouter un satellite"));
         d.setModal(true);
         JPanel p = new JPanel();
         p.setBackground(Shack.BG);
@@ -611,14 +611,14 @@ final class SatPanel extends JPanel implements MapPanel.Overlay {
         JTextField down = Shack.field("", 10), up = Shack.field("", 10), tone = Shack.field("", 6), rfName = Shack.field("FM", 10);
         l1.setFont(Shack.mono(12f));
         l2.setFont(Shack.mono(12f));
-        Shack.Switch sstv = new Shack.Switch("Satellite SSTV", false);
-        p.add(left(cap("Nom")));
+        Shack.Switch sstv = new Shack.Switch(Tr.t("Satellite SSTV"), false);
+        p.add(left(cap(Tr.t("Nom"))));
         p.add(left(name));
-        p.add(left(cap("N° NORAD (pour récupérer le TLE sur CelesTrak)")));
+        p.add(left(cap(Tr.t("N° NORAD (pour récupérer le TLE sur CelesTrak)"))));
         JPanel nr = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
         nr.setOpaque(false);
         nr.add(norad);
-        Shack.Key fetch = new Shack.Key("RÉCUPÉRER LE TLE").font(Shack.bold(11.5f));
+        Shack.Key fetch = new Shack.Key(Tr.t("RÉCUPÉRER LE TLE")).font(Shack.bold(11.5f));
         fetch.addActionListener(e -> {
             try {
                 String[] t = catalog.fetchTleByNorad(Integer.parseInt(norad.getText().trim()));
@@ -626,16 +626,16 @@ final class SatPanel extends JPanel implements MapPanel.Overlay {
                 l1.setText(t[1]);
                 l2.setText(t[2]);
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(d, "TLE introuvable : " + ex.getMessage());
+                JOptionPane.showMessageDialog(d, Tr.t("TLE introuvable : ") + ex.getMessage());
             }
         });
         nr.add(fetch);
         p.add(left(nr));
-        p.add(left(cap("TLE ligne 1")));
+        p.add(left(cap(Tr.t("TLE ligne 1"))));
         p.add(left(l1));
-        p.add(left(cap("TLE ligne 2")));
+        p.add(left(cap(Tr.t("TLE ligne 2"))));
         p.add(left(l2));
-        p.add(left(cap("Configuration radio (facultatif) : nom, descente MHz, montée MHz, CTCSS Hz")));
+        p.add(left(cap(Tr.t("Configuration radio (facultatif) : nom, descente MHz, montée MHz, CTCSS Hz"))));
         JPanel rr = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
         rr.setOpaque(false);
         rr.add(rfName);
@@ -647,9 +647,9 @@ final class SatPanel extends JPanel implements MapPanel.Overlay {
         p.add(left(sstv));
         JPanel br = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 8));
         br.setOpaque(false);
-        Shack.Key cancel = new Shack.Key("ANNULER").font(Shack.bold(12f));
+        Shack.Key cancel = new Shack.Key(Tr.t("ANNULER")).font(Shack.bold(12f));
         cancel.addActionListener(e -> d.dispose());
-        Shack.Key ok = new Shack.Key("AJOUTER").primary().font(Shack.bold(12f));
+        Shack.Key ok = new Shack.Key(Tr.t("AJOUTER")).primary().font(Shack.bold(12f));
         ok.addActionListener(e -> {
             try {
                 SatCatalog.Rf rf = null;
@@ -661,13 +661,13 @@ final class SatPanel extends JPanel implements MapPanel.Overlay {
                     if (!tone.getText().trim().isEmpty()) rf.upTone = (int) Math.round(Double.parseDouble(tone.getText().trim().replace(',', '.')) * 100);
                 }
                 String n = name.getText().trim();
-                catalog.addUser(n.isEmpty() ? "Satellite perso" : n, l1.getText().trim(), l2.getText().trim(), rf, sstv.isOn());
-                host.log("Satellite ajouté : " + n);
+                catalog.addUser(n.isEmpty() ? Tr.t("Satellite perso") : n, l1.getText().trim(), l2.getText().trim(), rf, sstv.isOn());
+                host.log(Tr.t("Satellite ajouté : ") + n);
                 d.dispose();
                 refilter();
                 new Thread(this::computePasses, "htmod-passages").start();
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(d, "Impossible d'ajouter : " + ex.getMessage());
+                JOptionPane.showMessageDialog(d, Tr.t("Impossible d'ajouter : ") + ex.getMessage());
             }
         });
         br.add(cancel);
@@ -689,16 +689,16 @@ final class SatPanel extends JPanel implements MapPanel.Overlay {
         SatCatalog.Sat s = selected;
         if (s == null) return;
         if (!SatCatalog.SRC_USER.equals(s.source)) {
-            JOptionPane.showMessageDialog(this, "Seuls les satellites ajoutés par vous peuvent être supprimés (le filtre SSTV permet de masquer les autres).");
+            JOptionPane.showMessageDialog(this, Tr.t("Seuls les satellites ajoutés par vous peuvent être supprimés (le filtre SSTV permet de masquer les autres)."));
             return;
         }
-        if (JOptionPane.showConfirmDialog(this, "Supprimer « " + s.name + " » ?", "Satellites", JOptionPane.OK_CANCEL_OPTION) != JOptionPane.OK_OPTION) return;
+        if (JOptionPane.showConfirmDialog(this, Tr.t("Supprimer « ") + s.name + Tr.t(" » ?"), Tr.t("Satellites"), JOptionPane.OK_CANCEL_OPTION) != JOptionPane.OK_OPTION) return;
         try {
             catalog.removeUser(s.norad);
             selected = null;
             refilter();
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Suppression impossible : " + ex.getMessage());
+            JOptionPane.showMessageDialog(this, Tr.t("Suppression impossible : ") + ex.getMessage());
         }
     }
 
@@ -749,7 +749,7 @@ final class SatPanel extends JPanel implements MapPanel.Overlay {
             case "rfEdit":
             case "rfReset": {
                 SatCatalog.Sat s = selected;
-                if (s == null || s.rf.isEmpty()) return "Choisissez un satellite avec une configuration radio.";
+                if (s == null || s.rf.isEmpty()) return Tr.t("Choisissez un satellite avec une configuration radio.");
                 SatCatalog.Rf r = s.rf.get(Math.min(rfIndex, s.rf.size() - 1));
                 return a.equals("rfReset") ? resetRf(s, r)
                         : editRf(s, r, p.getOrDefault("down", ""), p.getOrDefault("up", ""), p.getOrDefault("tone", ""));
@@ -774,7 +774,7 @@ final class SatPanel extends JPanel implements MapPanel.Overlay {
                     double la = Double.parseDouble(p.get("lat").trim().replace(',', '.')), lo = Double.parseDouble(p.get("lon").trim().replace(',', '.'));
                     if (Math.abs(la) > 90 || Math.abs(lo) > 180) throw new NumberFormatException();
                 } catch (Exception e) {
-                    return "Position invalide (latitude -90..90, longitude -180..180).";
+                    return Tr.t("Position invalide (latitude -90..90, longitude -180..180).");
                 }
                 latF.setText(p.get("lat").trim());
                 lonF.setText(p.get("lon").trim());
@@ -795,10 +795,10 @@ final class SatPanel extends JPanel implements MapPanel.Overlay {
             case "track": {
                 SatCatalog.Sat s = selected;
                 if (!tracking) {
-                    if (s == null) return "Choisissez un satellite.";
-                    if (!host.radio().isRunning()) return "Connectez d'abord le poste.";
-                    if (s.rf.isEmpty()) return "Ce satellite n'a pas de configuration radio.";
-                    if (s.rf.get(Math.min(rfIndex, s.rf.size() - 1)).downHz <= 0) return "Pas de fréquence pour cette configuration : réglez-la avec MODIFIER.";
+                    if (s == null) return Tr.t("Choisissez un satellite.");
+                    if (!host.radio().isRunning()) return Tr.t("Connectez d'abord le poste.");
+                    if (s.rf.isEmpty()) return Tr.t("Ce satellite n'a pas de configuration radio.");
+                    if (s.rf.get(Math.min(rfIndex, s.rf.size() - 1)).downHz <= 0) return Tr.t("Pas de fréquence pour cette configuration : réglez-la avec MODIFIER.");
                 }
                 toggleTracking();
                 return null;
@@ -809,7 +809,7 @@ final class SatPanel extends JPanel implements MapPanel.Overlay {
             case "refresh":
                 new Thread(() -> {
                     String m = catalog.refresh();
-                    host.log("Satellites : " + m);
+                    host.log(Tr.t("Satellites : ") + m);
                     SwingUtilities.invokeLater(() -> { status.setText(m); refilter(); });
                     computePasses();
                 }, "htmod-satellites").start();
@@ -819,7 +819,7 @@ final class SatPanel extends JPanel implements MapPanel.Overlay {
                     String[] t = catalog.fetchTleByNorad(Integer.parseInt(p.get("norad").trim()));
                     return Json.obj("name", t[0], "l1", t[1], "l2", t[2]);
                 } catch (Exception e) {
-                    return "TLE introuvable : " + e.getMessage();
+                    return Tr.t("TLE introuvable : ") + e.getMessage();
                 }
             case "add":
                 try {
@@ -833,19 +833,19 @@ final class SatPanel extends JPanel implements MapPanel.Overlay {
                         if (!tone.isEmpty()) rf.upTone = (int) Math.round(Double.parseDouble(tone.replace(',', '.')) * 100);
                     }
                     String n = p.getOrDefault("name", "").trim();
-                    catalog.addUser(n.isEmpty() ? "Satellite perso" : n, p.getOrDefault("l1", "").trim(), p.getOrDefault("l2", "").trim(), rf,
+                    catalog.addUser(n.isEmpty() ? Tr.t("Satellite perso") : n, p.getOrDefault("l1", "").trim(), p.getOrDefault("l2", "").trim(), rf,
                             "1".equals(p.get("sstv")));
-                    host.log("Satellite ajouté : " + n);
+                    host.log(Tr.t("Satellite ajouté : ") + n);
                     refilter();
                     new Thread(this::computePasses, "htmod-passages").start();
                     return null;
                 } catch (Exception e) {
-                    return "Impossible d'ajouter : " + e.getMessage();
+                    return Tr.t("Impossible d'ajouter : ") + e.getMessage();
                 }
             case "remove": {
                 SatCatalog.Sat s = selected;
                 if (s == null) return null;
-                if (!SatCatalog.SRC_USER.equals(s.source)) return "Seuls les satellites ajoutés par vous peuvent être supprimés.";
+                if (!SatCatalog.SRC_USER.equals(s.source)) return Tr.t("Seuls les satellites ajoutés par vous peuvent être supprimés.");
                 try {
                     if (tracking) stopTracking();
                     catalog.removeUser(s.norad);
@@ -853,7 +853,7 @@ final class SatPanel extends JPanel implements MapPanel.Overlay {
                     refilter();
                     return null;
                 } catch (Exception e) {
-                    return "Suppression impossible : " + e.getMessage();
+                    return Tr.t("Suppression impossible : ") + e.getMessage();
                 }
             }
             default: return null;
@@ -926,12 +926,12 @@ final class SatPanel extends JPanel implements MapPanel.Overlay {
         }
         // legende
         g.setFont(Shack.mono(10.5f));
-        String leg = "● visible   ● SSTV   ● sous l'horizon   — trace   ○ empreinte";
+        String leg = Tr.t("● visible   ● SSTV   ● sous l'horizon   — trace   ○ empreinte");
         g.setColor(Shack.alpha(Shack.BG, 210));
         g.fillRoundRect(8, 8, g.getFontMetrics().stringWidth(leg) + 16, 20, 8, 8);
         int x = 16;
         Color[] cs = {Shack.CYAN, new Color(0xC24DD6), Shack.TEXT2};
-        String[] parts = {"● visible   ", "● SSTV   ", "● sous l'horizon   ", "— trace   ○ empreinte"};
+        String[] parts = {Tr.t("● visible   "), "● SSTV   ", Tr.t("● sous l'horizon   "), Tr.t("— trace   ○ empreinte")};
         for (int i = 0; i < parts.length; i++) {
             g.setColor(i < 3 ? cs[i] : Shack.AMBER);
             g.drawString(parts[i], x, 22);
@@ -974,7 +974,7 @@ final class SatPanel extends JPanel implements MapPanel.Overlay {
     // ------------------------------------------------------------------ Liste
 
     private final class ListModel extends AbstractTableModel {
-        private final String[] cols = {"Satellite", "Élév.", "Prochain", "SSTV"};
+        private final String[] cols = {"Satellite", Tr.t("Élév."), Tr.t("Prochain"), "SSTV"};
 
         @Override public int getRowCount() { return shown.size(); }
         @Override public int getColumnCount() { return cols.length; }

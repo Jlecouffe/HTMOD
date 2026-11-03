@@ -17,7 +17,7 @@ final class Wav {
     /** Lit un WAV PCM 16 bits ; en stereo, ne garde que le canal gauche. */
     static Wav read(File file) throws IOException {
         ByteBuffer bb = ByteBuffer.wrap(Files.readAllBytes(file.toPath())).order(ByteOrder.LITTLE_ENDIAN);
-        if (bb.limit() < 12 || bb.getInt(0) != 0x46464952 || bb.getInt(8) != 0x45564157) throw new IOException("pas un fichier WAV");
+        if (bb.limit() < 12 || bb.getInt(0) != 0x46464952 || bb.getInt(8) != 0x45564157) throw new IOException(Tr.t("pas un fichier WAV"));
         int pos = 12, rate = 32000, channels = 1, bits = 16, dataOff = -1, dataLen = 0;
         while (pos + 8 <= bb.limit()) {
             String id = new String(bb.array(), pos, 4, "US-ASCII");
@@ -33,8 +33,8 @@ final class Wav {
             }
             pos += 8 + size + (size & 1);
         }
-        if (dataOff < 0) throw new IOException("pas de donnees audio");
-        if (bits != 16) throw new IOException("seul le PCM 16 bits est pris en charge (fichier : " + bits + " bits)");
+        if (dataOff < 0) throw new IOException(Tr.t("pas de donnees audio"));
+        if (bits != 16) throw new IOException(Tr.t("seul le PCM 16 bits est pris en charge (fichier : ") + bits + Tr.t(" bits)"));
         int step = 2 * Math.max(1, channels);
         Wav w = new Wav();
         w.rate = rate;

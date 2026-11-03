@@ -55,6 +55,9 @@ svg[data-icon] { width: 18px; height: 18px; flex: none; stroke: currentColor; fi
 .sound-btn.on svg { color: var(--amber); }
 @media (max-width: 560px) { .sound-btn span { display: none; } .sound-btn { width: 44px; padding: 0; } }
 .key.drawer-btn { display: none; }
+svg.flag { width: 22px; height: 15px; flex: none; border-radius: 2px; }
+.lang-btn { height: 44px; padding: 0 12px; font-size: 12px; }
+@media (max-width: 560px) { .lang-btn span { display: none; } .lang-btn { width: 44px; padding: 0; } }
 #side { overflow-y: auto; overflow-x: hidden; padding: 6px 12px 18px 18px; }
 #main { display: flex; flex-direction: column; min-width: 0; min-height: 0; padding: 6px 20px 18px 6px; }
 #tabs { display: flex; gap: 5px; padding-bottom: 10px; overflow-x: auto; scrollbar-width: none; flex: none; }

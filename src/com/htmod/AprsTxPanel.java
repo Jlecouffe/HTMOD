@@ -44,8 +44,8 @@ final class AprsTxPanel extends Shack.Card {
     private final JTextArea params = new JTextArea();
     private final JTextField infoField = Shack.field("", 24);
     private final JLabel statusLbl = Shack.label(" ", Shack.mono(11.5f), Shack.MUTED);
-    private final Shack.Key sendKey = new Shack.Key("ÉMETTRE TRAME").primary().font(Shack.bold(13f));
-    private final Shack.Switch autoSw = new Shack.Switch("Balise automatique (intervalle du poste)", false);
+    private final Shack.Key sendKey = new Shack.Key(Tr.t("ÉMETTRE TRAME")).primary().font(Shack.bold(13f));
+    private final Shack.Switch autoSw = new Shack.Switch(Tr.t("Balise automatique (intervalle du poste)"), false);
     private volatile byte[] pending;
     private long lastSent;
 
@@ -55,7 +55,7 @@ final class AprsTxPanel extends Shack.Card {
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         setBorder(new EmptyBorder(12, 16, 12, 16));
         setPreferredSize(new Dimension(400, 100));
-        add(left(Shack.label("ÉMISSION APRS · RÉGLAGES DU POSTE", Shack.tracked(Shack.mono(11f), 0.16f), Shack.MUTED)));
+        add(left(Shack.label(Tr.t("ÉMISSION APRS · RÉGLAGES DU POSTE"), Shack.tracked(Shack.mono(11f), 0.16f), Shack.MUTED)));
         add(Box.createVerticalStrut(8));
         params.setEditable(false);
         params.setOpaque(false);
@@ -65,15 +65,15 @@ final class AprsTxPanel extends Shack.Card {
         params.setWrapStyleWord(true);
         params.setMaximumSize(new Dimension(Integer.MAX_VALUE, 220));
         add(left(params));
-        Shack.Key reload = new Shack.Key("RELIRE LE POSTE").font(Shack.bold(11.5f));
+        Shack.Key reload = new Shack.Key(Tr.t("RELIRE LE POSTE")).font(Shack.bold(11.5f));
         reload.addActionListener(e -> reload());
         reload.setPreferredSize(new Dimension(170, 36));
         reload.setMaximumSize(new Dimension(170, 36));
         add(left(reload));
         add(Box.createVerticalStrut(10));
-        add(left(caption("Champ d'information (vide = balise de position)")));
+        add(left(caption(Tr.t("Champ d'information (vide = balise de position)"))));
         infoField.setText(prefs.get("aprsTxInfo", ""));
-        infoField.setToolTipText("Ex. « >En écoute » (statut) ou « :F4ABC    :Bonjour » (message) ; vide = position + commentaire du poste");
+        infoField.setToolTipText(Tr.t("Ex. « >En écoute » (statut) ou « :F4ABC    :Bonjour » (message) ; vide = position + commentaire du poste"));
         infoField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
         add(left(infoField));
         add(Box.createVerticalStrut(6));
@@ -91,9 +91,9 @@ final class AprsTxPanel extends Shack.Card {
         });
         add(left(sendKey));
         add(Box.createVerticalStrut(8));
-        JLabel note = new JLabel("<html><body style='width:270px'>La trame est modulée par le TNC du poste (AFSK 1200) "
-                + "et émise dès que le canal est libre, sur le canal nommé « APRS » s'il existe, sinon sur celui du VFO A. "
-                + "Indicatif, symbole, chemin et commentaire se règlent dans le poste ou son appli. Réservé aux radioamateurs.</body></html>");
+        JLabel note = new JLabel(Tr.t("<html><body style='width:270px'>La trame est modulée par le TNC du poste (AFSK 1200) ")
+                + Tr.t("et émise dès que le canal est libre, sur le canal nommé « APRS » s'il existe, sinon sur celui du VFO A. ")
+                + Tr.t("Indicatif, symbole, chemin et commentaire se règlent dans le poste ou son appli. Réservé aux radioamateurs.</body></html>"));
         note.setFont(Shack.body(11.5f));
         note.setForeground(Shack.MUTED);
         add(left(note));
@@ -126,9 +126,9 @@ final class AprsTxPanel extends Shack.Card {
 
     void reload() {
         Radio r = host.radio();
-        if (!r.isRunning()) { warn("Connectez d'abord le poste."); return; }
+        if (!r.isRunning()) { warn(Tr.t("Connectez d'abord le poste.")); return; }
         r.readAprsSettings();
-        status("Lecture des réglages APRS du poste…", Shack.MUTED);
+        status(Tr.t("Lecture des réglages APRS du poste…"), Shack.MUTED);
     }
 
     // ------------------------------------------------------------------ Parametres
@@ -171,27 +171,27 @@ final class AprsTxPanel extends Shack.Card {
         Radio r = host.radio();
         Radio.AprsSettings a = r.aprsSettings();
         StringBuilder sb = new StringBuilder();
-        if (!r.isRunning()) sb.append("Poste non connecté.");
-        else if (a == null) sb.append("Réglages APRS pas encore lus…");
+        if (!r.isRunning()) sb.append(Tr.t("Poste non connecté."));
+        else if (a == null) sb.append(Tr.t("Réglages APRS pas encore lus…"));
         else {
             int ch = aprsChannel(r);
             long hz = txHz(r, ch);
             double[] pos = position(r);
-            sb.append("Indicatif   ").append(a.source().isEmpty() ? "(non réglé dans le poste)" : a.source()).append('\n');
-            sb.append("Symbole     ").append(a.symbol.isEmpty() ? "(aucun, /[ par défaut)" : a.symbol + "  " + Aprs.symbolName(symTable(a), symCode(a))).append('\n');
-            sb.append("Chemin      ").append(String.join(",", path(r))).append(r.aprsPath() == null || r.aprsPath().isEmpty() ? " (défaut)" : "").append('\n');
-            sb.append("Commentaire ").append(a.beacon.isEmpty() ? "(aucun)" : a.beacon).append('\n');
-            sb.append("Intervalle  ").append(a.intervalS > 0 ? a.intervalS + " s" : "(non réglé)")
-                    .append(a.shareLocation ? " · partage de position actif" : "").append(a.smartBeacon ? " · SmartBeacon" : "").append('\n');
-            sb.append("Format      ").append(a.packetFormat == 1 ? "APRS" : "BSS (le poste émet en BSS ; HTMod émet en APRS)").append('\n');
-            sb.append("Position    ").append(pos == null ? "aucune (GPS du poste sans fix, pas de position d'observation)"
-                    : Aprs.fmtPos(pos[0], pos[1]) + (pos[2] > 0 ? " (GPS du poste)" : " (position d'observation)")).append('\n');
-            sb.append("Canal       ").append(ch >= 0 ? (ch + 1) + " " + r.channelName(ch) : "VFO A (pas de canal « APRS »)")
-                    .append(hz > 0 ? " · " + Bandscope.mhz(hz) + " MHz" + (PocsagPanel.amateur(hz) ? "" : " (hors bande radioamateur)") : " · émission interdite");
+            sb.append(Tr.pad("Indicatif", 12)).append(a.source().isEmpty() ? Tr.t("(non réglé dans le poste)") : a.source()).append('\n');
+            sb.append(Tr.pad("Symbole", 12)).append(a.symbol.isEmpty() ? Tr.t("(aucun, /[ par défaut)") : a.symbol + "  " + Aprs.symbolName(symTable(a), symCode(a))).append('\n');
+            sb.append(Tr.pad("Chemin", 12)).append(String.join(",", path(r))).append(r.aprsPath() == null || r.aprsPath().isEmpty() ? Tr.t(" (défaut)") : "").append('\n');
+            sb.append(Tr.pad("Commentaire", 12)).append(a.beacon.isEmpty() ? Tr.t("(aucun)") : a.beacon).append('\n');
+            sb.append(Tr.pad("Intervalle", 12)).append(a.intervalS > 0 ? a.intervalS + " s" : Tr.t("(non réglé)"))
+                    .append(a.shareLocation ? Tr.t(" · partage de position actif") : "").append(a.smartBeacon ? " · SmartBeacon" : "").append('\n');
+            sb.append(Tr.pad("Format", 12)).append(a.packetFormat == 1 ? "APRS" : Tr.t("BSS (le poste émet en BSS ; HTMod émet en APRS)")).append('\n');
+            sb.append(Tr.pad("Position", 12)).append(pos == null ? Tr.t("aucune (GPS du poste sans fix, pas de position d'observation)")
+                    : Aprs.fmtPos(pos[0], pos[1]) + (pos[2] > 0 ? Tr.t(" (GPS du poste)") : Tr.t(" (position d'observation)"))).append('\n');
+            sb.append(Tr.pad("Canal", 12)).append(ch >= 0 ? (ch + 1) + " " + r.channelName(ch) : Tr.t("VFO A (pas de canal « APRS »)"))
+                    .append(hz > 0 ? " · " + Bandscope.mhz(hz) + " MHz" + (PocsagPanel.amateur(hz) ? "" : Tr.t(" (hors bande radioamateur)")) : Tr.t(" · émission interdite"));
         }
         params.setText(sb.toString());
         boolean busy = pending != null;
-        sendKey.setText(busy ? "EN ATTENTE DU CANAL…" : "ÉMETTRE TRAME");
+        sendKey.setText(busy ? Tr.t("EN ATTENTE DU CANAL…") : Tr.t("ÉMETTRE TRAME"));
     }
 
     private static char symTable(Radio.AprsSettings a) { return a.symbol.length() >= 2 ? a.symbol.charAt(0) : '/'; }
@@ -216,16 +216,16 @@ final class AprsTxPanel extends Shack.Card {
     /** Emet une trame ; info vide = balise de position. warn recoit le message d'erreur (Swing ou page web). */
     void send(String info, java.util.function.Consumer<String> warn) {
         Radio r = host.radio();
-        if (!r.isRunning()) { warn.accept("Connectez d'abord le poste."); return; }
+        if (!r.isRunning()) { warn.accept(Tr.t("Connectez d'abord le poste.")); return; }
         Radio.AprsSettings a = r.aprsSettings();
-        if (a == null) { r.readAprsSettings(); warn.accept("Réglages APRS du poste pas encore lus, réessayez dans un instant."); return; }
-        if (a.source().isEmpty()) { warn.accept("Aucun indicatif APRS réglé dans le poste (réglages APRS / BSS du poste ou de son appli)."); return; }
-        if (pending != null || r.tncBusy()) { warn.accept("Une trame attend déjà que le canal se libère."); return; }
+        if (a == null) { r.readAprsSettings(); warn.accept(Tr.t("Réglages APRS du poste pas encore lus, réessayez dans un instant.")); return; }
+        if (a.source().isEmpty()) { warn.accept(Tr.t("Aucun indicatif APRS réglé dans le poste (réglages APRS / BSS du poste ou de son appli).")); return; }
+        if (pending != null || r.tncBusy()) { warn.accept(Tr.t("Une trame attend déjà que le canal se libère.")); return; }
         int ch = aprsChannel(r);
         long hz = txHz(r, ch);
-        if (hz <= 0) { warn.accept("Émission interdite sur le canal d'émission (ou canaux pas encore lus)."); return; }
+        if (hz <= 0) { warn.accept(Tr.t("Émission interdite sur le canal d'émission (ou canaux pas encore lus).")); return; }
         if (!PocsagPanel.amateur(hz)) {
-            warn.accept("Émission refusée : " + Bandscope.mhz(hz) + " MHz n'est pas dans une bande radioamateur (144–146 ou 430–440 MHz).");
+            warn.accept(Tr.t("Émission refusée : ") + Bandscope.mhz(hz) + Tr.t(" MHz n'est pas dans une bande radioamateur (144–146 ou 430–440 MHz)."));
             return;
         }
         info = info == null ? "" : info.trim();
@@ -237,15 +237,15 @@ final class AprsTxPanel extends Shack.Card {
         try {
             frame = Ax25.encodeUi(a.source(), TOCALL, path(r), info);
         } catch (IllegalArgumentException e) {
-            warn.accept("Trame impossible : " + e.getMessage());
+            warn.accept(Tr.t("Trame impossible : ") + e.getMessage());
             return;
         }
-        if (!r.sendTncFrame(frame, ch)) { warn.accept("Le TNC du poste est occupé, réessayez."); return; }
+        if (!r.sendTncFrame(frame, ch)) { warn.accept(Tr.t("Le TNC du poste est occupé, réessayez.")); return; }
         pending = frame;
         lastSent = System.currentTimeMillis();
         Ax25 p = Ax25.parse(frame);
-        host.log("APRS : émission " + (p == null ? "" : p.tnc2()) + " (canal " + (ch >= 0 ? ch + 1 : "VFO A") + ", " + Bandscope.mhz(hz) + " MHz)");
-        status("En attente du canal libre…", Shack.AMBER);
+        host.log(Tr.t("APRS : émission ") + (p == null ? "" : p.tnc2()) + Tr.t(" (canal ") + (ch >= 0 ? ch + 1 : "VFO A") + ", " + Bandscope.mhz(hz) + " MHz)");
+        status(Tr.t("En attente du canal libre…"), Shack.AMBER);
         refresh();
     }
 
@@ -255,8 +255,8 @@ final class AprsTxPanel extends Shack.Card {
         pending = null;
         if (ok && f != null) host.sent(f);
         SwingUtilities.invokeLater(() -> {
-            status(ok ? "Trame émise à " + new java.text.SimpleDateFormat("HH:mm:ss", Locale.ROOT).format(new java.util.Date())
-                    : "Trame non émise (canal occupé ou refus du poste).", ok ? Shack.GREEN : Shack.RED);
+            status(ok ? Tr.t("Trame émise à ") + new java.text.SimpleDateFormat("HH:mm:ss", Locale.ROOT).format(new java.util.Date())
+                    : Tr.t("Trame non émise (canal occupé ou refus du poste)."), ok ? Shack.GREEN : Shack.RED);
             refresh();
         });
     }
@@ -271,16 +271,16 @@ final class AprsTxPanel extends Shack.Card {
             Radio r = host.radio();
             Radio.AprsSettings a = r.aprsSettings();
             if (!r.isRunning() || a == null || a.source().isEmpty()) {
-                warn.accept(!r.isRunning() ? "Connectez d'abord le poste." : "Réglages APRS du poste non lus ou sans indicatif.");
+                warn.accept(!r.isRunning() ? Tr.t("Connectez d'abord le poste.") : Tr.t("Réglages APRS du poste non lus ou sans indicatif."));
                 on = false;
-            } else if (!confirm.test("Balise automatique : une position toutes les " + interval(a) + " s, en " + a.source()
-                    + ", tant que HTMod est connecté.\nContinuer ?")) {
+            } else if (!confirm.test(Tr.t("Balise automatique : une position toutes les ") + interval(a) + Tr.t(" s, en ") + a.source()
+                    + Tr.t(", tant que HTMod est connecté.\nContinuer ?"))) {
                 on = false;
             }
         }
         autoSw.setOn(on);
         if (on) lastSent = 0; // premiere balise tout de suite
-        host.log("APRS : balise automatique " + (on ? "activée" : "arrêtée"));
+        host.log(Tr.t("APRS : balise automatique ") + (on ? Tr.t("activée") : Tr.t("arrêtée")));
     }
 
     /** Intervalle de la balise automatique : celui du poste, 60 s au minimum (10 min si non regle). */
@@ -294,7 +294,7 @@ final class AprsTxPanel extends Shack.Card {
         if (System.currentTimeMillis() - lastSent < interval(a) * 1000L) return;
         send("", s -> {
             lastSent = System.currentTimeMillis(); // pas de nouvel essai avant l'intervalle suivant
-            status("Balise automatique : " + s, Shack.RED);
+            status(Tr.t("Balise automatique : ") + s, Shack.RED);
         });
     }
 
@@ -318,7 +318,7 @@ final class AprsTxPanel extends Shack.Card {
             case "auto": setAuto("1".equals(p.get("on")), s -> true, s -> err[0] = s); break;
             case "reload":
                 if (host.radio().isRunning()) host.radio().readAprsSettings();
-                else err[0] = "Connectez d'abord le poste.";
+                else err[0] = Tr.t("Connectez d'abord le poste.");
                 break;
             default: break;
         }

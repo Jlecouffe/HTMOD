@@ -1,0 +1,837 @@
+# Traductions de HTMod : francais (texte des sources) | anglais | italien
+# Une entree par ligne, separateur " | " ; \n = retour a la ligne. Les espaces en debut et fin de texte
+# sont ignores (conserves depuis la source). Colonne vide ou entree absente = texte francais.
+# Respecter les %.1f, %s et balises HTML. Le test Tr (WinTest) controle ces points.
+# Utilise par Tr.java (application) et servi a l'interface web par /i18n.js.
+
+# --- nouveau : langue
+Changer la langue | Change language | Cambia lingua
+HTMod va redémarrer pour appliquer la langue (la liaison avec le poste sera rouverte).\nContinuer ? | HTMod will restart to apply the language (the radio link will be reopened).\nContinue? | HTMod verrà riavviato per applicare la lingua (il collegamento con la radio verrà riaperto).\nContinuare?
+La langue sera appliquée au prochain démarrage de HTMod. | The language will be applied the next time HTMod starts. | La lingua verrà applicata al prossimo avvio di HTMod.
+Redémarrage impossible : relancez HTMod pour appliquer la langue. | Could not restart: start HTMod again to apply the language. | Riavvio impossibile: riavvia HTMod per applicare la lingua.
+HTMod redémarre… | HTMod is restarting… | HTMod si sta riavviando…
+Langue inconnue. | Unknown language. | Lingua sconosciuta.
+
+# --- App
+AUTORISER DANS LE PARE-FEU | ALLOW THROUGH FIREWALL | CONSENTI NEL FIREWALL
+Pont Bluetooth | Bluetooth bridge | Bridge Bluetooth
+Décodeur SBC | SBC decoder | Decodificatore SBC
+Balises SARSAT 406 | SARSAT 406 beacons | Radiofari SARSAT 406
+Radiosondes | Radiosondes | Radiosonde
+Carte OpenStreetMap | OpenStreetMap map | Mappa OpenStreetMap
+Prêt | Ready | Pronto
+HTMod – SARSAT, radiosondes & APRS | HTMod – SARSAT, radiosondes & APRS | HTMod – SARSAT, radiosonde e APRS
+HORS LIGNE | OFFLINE | NON IN LINEA
+– résultats dans | – results in | – risultati in
+ATTENTION : btbridge.exe introuvable ( | WARNING: btbridge.exe not found ( | ATTENZIONE: btbridge.exe non trovato (
+SARSAT · RADIOSONDES · APRS |  | SARSAT · RADIOSONDE · APRS
+Réglages et outils | Settings and tools | Impostazioni e strumenti
+Aucun poste | No radio | Nessuna radio
+Poste › | Radio › | Radio ›
+Choisir le poste parmi les appareils Bluetooth appairés | Choose the radio among the paired Bluetooth devices | Scegli la radio tra i dispositivi Bluetooth associati
+SE CONNECTER | CONNECT | CONNETTI
+PORT COM | COM PORT | PORTA COM
+Le poste en Bluetooth (commandes, audio, TNC du poste) | The radio over Bluetooth (commands, audio, radio's TNC) | La radio via Bluetooth (comandi, audio, TNC della radio)
+Un TNC externe en mode KISS sur port série : réception APRS | An external TNC in KISS mode on a serial port: APRS reception | Un TNC esterno in modalità KISS su porta seriale: ricezione APRS
+OUVERTURE… | OPENING… | APERTURA…
+DÉCONNECTER | DISCONNECT | DISCONNETTI
+Déconnecté | Disconnected | Disconnesso
+Réception | Reception | Ricezione
+CANAL | CHANNEL | CANALE
+Décodage SARSAT / sondes | SARSAT / sonde decoding | Decodifica SARSAT / sonde
+SONDE |  | SONDA
+Décode quand le canal en réception s'appelle SARSAT ou Radiosonde | Decodes when the receiving channel is named SARSAT or Radiosonde | Decodifica quando il canale in ricezione si chiama SARSAT o Radiosonde
+Décoder l'audio en SARSAT quel que soit le canal | Decode audio as SARSAT whatever the channel | Decodifica l'audio come SARSAT su qualsiasi canale
+Décoder l'audio en radiosonde quel que soit le canal | Decode audio as radiosonde whatever the channel | Decodifica l'audio come radiosonda su qualsiasi canale
+Options |  | Opzioni
+Écouter sur le PC | Listen on the PC | Ascolta sul PC
+Enregistrer les WAV | Save WAV files | Salva i file WAV
+Couper le son des trames APRS | Mute APRS frames | Silenzia le trame APRS
+Les trames restent reçues et décodées ; seul le haut-parleur du PC est coupé pendant la trame | Frames are still received and decoded; only the PC speaker is muted during the frame | Le trame restano ricevute e decodificate; viene silenziato solo l'altoparlante del PC durante la trama
+Serveur web (réseau local) | Web server (local network) | Server web (rete locale)
+Toute l'application dans un navigateur du réseau local (PC, tablette, téléphone) | The whole application in a browser on the local network (PC, tablet, phone) | Tutta l'applicazione in un browser della rete locale (PC, tablet, telefono)
+Autoriser les connexions du réseau local vers HTMod (Windows demande confirmation) | Allow connections from the local network to HTMod (Windows asks for confirmation) | Consenti le connessioni dalla rete locale verso HTMod (Windows chiede conferma)
+Version |  | Versione
+Vérifier les mises à jour au démarrage | Check for updates at startup | Controlla gli aggiornamenti all'avvio
+Station |  | Stazione
+SONDES |  | SONDE
+CARTE | MAP | MAPPA
+Double-clic : voir la station sur la carte | Double-click: show the station on the map | Doppio clic: mostra la stazione sulla mappa
+0 paquet | 0 packets | 0 pacchetti
+ÉMIS | SENT | INVIATO
+TRAFIC APRS | APRS TRAFFIC | TRAFFICO APRS
+Double-clic : voir la position sur la carte | Double-click: show the position on the map | Doppio clic: mostra la posizione sulla mappa
+DÉCODAGES | DECODES | DECODIFICHE
+SARSAT & RADIOSONDES |  | SARSAT E RADIOSONDE
+SATELLITES |  | SATELLITI
+JOURNAL | LOG | REGISTRO
+Zoom avant | Zoom in | Ingrandisci
+Zoom arrière | Zoom out | Riduci
+Cadrer toutes les positions | Fit all positions | Inquadra tutte le posizioni
+NUIT | NIGHT | NOTTE
+Carte en couleurs inversées (mode nuit) | Map with inverted colours (night mode) | Mappa a colori invertiti (modalità notte)
+Fond OpenTopoMap (relief) | OpenTopoMap background (terrain) | Sfondo OpenTopoMap (rilievo)
+VENT | WIND | VENTO
+Vent animé (Open-Meteo, 10 m) | Animated wind (Open-Meteo, 10 m) | Vento animato (Open-Meteo, 10 m)
+Décoder un WAV SARSAT… | Decode a SARSAT WAV… | Decodifica un WAV SARSAT…
+Décoder un WAV radiosonde… | Decode a radiosonde WAV… | Decodifica un WAV radiosonda…
+Décoder un WAV APRS… | Decode an APRS WAV… | Decodifica un WAV APRS…
+Décoder un WAV POCSAG… | Decode a POCSAG WAV… | Decodifica un WAV POCSAG…
+Ouvrir le dossier des résultats | Open the results folder | Apri la cartella dei risultati
+Ouverture du dossier impossible : | Could not open the folder: | Impossibile aprire la cartella:
+Effacer la carte et les tableaux | Clear the map and tables | Cancella la mappa e le tabelle
+APRS : démodulateur logiciel en plus du TNC | APRS: software demodulator in addition to the TNC | APRS: demodulatore software oltre al TNC
+Mode d'emploi | User guide | Istruzioni
+Quitter | Quit | Esci
+Aucun appareil appairé dans Windows | No paired device in Windows | Nessun dispositivo associato in Windows
+Actualiser la liste | Refresh the list | Aggiorna l'elenco
+Ouvrir les paramètres Bluetooth de Windows | Open Windows Bluetooth settings | Apri le impostazioni Bluetooth di Windows
+1. Appairez le poste dans Paramètres Windows > Bluetooth (une seule fois). | 1. Pair the radio in Windows Settings > Bluetooth (once only). | 1. Associa la radio in Impostazioni di Windows > Bluetooth (una sola volta).
+2. Coupez le Bluetooth du téléphone : le poste n'accepte qu'une connexion. | 2. Turn off Bluetooth on the phone: the radio accepts only one connection. | 2. Disattiva il Bluetooth del telefono: la radio accetta una sola connessione.
+3. Choisissez le poste (Poste ›) et cliquez sur SE CONNECTER. | 3. Choose the radio (Radio ›) and click CONNECT. | 3. Scegli la radio (Radio ›) e fai clic su CONNETTI.
+RT-660 : commandes en BLE et audio en Bluetooth classique, comme Radtel Tools. | RT-660: commands over BLE and audio over classic Bluetooth, like Radtel Tools. | RT-660: comandi via BLE e audio via Bluetooth classico, come Radtel Tools.
+4. SARSAT / radiosondes : canal nommé SARSAT ou Radiosonde, ou mode forcé. | 4. SARSAT / radiosondes: channel named SARSAT or Radiosonde, or forced mode. | 4. SARSAT / radiosonde: canale chiamato SARSAT o Radiosonde, oppure modalità forzata.
+APRS : toujours actif (TNC du poste + démodulateur logiciel). | APRS: always active (radio's TNC + software demodulator). | APRS: sempre attivo (TNC della radio + demodulatore software).
+5. BANDSCOPE : le poste balaie ±100 kHz à ±1 MHz autour du canal (S-mètre à chaque pas, | 5. BANDSCOPE: the radio sweeps ±100 kHz to ±1 MHz around the channel (S-meter at each step, | 5. BANDSCOPE: la radio scansiona da ±100 kHz a ±1 MHz attorno al canale (S-meter a ogni passo,
+rien n'est écrit en mémoire). Double-clic pour écouter une fréquence. Pendant le | nothing is written to memory). Double-click to listen to a frequency. During the | nulla viene scritto in memoria). Doppio clic per ascoltare una frequenza. Durante la
+balayage, le poste n'écoute plus le canal : SARSAT et sondes sont en pause. | sweep, the radio no longer listens to the channel: SARSAT and sondes are paused. | scansione, la radio non ascolta più il canale: SARSAT e sonde sono in pausa.
+6. POCSAG : décodage permanent ; émission (radioamateurs, bandes 2 m / 70 cm) depuis l'onglet. | 6. POCSAG: permanent decoding; transmission (radio amateurs, 2 m / 70 cm bands) from the tab. | 6. POCSAG: decodifica permanente; trasmissione (radioamatori, bande 2 m / 70 cm) dalla scheda.
+7. VFO : double veille (écoute des 2 VFO) et accord sur une fréquence libre. | 7. VFO: dual watch (listening to both VFOs) and tuning to any frequency. | 7. VFO: doppio ascolto (ascolto dei 2 VFO) e sintonia su una frequenza libera.
+Carte : glisser pour déplacer, molette pour zoomer, clic sur une épingle. | Map: drag to move, wheel to zoom, click on a pin. | Mappa: trascina per spostare, rotella per lo zoom, clic su un segnaposto.
+Résultats (CSV, WAV, journal APRS, tuiles) : | Results (CSV, WAV, APRS log, tiles): | Risultati (CSV, WAV, registro APRS, tessere):
+BALAYAGE BANDSCOPE · DÉCODAGES EN PAUSE | BANDSCOPE SWEEP · DECODING PAUSED | SCANSIONE BANDSCOPE · DECODIFICHE IN PAUSA
+APRS SEUL · SARSAT/SONDES EN ATTENTE | APRS ONLY · SARSAT/SONDES ON STANDBY | SOLO APRS · SARSAT/SONDE IN ATTESA
+DÉCODAGE SARSAT | SARSAT DECODING | DECODIFICA SARSAT
+(FORCÉ) | (FORCED) | (FORZATA)
+DÉCODAGE RADIOSONDE | RADIOSONDE DECODING | DECODIFICA RADIOSONDA
+Aucun appareil Bluetooth appairé : appairez le poste dans les paramètres Windows. | No paired Bluetooth device: pair the radio in Windows settings. | Nessun dispositivo Bluetooth associato: associa la radio nelle impostazioni di Windows.
+appareil(s) Bluetooth appairé(s) | paired Bluetooth device(s) | dispositivo/i Bluetooth associato/i
+Liste Bluetooth impossible : | Could not list Bluetooth devices: | Impossibile elencare i dispositivi Bluetooth:
+CONNEXION… | CONNECTING… | CONNESSIONE…
+Connexion impossible : | Could not connect: | Connessione impossibile:
+Choisir un fichier WAV | Choose a WAV file | Scegli un file WAV
+Fichier | File | File
+échantillons à | samples at | campioni a
+Hz, décodage | Hz, decoding | Hz, decodifica
+Fichier : | File: | File:
+trame(s) AX.25 | AX.25 frame(s) | trama/e AX.25
+Lecture impossible : | Could not read: | Lettura impossibile:
+RECHERCHER UNE MISE À JOUR | CHECK FOR UPDATES | CERCA AGGIORNAMENTI
+Recherche d'une mise à jour… | Checking for updates… | Ricerca di aggiornamenti…
+disponible (installée : | available (installed: | disponibile (installata:
+INSTALLER LA VERSION | INSTALL VERSION | INSTALLA LA VERSIONE
+Mise à jour : version | Update: version | Aggiornamento: versione
+disponible | available | disponibile
+· à jour | · up to date | · aggiornato
+est la dernière version. | is the latest version. | è l'ultima versione.
+Mise à jour | Update | Aggiornamento
+Mise à jour : vérification impossible ( | Update: check failed ( | Aggiornamento: controllo impossibile (
+· vérification impossible | · check failed | · controllo impossibile
+Vérification impossible : | Check failed: | Controllo impossibile:
+(pas de notes de version) | (no release notes) | (nessuna nota di versione)
+est disponible (installée : | is available (installed: | è disponibile (installata:
+METTRE À JOUR | UPDATE | AGGIORNA
+PLUS TARD | LATER | PIÙ TARDI
+Mise à jour de HTMod | HTMod update | Aggiornamento di HTMod
+HTMod n'est pas lancé depuis une installation : téléchargez la version | HTMod is not running from an installation: download version | HTMod non è avviato da un'installazione: scarica la versione
+sur | on | su
+Une émission est en cours : réessayez une fois terminée. | A transmission is in progress: try again once it has finished. | Trasmissione in corso: riprova al termine.
+Téléchargement de la version | Downloading version | Download della versione
+Mise à jour : téléchargement de la version | Update: downloading version | Aggiornamento: download della versione
+Mise à jour : installateur vérifié (SHA-256), installation puis redémarrage de HTMod | Update: installer verified (SHA-256), installing then restarting HTMod | Aggiornamento: programma di installazione verificato (SHA-256), installazione e riavvio di HTMod
+Installation… HTMod va redémarrer | Installing… HTMod will restart | Installazione… HTMod verrà riavviato
+Mise à jour : installateur lancé (journal : | Update: installer started (log: | Aggiornamento: programma di installazione avviato (registro:
+Mise à jour impossible : | Update failed: | Aggiornamento impossibile:
+Accusé | Ack | Conferma
+trame(s) des dernières 24 h rechargée(s) depuis aprs.txt | frame(s) from the last 24 h reloaded from aprs.txt | trama/e delle ultime 24 h ricaricata/e da aprs.txt
+APRS : relecture de aprs.txt impossible ( | APRS: could not reread aprs.txt ( | APRS: rilettura di aprs.txt impossibile (
+· par | · by | · da
+paquet(s) · | packet(s) · | pacchetto/i ·
+station(s) sur la carte | station(s) on the map | stazione/i sulla mappa
+Journal APRS : | APRS log: | Registro APRS:
+Ouverture de la carte impossible : | Could not open the map: | Impossibile aprire la mappa:
+Connecté | Connected | Connesso
+Commandes ouvertes | Commands open | Comandi aperti
+CONNECTÉ | CONNECTED | CONNESSO
+Liaison perdue, nouvel essai toutes les 15 s (DÉCONNECTER pour arrêter). | Link lost, retrying every 15 s (DISCONNECT to stop). | Collegamento perso, nuovo tentativo ogni 15 s (DISCONNETTI per interrompere).
+NOUVEL ESSAI… | RETRYING… | NUOVO TENTATIVO…
+Sortie audio impossible : | Could not open audio output: | Uscita audio impossibile:
+bauds |  | baud
+Commande inconnue : | Unknown command: | Comando sconosciuto:
+Choisissez d'abord le poste (liste des appareils). | First choose the radio (device list). | Scegli prima la radio (elenco dei dispositivi).
+Choisissez d'abord le port COM sur le PC. | First choose the COM port on the PC. | Scegli prima la porta COM sul PC.
+Fichier illisible : | Unreadable file: | File illeggibile:
+Envoi inconnu | Unknown upload | Invio sconosciuto
+<br>code d'accès : <b> | <br>access code: <b> | <br>codice di accesso: <b>
+Serveur web impossible sur le port | Web server unavailable on port | Server web impossibile sulla porta
+Port | Port | Porta
+indisponible | unavailable | non disponibile
+Ouvrir sur OpenStreetMap › | Open on OpenStreetMap › | Apri su OpenStreetMap ›
+Fermer × | Close × | Chiudi ×
+Heure | Time | Ora
+Indicatif | Callsign | Nominativo
+Type |  | Tipo
+Position |  | Posizione
+Informations | Information | Informazioni
+Reçu (local) | Received (local) | Ricevuto (locale)
+Identifiant | Identifier | Identificativo
+Latitude |  | Latitudine
+Longitude |  | Longitudine
+Détails | Details | Dettagli
+
+# --- Aprs
+cap | heading | rotta
+Vide | Empty | Vuoto
+Objet | Object | Oggetto
+Message |  | Messaggio
+Bulletin |  | Bollettino
+Statut | Status | Stato
+(via |  | (tramite
+Tiers | Third party | Terzi
+Télémétrie | Telemetry | Telemetria
+Météo | Weather | Meteo
+Autre | Other | Altro
+Voiture | Car | Auto
+Maison | House | Casa
+Relais numérique | Digipeater | Ripetitore digitale
+Passerelle | Gateway | Gateway
+Véhicule | Vehicle | Veicolo
+Camion | Truck | Camion
+Poids lourd | Lorry | Autocarro
+Fourgon | Van | Furgone
+Piéton | Pedestrian | Pedone
+Vélo | Bicycle | Bicicletta
+Moto | Motorcycle | Moto
+Fusée | Rocket | Razzo
+Ballon | Balloon | Pallone
+Avion | Plane | Aereo
+Aéronef | Aircraft | Aeromobile
+Gros avion | Large aircraft | Aereo di linea
+Hélicoptère | Helicopter | Elicottero
+Bateau | Boat | Barca
+Voilier | Sailboat | Barca a vela
+Antenne | Antenna | Antenna
+Pompiers | Fire brigade | Vigili del fuoco
+Police |  | Polizia
+Maison (yagi) | House (yagi) | Casa (yagi)
+Ordinateur | Computer | Computer
+Nœud | Node | Nodo
+Antenne parabolique | Satellite dish | Parabola
+Camping-car | Motorhome | Camper
+Navette | Shuttle | Navetta
+Événement | Event | Evento
+Symbole | Symbol | Simbolo
+
+# --- AprsTxPanel
+ÉMETTRE TRAME | SEND FRAME | INVIA TRAMA
+Balise automatique (intervalle du poste) | Automatic beacon (radio's interval) | Beacon automatico (intervallo della radio)
+ÉMISSION APRS · RÉGLAGES DU POSTE | APRS TRANSMISSION · RADIO SETTINGS | TRASMISSIONE APRS · IMPOSTAZIONI RADIO
+RELIRE LE POSTE | RELOAD FROM RADIO | RILEGGI LA RADIO
+Champ d'information (vide = balise de position) | Information field (empty = position beacon) | Campo informazioni (vuoto = beacon di posizione)
+vide = balise de position | empty = position beacon | vuoto = beacon di posizione
+Ex. « >En écoute » (statut) ou « :F4ABC    :Bonjour » (message) ; vide = position + commentaire du poste | E.g. ">Listening" (status) or ":F4ABC    :Hello" (message); empty = position + radio's comment | Es. «>In ascolto» (stato) o «:F4ABC    :Ciao» (messaggio); vuoto = posizione + commento della radio
+<html><body style='width:270px'>La trame est modulée par le TNC du poste (AFSK 1200) | <html><body style='width:270px'>The frame is modulated by the radio's TNC (AFSK 1200) | <html><body style='width:270px'>La trama è modulata dal TNC della radio (AFSK 1200)
+et émise dès que le canal est libre, sur le canal nommé « APRS » s'il existe, sinon sur celui du VFO A. | and sent as soon as the channel is free, on the channel named "APRS" if there is one, otherwise on VFO A's. | e trasmessa appena il canale è libero, sul canale chiamato «APRS» se esiste, altrimenti su quello del VFO A.
+Indicatif, symbole, chemin et commentaire se règlent dans le poste ou son appli. Réservé aux radioamateurs.</body></html> | Callsign, symbol, path and comment are set in the radio or its app. For radio amateurs only.</body></html> | Nominativo, simbolo, percorso e commento si impostano nella radio o nella sua app. Riservato ai radioamatori.</body></html>
+La trame est modulée par le TNC du poste (AFSK 1200) et émise dès que le canal est libre, sur le canal nommé « APRS » s'il existe, sinon sur celui du VFO A. Réservé aux radioamateurs. | The frame is modulated by the radio's TNC (AFSK 1200) and sent as soon as the channel is free, on the channel named "APRS" if there is one, otherwise on VFO A's. For radio amateurs only. | La trama è modulata dal TNC della radio (AFSK 1200) e trasmessa appena il canale è libero, sul canale chiamato «APRS» se esiste, altrimenti su quello del VFO A. Riservato ai radioamatori.
+Connectez d'abord le poste. | Connect the radio first. | Connetti prima la radio.
+Lecture des réglages APRS du poste… | Reading the radio's APRS settings… | Lettura delle impostazioni APRS della radio…
+Poste non connecté. | Radio not connected. | Radio non connessa.
+Réglages APRS pas encore lus… | APRS settings not read yet… | Impostazioni APRS non ancora lette…
+(non réglé dans le poste) | (not set in the radio) | (non impostato nella radio)
+(aucun, /[ par défaut) | (none, /[ by default) | (nessuno, /[ predefinito)
+Chemin | Path | Percorso
+(défaut) | (default) | (predefinito)
+Commentaire | Comment | Commento
+(aucun) | (none) | (nessuno)
+Intervalle | Interval | Intervallo
+(non réglé) | (not set) | (non impostato)
+· partage de position actif | · position sharing on | · condivisione posizione attiva
+Format |  | Formato
+BSS (le poste émet en BSS ; HTMod émet en APRS) | BSS (the radio transmits BSS; HTMod transmits APRS) | BSS (la radio trasmette in BSS; HTMod trasmette in APRS)
+aucune (GPS du poste sans fix, pas de position d'observation) | none (radio's GPS has no fix, no observer position) | nessuna (GPS della radio senza fix, nessuna posizione di osservazione)
+(GPS du poste) | (radio's GPS) | (GPS della radio)
+(position d'observation) | (observer position) | (posizione di osservazione)
+Canal | Channel | Canale
+VFO A (pas de canal « APRS ») | VFO A (no "APRS" channel) | VFO A (nessun canale «APRS»)
+(hors bande radioamateur) | (outside amateur bands) | (fuori dalla banda radioamatoriale)
+· émission interdite | · transmission forbidden | · trasmissione vietata
+EN ATTENTE DU CANAL… | WAITING FOR CHANNEL… | IN ATTESA DEL CANALE…
+Réglages APRS du poste pas encore lus, réessayez dans un instant. | Radio's APRS settings not read yet, try again in a moment. | Impostazioni APRS della radio non ancora lette, riprova tra un istante.
+Aucun indicatif APRS réglé dans le poste (réglages APRS / BSS du poste ou de son appli). | No APRS callsign set in the radio (APRS / BSS settings of the radio or its app). | Nessun nominativo APRS impostato nella radio (impostazioni APRS / BSS della radio o della sua app).
+Une trame attend déjà que le canal se libère. | A frame is already waiting for the channel to clear. | Una trama sta già aspettando che il canale si liberi.
+Émission interdite sur le canal d'émission (ou canaux pas encore lus). | Transmission forbidden on the transmit channel (or channels not read yet). | Trasmissione vietata sul canale di trasmissione (o canali non ancora letti).
+Émission refusée : | Transmission refused: | Trasmissione rifiutata:
+MHz n'est pas dans une bande radioamateur (144–146 ou 430–440 MHz). | MHz is not in an amateur band (144–146 or 430–440 MHz). | MHz non è in una banda radioamatoriale (144–146 o 430–440 MHz).
+Trame impossible : | Could not build frame: | Trama impossibile:
+Le TNC du poste est occupé, réessayez. | The radio's TNC is busy, try again. | Il TNC della radio è occupato, riprova.
+APRS : émission | APRS: transmitting | APRS: trasmissione
+(canal | (channel | (canale
+En attente du canal libre… | Waiting for a free channel… | In attesa del canale libero…
+Trame émise à | Frame sent at | Trama inviata alle
+Trame non émise (canal occupé ou refus du poste). | Frame not sent (channel busy or refused by the radio). | Trama non inviata (canale occupato o rifiuto della radio).
+Réglages APRS du poste non lus ou sans indicatif. | Radio's APRS settings not read or no callsign. | Impostazioni APRS della radio non lette o senza nominativo.
+Balise automatique : une position toutes les | Automatic beacon: one position every | Beacon automatico: una posizione ogni
+s, en | s, on | s, su
+, tant que HTMod est connecté.\nContinuer ? | , while HTMod is connected.\nContinue? | , finché HTMod è connesso.\nContinuare?
+APRS : balise automatique | APRS: automatic beacon | APRS: beacon automatico
+activée | on | attivato
+arrêtée | stopped | arrestato
+Balise automatique : | Automatic beacon: | Beacon automatico:
+
+# --- Ax25
+chemin trop long (8 relais au plus) | path too long (8 digipeaters at most) | percorso troppo lungo (massimo 8 ripetitori)
+indicatif invalide : | invalid callsign: | nominativo non valido:
+
+# --- Bandscope
+BALAYER | SWEEP | SCANSIONA
+RETOUR AU CANAL | BACK TO CHANNEL | TORNA AL CANALE
+Arrêté | Stopped | Fermo
+BANDSCOPE · FRÉQUENCE CENTRALE | BANDSCOPE · CENTRE FREQUENCY | BANDSCOPE · FREQUENZA CENTRALE
+LARGEUR ± | WIDTH ± | LARGHEZZA ±
+PAS | STEP | PASSO
+ARRÊTER | STOP | FERMA
+Calé sur | Tuned to | Sintonizzato su
+MHz (mode fréquence) · | MHz (frequency mode) · | MHz (modalità frequenza) ·
+pas par balayage | steps per sweep | passi per scansione
+Arrêté · | Stopped · | Fermo ·
+pas, ~ | steps, ~ | passi, ~
+s par balayage | s per sweep | s per scansione
+Bandscope : connectez d'abord le poste. | Bandscope: connect the radio first. | Bandscope: connetti prima la radio.
+Bandscope : fréquence du canal encore inconnue (lecture des canaux en cours). | Bandscope: channel frequency not known yet (reading channels). | Bandscope: frequenza del canale ancora sconosciuta (lettura dei canali in corso).
+Bandscope : balayage de | Bandscope: sweeping | Bandscope: scansione di
+MHz, pas | MHz, step | MHz, passo
+Balayage n° | Sweep no. | Scansione n.
+pas en | steps in | passi in
+s · décodages SARSAT/sondes en pause | s · SARSAT/sonde decoding paused | s · decodifiche SARSAT/sonde in pausa
+Bandscope : arrêté | Bandscope: stopped | Bandscope: fermo
+, retour au canal | , back to channel | , ritorno al canale
+Bandscope : écoute de | Bandscope: listening to | Bandscope: ascolto di
+MHz (RETOUR AU CANAL pour revenir) | MHz (BACK TO CHANNEL to return) | MHz (TORNA AL CANALE per tornare)
+Bandscope : retour au canal | Bandscope: back to channel | Bandscope: ritorno al canale
+Double-clic : écouter cette fréquence | Double-click: listen to this frequency | Doppio clic: ascolta questa frequenza
+Connectez le poste puis cliquez sur BALAYER : le bandscope se centre sur la fréquence du canal. | Connect the radio then click SWEEP: the bandscope centres on the channel frequency. | Connetti la radio e fai clic su SCANSIONA: il bandscope si centra sulla frequenza del canale.
+canal | channel | canale
+CASCADE DES BALAYAGES | SWEEP WATERFALL | CASCATA DELLE SCANSIONI
+C A S C A D E   D E S   B A L A Y A G E S | S W E E P   W A T E R F A L L | C A S C A T A   D E L L E   S C A N S I O N I
+
+# --- BootSplash
+Décodeurs portés de Radtel Tools / HTMOD Android | Decoders ported from Radtel Tools / HTMOD Android | Decodificatori derivati da Radtel Tools / HTMOD Android
+Protocole et SBC d'après HTCommander | Protocol and SBC based on HTCommander | Protocollo e SBC basati su HTCommander
+SARSAT · RADIOSONDES · APRS · v |  | SARSAT · RADIOSONDE · APRS · v
+
+# --- Decoders
+aucun | none | nessuno
+détecté, décodage actif | detected, decoding active | rilevato, decodifica attiva
+trame(s) SARSAT | SARSAT frame(s) | trama/e SARSAT
+position(s) de radiosonde | radiosonde position(s) | posizione/i di radiosonda
+Décodage du fichier impossible : | Could not decode the file: | Decodifica del file impossibile:
+Erreur de décodage : | Decoding error: | Errore di decodifica:
+SARSAT : rafale de | SARSAT: burst of | SARSAT: burst di
+ms analysée en | ms analysed in | ms analizzato in
+trame(s) | frame(s) | trama/e
+Radiosonde : | Radiosonde: | Radiosonda:
+ms analysés en | ms analysed in | ms analizzati in
+position(s) | position(s) | posizione/i
+SARSAT (auto-test) | SARSAT (self-test) | SARSAT (autotest)
+Pas de position | No position | Nessuna posizione
+– trame | – frame | – trama
+/ auto-test | / self-test | / autotest
+
+# --- Firewall
+Pare-feu : btbridge.exe ou HTMod.exe introuvable | Firewall: btbridge.exe or HTMod.exe not found | Firewall: btbridge.exe o HTMod.exe non trovato
+Pare-feu : autorisation de | Firewall: allowing | Firewall: autorizzazione di
+sur les réseaux privés (confirmez la demande de Windows)… | on private networks (confirm Windows' request)… | sulle reti private (conferma la richiesta di Windows)…
+Pare-feu : règle « | Firewall: rule " | Firewall: regola «
+» ajoutée | " added | » aggiunta
+Pare-feu : règle non ajoutée (autorisation refusée ?) | Firewall: rule not added (permission denied?) | Firewall: regola non aggiunta (autorizzazione negata?)
+Pare-feu : | Firewall: | Firewall:
+
+# --- KissPanel / KissTnc
+Port série du TNC KISS (USB-série, Bluetooth SPP, port virtuel com0com…) | Serial port of the KISS TNC (USB-serial, Bluetooth SPP, com0com virtual port…) | Porta seriale del TNC KISS (USB-seriale, Bluetooth SPP, porta virtuale com0com…)
+Débit du port série (souvent 9600 ; 1200 pour certains TNC anciens) | Serial port speed (often 9600; 1200 for some old TNCs) | Velocità della porta seriale (spesso 9600; 1200 per alcuni TNC vecchi)
+Relire la liste des ports COM | Reload the COM port list | Rileggi l'elenco delle porte COM
+Aucun port COM détecté | No COM port detected | Nessuna porta COM rilevata
+Choisissez un port COM. | Choose a COM port. | Scegli una porta COM.
+Ouverture impossible : | Could not open: | Apertura impossibile:
+TNC KISS : port fermé | KISS TNC: port closed | TNC KISS: porta chiusa
+TNC KISS sur | KISS TNC on | TNC KISS su
+trame(s) reçue(s) | frame(s) received | trama/e ricevuta/e
+Ouverture | Opening | Apertura
+Ouverture de | Opening | Apertura di
+bauds… |  | baud…
+TNC KISS : | KISS TNC: | TNC KISS:
+fermé | closed | chiusa
+Connecté sur | Connected on | Connesso su
+· en écoute | · listening | · in ascolto
+Échec : | Failed: | Errore:
+TNC KISS : envoi impossible ( | KISS TNC: could not send ( | TNC KISS: invio impossibile (
+
+# --- MapPanel
+Carte : le serveur de tuiles répond | Map: tile server replies | Mappa: il server delle tessere risponde
+Carte : téléchargement des tuiles impossible ( | Map: could not download tiles ( | Mappa: download delle tessere impossibile (
+© contributeurs OpenStreetMap | © OpenStreetMap contributors | © collaboratori di OpenStreetMap
+
+# --- Pocsag / PocsagPanel
+caractère non numérique : | non-numeric character: | carattere non numerico:
+En écoute… | Listening… | In ascolto…
+0 message | 0 messages | 0 messaggi
+ÉMETTRE | TRANSMIT | TRASMETTI
+MESSAGES REÇUS · 512 / 1200 / 2400 BAUDS | RECEIVED MESSAGES · 512 / 1200 / 2400 BAUD | MESSAGGI RICEVUTI · 512 / 1200 / 2400 BAUD
+ÉMISSION | TRANSMISSION | TRASMISSIONE
+RIC (adresse du récepteur) | RIC (receiver address) | RIC (indirizzo del ricevitore)
+Fonction | Function | Funzione
+Débit | Rate | Velocità
+Alphanumérique | Alphanumeric | Alfanumerico
+Numérique | Numeric | Numerico
+Message (vide = bip seul) | Message (empty = beep only) | Messaggio (vuoto = solo bip)
+Niveau audio | Audio level | Livello audio
+Pré-compensation (pré-accentuation) | Pre-compensation (pre-emphasis) | Precompensazione (pre-enfasi)
+Inverser la polarité | Invert polarity | Inverti la polarità
+<html><body style='width:290px'>Émission sur la fréquence du canal ou celle accordée | <html><body style='width:290px'>Transmits on the channel frequency or the one tuned | <html><body style='width:290px'>Trasmissione sulla frequenza del canale o su quella sintonizzata
+dans l'onglet VFO, réservée aux radioamateurs sur une fréquence autorisée (ex. DAPNET 439,9875 MHz). | in the VFO tab, for radio amateurs only on an authorised frequency (e.g. DAPNET 439.9875 MHz). | nella scheda VFO, riservata ai radioamatori su una frequenza autorizzata (es. DAPNET 439,9875 MHz).
+Vérifiez la réception avec un second poste ou un SDR.</body></html> | Check reception with a second radio or an SDR.</body></html> | Verifica la ricezione con una seconda radio o un SDR.</body></html>
+Émission sur la fréquence du canal ou celle accordée dans l'onglet VFO, réservée aux radioamateurs sur une fréquence autorisée (ex. DAPNET 439,9875 MHz). Vérifiez la réception avec un second poste ou un SDR. | Transmits on the channel frequency or the one tuned in the VFO tab, for radio amateurs only on an authorised frequency (e.g. DAPNET 439.9875 MHz). Check reception with a second radio or an SDR. | Trasmissione sulla frequenza del canale o su quella sintonizzata nella scheda VFO, riservata ai radioamatori su una frequenza autorizzata (es. DAPNET 439,9875 MHz). Verifica la ricezione con una seconda radio o un SDR.
+POCSAG : | POCSAG: | POCSAG:
+message(s) POCSAG | POCSAG message(s) | messaggio/i POCSAG
+(bip seul) | (beep only) | (solo bip)
+message(s) | message(s) | messaggio/i
+Réception en pause (balayage bandscope) | Reception paused (bandscope sweep) | Ricezione in pausa (scansione bandscope)
+En écoute… (aucune synchro) | Listening… (no sync) | In ascolto… (nessuna sincronizzazione)
+Synchronisé : | Synchronised: | Sincronizzato:
+Poste non connecté | Radio not connected | Radio non connessa
+Fréquence d'émission : | Transmit frequency: | Frequenza di trasmissione:
+Émettre le message POCSAG ? | Transmit the POCSAG message? | Trasmettere il messaggio POCSAG?
+Connectez d'abord le poste (canal audio ouvert). | Connect the radio first (audio channel open). | Connetti prima la radio (canale audio aperto).
+Arrêtez d'abord le balayage du bandscope. | Stop the bandscope sweep first. | Ferma prima la scansione del bandscope.
+RIC invalide (0 à 2097151). | Invalid RIC (0 to 2097151). | RIC non valido (da 0 a 2097151).
+Fréquence d'émission inconnue (lecture des canaux en cours, ou émission interdite sur ce canal). | Transmit frequency unknown (reading channels, or transmission forbidden on this channel). | Frequenza di trasmissione sconosciuta (lettura dei canali in corso, o trasmissione vietata su questo canale).
+· fonction | · function | · funzione
+bauds · |  | baud ·
+s d'émission\nFréquence : | s of transmission\nFrequency: | s di trasmissione\nFrequenza:
+Je confirme être radioamateur et émettre sur une fréquence autorisée. | I confirm I am a radio amateur transmitting on an authorised frequency. | Confermo di essere radioamatore e di trasmettere su una frequenza autorizzata.
+ARRÊTER L'ÉMISSION | STOP TRANSMISSION | FERMA LA TRASMISSIONE
+Émission en cours sur | Transmitting on | Trasmissione in corso su
+POCSAG : émission RIC | POCSAG: transmitting RIC | POCSAG: trasmissione RIC
+Émission interrompue. | Transmission interrupted. | Trasmissione interrotta.
+Message émis. | Message sent. | Messaggio trasmesso.
+émission interrompue | transmission interrupted | trasmissione interrotta
+message émis | message sent | messaggio trasmesso
+Émission impossible : une émission est déjà en cours ou le canal audio est fermé. | Cannot transmit: a transmission is already in progress or the audio channel is closed. | Trasmissione impossibile: una trasmissione è già in corso o il canale audio è chiuso.
+inconnue | unknown | sconosciuta
+
+# --- Radio
+Connexion à | Connecting to | Connessione a
+Erreur liaison : | Link error: | Errore di collegamento:
+Commandes ouvertes ( | Commands open ( | Comandi aperti (
+Bluetooth classique | classic Bluetooth | Bluetooth classico
+), lecture du poste… | ), reading the radio… | ), lettura della radio…
+Connecté (commandes + audio) | Connected (commands + audio) | Connesso (comandi + audio)
+Échec de connexion : poste éteint, hors de portée, ou déjà connecté à l'appli du téléphone ? | Connection failed: radio off, out of range, or already connected to the phone app? | Connessione fallita: radio spenta, fuori portata o già connessa all'app del telefono?
+Écriture vers le pont impossible : | Could not write to the bridge: | Scrittura verso il bridge impossibile:
+Commande mal formée : | Malformed command: | Comando non valido:
+Écriture des réglages refusée (état | Settings write refused (status | Scrittura delle impostazioni rifiutata (stato
+Nom de groupe refusé par le poste (état | Group name refused by the radio (status | Nome del gruppo rifiutato dalla radio (stato
+enregistré dans le poste | saved in the radio | salvato nella radio
+Écriture du canal refusée par le poste (état | Channel write refused by the radio (status | Scrittura del canale rifiutata dalla radio (stato
+Poste : produit | Radio: product | Radio: prodotto
+, logiciel | , firmware | , software
+canaux, | channels, | canali,
+groupe(s) | group(s) | gruppo/i
+Réglages du poste : double veille | Radio settings: dual watch | Impostazioni della radio: doppio ascolto
+active | active | attivo
+inactive | inactive | inattivo
+active ( | active ( | attivo (
+, VFO A canal | , VFO A channel | , VFO A canale
+, VFO B canal | , VFO B channel | , VFO B canale
+Écriture des réglages : double veille | Writing settings: dual watch | Scrittura delle impostazioni: doppio ascolto
+octets) | bytes) | byte)
+Squelch du poste → | Radio squelch → | Squelch della radio →
+État du poste : canal | Radio status: channel | Stato della radio: canale
+(ni A ni B) | (neither A nor B) | (né A né B)
+, double veille | , dual watch | , doppio ascolto
+, réception | , receiving | , ricezione
+Poste éteint | Radio off | Radio spenta
+: réencodage différent de l'original ( | : re-encoding differs from the original ( | : ricodifica diversa dall'originale (
+Canaux lus : | Channels read: | Canali letti:
+Groupes : | Groups: | Gruppi:
+Groupe | Group | Gruppo
+renommé « | renamed " | rinominato «
+→ canal | → channel | → canale
+Réglages APRS du poste : | Radio's APRS settings: | Impostazioni APRS della radio:
+pas d'indicatif | no callsign | nessun nominativo
+, symbole « | , symbol " | , simbolo «
+», intervalle | ", interval | », intervallo
+s, format | s, format | s, formato
+, commentaire « | , comment " | , commento «
+APRS : canal occupé depuis 30 s, trame abandonnée | APRS: channel busy for 30 s, frame dropped | APRS: canale occupato da 30 s, trama abbandonata
+APRS : le poste a refusé la trame | APRS: the radio refused the frame | APRS: la radio ha rifiutato la trama
+Code DCS invalide : | Invalid DCS code: | Codice DCS non valido:
+CTCSS hors plage (60–260 Hz) : | CTCSS out of range (60–260 Hz): | CTCSS fuori intervallo (60–260 Hz):
+octet | byte | byte
+Écriture du canal | Writing channel | Scrittura del canale
+(aucun nom) | (no name) | (nessun nome)
+
+# --- SatCatalog
+· fréquence à régler (MODIFIER) | · frequency to set (EDIT) | · frequenza da impostare (MODIFICA)
+(modifié) | (edited) | (modificato)
+Serveur Benshi : | Benshi server: | Server Benshi:
+satellite(s) | satellite(s) | satellite/i
+Serveur Benshi injoignable ( | Benshi server unreachable ( | Server Benshi non raggiungibile (
+· CelesTrak injoignable | · CelesTrak unreachable | · CelesTrak non raggiungibile
+aucun TLE pour NORAD | no TLE for NORAD | nessun TLE per NORAD
+
+# --- SatPanel
+Aucun satellite | No satellite | Nessun satellite
+SUIVRE AVEC LE POSTE | TRACK WITH THE RADIO | SEGUI CON LA RADIO
+Satellites : | Satellites: | Satelliti:
+POSITION D'OBSERVATION (LAT / LON EN DEGRÉS) | OBSERVER POSITION (LAT / LON IN DEGREES) | POSIZIONE DI OSSERVAZIONE (LAT / LON IN GRADI)
+TOUS | ALL | TUTTI
+VISIBLES | VISIBLE | VISIBILI
+ÉLÉV. MIN | MIN ELEV. | ELEV. MIN
+Élévation minimale : satellites au-dessus maintenant, ou dont un passage des 24 h l'atteint | Minimum elevation: satellites above it now, or with a pass within 24 h reaching it | Elevazione minima: satelliti al di sopra ora, o con un passaggio nelle 24 h che la raggiunge
+Rechercher un satellite (nom ou n° NORAD) | Search for a satellite (name or NORAD no.) | Cerca un satellite (nome o n. NORAD)
+Rechercher (nom ou n° NORAD) | Search (name or NORAD no.) | Cerca (nome o n. NORAD)
+ACTUALISER | REFRESH | AGGIORNA
+Recharger la liste du serveur Benshi (et les TLE CelesTrak si besoin) | Reload the list from the Benshi server (and CelesTrak TLEs if needed) | Ricarica l'elenco dal server Benshi (e i TLE CelesTrak se necessario)
+AJOUTER… | ADD… | AGGIUNGI…
+SUPPRIMER | DELETE | ELIMINA
+Supprimer un satellite ajouté par vous | Delete a satellite you added | Elimina un satellite aggiunto da te
+Position invalide (latitude -90..90, longitude -180..180). | Invalid position (latitude -90..90, longitude -180..180). | Posizione non valida (latitudine -90..90, longitudine -180..180).
+SATELLITE |  | SATELLITE
+RADIO (DOPPLER CORRIGÉ) | RADIO (DOPPLER CORRECTED) | RADIO (DOPPLER CORRETTO)
+MODIFIER | EDIT | MODIFICA
+Modifier les fréquences de la configuration choisie | Edit the frequencies of the chosen configuration | Modifica le frequenze della configurazione scelta
+PASSAGES (24 H, HEURE LOCALE) | PASSES (24 H, LOCAL TIME) | PASSAGGI (24 H, ORA LOCALE)
+· source | · source | · fonte
+Position incalculable (TLE trop ancien ?) | Position cannot be computed (TLE too old?) | Posizione non calcolabile (TLE troppo vecchio?)
+<html>Az %.1f°  ·  Él <b>%.1f°</b>  ·  %.0f km<br>Alt %.0f km  ·  %.3f, %.3f<br>%s</html> | <html>Az %.1f°  ·  El <b>%.1f°</b>  ·  %.0f km<br>Alt %.0f km  ·  %.3f, %.3f<br>%s</html> | <html>Az %.1f°  ·  El <b>%.1f°</b>  ·  %.0f km<br>Alt %.0f km  ·  %.3f, %.3f<br>%s</html>
+<font color='#5FC8E8'>VISIBLE</font> |  | <font color='#5FC8E8'>VISIBILE</font>
+·  vitesse radiale %+.2f km/s | ·  radial speed %+.2f km/s | ·  velocità radiale %+.2f km/s
+sous l'horizon | below the horizon | sotto l'orizzonte
+Aucune configuration radio connue (ajoutez-en une avec AJOUTER…). | No known radio configuration (add one with ADD…). | Nessuna configurazione radio nota (aggiungine una con AGGIUNGI…).
+Réception : | Reception: | Ricezione:
+Aucun passage au-dessus de l'horizon dans les 24 h. | No pass above the horizon within 24 h. | Nessun passaggio sopra l'orizzonte nelle 24 h.
+Ce satellite n'a pas de configuration radio. | This satellite has no radio configuration. | Questo satellite non ha una configurazione radio.
+Pas de fréquence pour cette configuration : réglez-la avec MODIFIER. | No frequency for this configuration: set it with EDIT. | Nessuna frequenza per questa configurazione: impostala con MODIFICA.
+ARRÊTER LE SUIVI | STOP TRACKING | FERMA IL TRACCIAMENTO
+Suivi Doppler de | Doppler tracking of | Tracciamento Doppler di
+Suivi Doppler arrêté | Doppler tracking stopped | Tracciamento Doppler fermato
+Choisissez un satellite. | Choose a satellite. | Scegli un satellite.
+Ce satellite n'a pas de configuration radio (ajoutez-en une avec AJOUTER…). | This satellite has no radio configuration (add one with ADD…). | Questo satellite non ha una configurazione radio (aggiungine una con AGGIUNGI…).
+Réception (descente), MHz | Reception (downlink), MHz | Ricezione (downlink), MHz
+Émission (montée), MHz — vide = pas d'émission | Transmission (uplink), MHz — empty = no transmission | Trasmissione (uplink), MHz — vuoto = nessuna trasmissione
+CTCSS à l'émission, Hz — vide = aucun | CTCSS on transmit, Hz — empty = none | CTCSS in trasmissione, Hz — vuoto = nessuno
+Origine : ↓ | Original: ↓ | Originale: ↓
+Origine : | Original: | Originale:
+ENREGISTRER | SAVE | SALVA
+RÉTABLIR L'ORIGINE | RESTORE ORIGINAL | RIPRISTINA ORIGINALE
+ANNULER | CANCEL | ANNULLA
+Valeur invalide. | Invalid value. | Valore non valido.
+Fréquence hors plage. | Frequency out of range. | Frequenza fuori intervallo.
+CTCSS hors plage (60–260 Hz). | CTCSS out of range (60–260 Hz). | CTCSS fuori intervallo (60–260 Hz).
+Enregistrement impossible : | Could not save: | Salvataggio impossibile:
+fréquences d'origine | original frequencies | frequenze originali
+Ajouter un satellite | Add a satellite | Aggiungi un satellite
+Nom | Name | Nome
+N° NORAD (pour récupérer le TLE sur CelesTrak) | NORAD no. (to fetch the TLE from CelesTrak) | N. NORAD (per recuperare il TLE da CelesTrak)
+RÉCUPÉRER LE TLE | FETCH TLE | RECUPERA IL TLE
+TLE introuvable : | TLE not found: | TLE non trovato:
+TLE ligne 1 | TLE line 1 | TLE riga 1
+TLE ligne 2 | TLE line 2 | TLE riga 2
+Configuration radio (facultatif) : nom, descente MHz, montée MHz, CTCSS Hz | Radio configuration (optional): name, downlink MHz, uplink MHz, CTCSS Hz | Configurazione radio (facoltativa): nome, downlink MHz, uplink MHz, CTCSS Hz
+descente MHz | downlink MHz | downlink MHz
+montée MHz | uplink MHz | uplink MHz
+AJOUTER | ADD | AGGIUNGI
+Satellite perso | Custom satellite | Satellite personale
+Satellite ajouté : | Satellite added: | Satellite aggiunto:
+Impossible d'ajouter : | Could not add: | Impossibile aggiungere:
+Seuls les satellites ajoutés par vous peuvent être supprimés (le filtre SSTV permet de masquer les autres). | Only satellites you added can be deleted (the SSTV filter can hide the others). | Solo i satelliti aggiunti da te possono essere eliminati (il filtro SSTV permette di nascondere gli altri).
+Supprimer « | Delete " | Eliminare «
+» ? | "? | »?
+Satellites |  | Satelliti
+Suppression impossible : | Could not delete: | Eliminazione impossibile:
+Choisissez un satellite avec une configuration radio. | Choose a satellite with a radio configuration. | Scegli un satellite con una configurazione radio.
+Seuls les satellites ajoutés par vous peuvent être supprimés. | Only satellites you added can be deleted. | Solo i satelliti aggiunti da te possono essere eliminati.
+● visible   ● SSTV   ● sous l'horizon   — trace   ○ empreinte | ● visible   ● SSTV   ● below horizon   — track   ○ footprint | ● visibile   ● SSTV   ● sotto l'orizzonte   — traccia   ○ impronta
+● visible |  | ● visibile
+● sous l'horizon | ● below horizon | ● sotto l'orizzonte
+— trace   ○ empreinte | — track   ○ footprint | — traccia   ○ impronta
+Élév. | Elev. | Elev.
+Prochain | Next | Prossimo
+VISIBLE |  | VISIBILE
+·  vitesse radiale | ·  radial speed | ·  velocità radiale
+Satellite SSTV | SSTV satellite | Satellite SSTV
+
+# --- Sgp4
+lignes TLE invalides | invalid TLE lines | righe TLE non valide
+lignes TLE invalides : | invalid TLE lines: | righe TLE non valide:
+
+# --- SstvPanel
+En attente d'une image SSTV… | Waiting for an SSTV image… | In attesa di un'immagine SSTV…
+Aucune image | No image | Nessuna immagine
+En écoute · détection VIS automatique | Listening · automatic VIS detection | In ascolto · rilevamento VIS automatico
+ÉMETTRE L'IMAGE | TRANSMIT IMAGE | TRASMETTI L'IMMAGINE
+ROBOT 36 / 72 · MARTIN M1 / M2 · SCOTTIE S1 / S2 / DX · PD 90 À 240 | ROBOT 36 / 72 · MARTIN M1 / M2 · SCOTTIE S1 / S2 / DX · PD 90 TO 240 | ROBOT 36 / 72 · MARTIN M1 / M2 · SCOTTIE S1 / S2 / DX · PD DA 90 A 240
+RÉCEPTION SSTV | SSTV RECEPTION | RICEZIONE SSTV
+TERMINER | FINISH | TERMINA
+DOSSIER | FOLDER | CARTELLA
+CHOISIR UNE IMAGE… | CHOOSE AN IMAGE… | SCEGLI UN'IMMAGINE…
+MIRE DE TEST | TEST PATTERN | IMMAGINE DI PROVA
+Mode |  | Modalità
+Texte incrusté (indicatif) | Overlay text (callsign) | Testo in sovraimpressione (nominativo)
+<html><body style='width:290px'>Émission sur la fréquence du canal ou celle accordée dans | <html><body style='width:290px'>Transmits on the channel frequency or the one tuned in | <html><body style='width:290px'>Trasmissione sulla frequenza del canale o su quella sintonizzata nella
+l'onglet VFO, réservée aux radioamateurs (ex. 145,500 MHz puis dégagement, 433,400 MHz…). Pensez au | the VFO tab, for radio amateurs only (e.g. 145.500 MHz then QSY, 433.400 MHz…). Mind the | scheda VFO, riservata ai radioamatori (es. 145,500 MHz poi QSY, 433,400 MHz…). Attenzione al
+temps d'émission du poste (TOT) pour les modes longs.</body></html> | radio's transmit time limit (TOT) for long modes.</body></html> | tempo di trasmissione della radio (TOT) per le modalità lunghe.</body></html>
+Émission sur la fréquence du canal ou celle accordée dans l'onglet VFO, réservée aux radioamateurs (ex. 145,500 MHz puis dégagement, 433,400 MHz…). Pensez au temps d'émission du poste (TOT) pour les modes longs. | Transmits on the channel frequency or the one tuned in the VFO tab, for radio amateurs only (e.g. 145.500 MHz then QSY, 433.400 MHz…). Mind the radio's transmit time limit (TOT) for long modes. | Trasmissione sulla frequenza del canale o su quella sintonizzata nella scheda VFO, riservata ai radioamatori (es. 145,500 MHz poi QSY, 433,400 MHz…). Attenzione al tempo di trasmissione della radio (TOT) per le modalità lunghe.
+SSTV : réception | SSTV: receiving | SSTV: ricezione
+SSTV : | SSTV: | SSTV:
+interrompue trop tôt, image ignorée | interrupted too early, image ignored | interrotta troppo presto, immagine ignorata
+SSTV : enregistrement impossible : | SSTV: could not save: | SSTV: salvataggio impossibile:
+(partielle, | (partial, | (parziale,
+lignes) | lines) | righe)
+SSTV : image reçue | SSTV: image received | SSTV: immagine ricevuta
+/ partielle | / partial | / parziale
+Image SSTV reçue | SSTV image received | Immagine SSTV ricevuta
+Réception coupée | Reception off | Ricezione disattivata
+lignes | lines | righe
+Images (PNG, JPEG, GIF, BMP) | Images (PNG, JPEG, GIF, BMP) | Immagini (PNG, JPEG, GIF, BMP)
+format non reconnu | unrecognised format | formato non riconosciuto
+Image illisible : | Unreadable image: | Immagine illeggibile:
+Émettre l'image SSTV ? | Transmit the SSTV image? | Trasmettere l'immagine SSTV?
+s d'émission continue\nFréquence : | s of continuous transmission\nFrequency: | s di trasmissione continua\nFrequenza:
+MHz\n\nJe confirme être radioamateur et émettre sur une fréquence autorisée. | MHz\n\nI confirm I am a radio amateur transmitting on an authorised frequency. | MHz\n\nConfermo di essere radioamatore e di trasmettere su una frequenza autorizzata.
+Émission | Transmission | Trasmissione
+SSTV : émission | SSTV: transmitting | SSTV: trasmissione
+Image émise ( | Image sent ( | Immagine trasmessa (
+image émise | image sent | immagine trasmessa
+Format d'image non reconnu (PNG, JPEG, GIF, BMP). | Unrecognised image format (PNG, JPEG, GIF, BMP). | Formato immagine non riconosciuto (PNG, JPEG, GIF, BMP).
+Télécharger l'image affichée | Download the displayed image | Scarica l'immagine visualizzata
+Double-clic : ouvrir | Double-click: open | Doppio clic: apri
+
+# --- Transmitter
+micro indisponible : | microphone unavailable: | microfono non disponibile:
+
+# --- Updater
+aucune version publiée | no published version | nessuna versione pubblicata
+absent de la version | missing from version | assente dalla versione
+empreinte | checksum | impronta
+.sha256 absente de la version | .sha256 missing from version | .sha256 assente dalla versione
+empreinte SHA-256 illisible | unreadable SHA-256 checksum | impronta SHA-256 illeggibile
+téléchargement HTTP | download HTTP | download HTTP
+empreinte SHA-256 différente : fichier corrompu ou modifié, installation annulée | SHA-256 checksum mismatch: file corrupted or modified, installation cancelled | impronta SHA-256 diversa: file danneggiato o modificato, installazione annullata
+lancement de l'installateur trop long | installer took too long to start | avvio del programma di installazione troppo lungo
+installateur non lancé (WMI | installer not started (WMI | programma di installazione non avviato (WMI
+
+# --- VfoPanel
+DOUBLE VEILLE | DUAL WATCH | DOPPIO ASCOLTO
+UN SEUL VFO | SINGLE VFO | UN SOLO VFO
+PTT · MAINTENIR POUR ÉMETTRE | PTT · HOLD TO TRANSMIT | PTT · TIENI PER TRASMETTERE
+Écoute des 2 VFO | Listening to both VFOs | Ascolto dei 2 VFO
+Le poste surveille le VFO A et le VFO B et bascule sur celui qui reçoit (canaux choisis sur le | The radio monitors VFO A and VFO B and switches to the one receiving (channels chosen on the | La radio controlla il VFO A e il VFO B e passa a quello che riceve (canali scelti sulla
+poste). Les décodeurs (APRS, SARSAT, sondes, POCSAG) suivent le VFO qui reçoit. | radio). The decoders (APRS, SARSAT, sondes, POCSAG) follow the receiving VFO. | radio). I decodificatori (APRS, SARSAT, sonde, POCSAG) seguono il VFO che riceve.
+Le poste surveille le VFO A et le VFO B et bascule sur celui qui reçoit (canaux choisis sur le poste). Les décodeurs (APRS, SARSAT, sondes, POCSAG) suivent le VFO qui reçoit. | The radio monitors VFO A and VFO B and switches to the one receiving (channels chosen on the radio). The decoders (APRS, SARSAT, sondes, POCSAG) follow the receiving VFO. | La radio controlla il VFO A e il VFO B e passa a quello che riceve (canali scelti sulla radio). I decodificatori (APRS, SARSAT, sonde, POCSAG) seguono il VFO che riceve.
+Poste : volume, squelch, émission | Radio: volume, squelch, transmission | Radio: volume, squelch, trasmissione
+VOLUME DU POSTE (0–15) | RADIO VOLUME (0–15) | VOLUME DELLA RADIO (0–15)
+SQUELCH (0 = OUVERT · 9) | SQUELCH (0 = OPEN · 9) | SQUELCH (0 = APERTO · 9)
+MICRO DU PC | PC MICROPHONE | MICROFONO DEL PC
+Maintenez le bouton PTT enfoncé pour parler dans le micro du PC : le poste émet sur la fréquence du | Hold the PTT button to talk into the PC microphone: the radio transmits on the frequency of the | Tieni premuto il pulsante PTT per parlare nel microfono del PC: la radio trasmette sulla frequenza del
+VFO actif (ou celle accordée ci-dessous) et repasse en réception au relâchement. Coupure de sécurité | active VFO (or the one tuned below) and returns to reception on release. Safety cut-off | VFO attivo (o quella sintonizzata qui sotto) e torna in ricezione al rilascio. Interruzione di sicurezza
+après 3 minutes. Le volume et le squelch sont ceux du poste lui-même. | after 3 minutes. The volume and squelch are those of the radio itself. | dopo 3 minuti. Il volume e lo squelch sono quelli della radio stessa.
+Maintenez le bouton PTT enfoncé pour parler : c'est le micro du PC qui émet (pas celui de cet appareil). Le poste émet sur la fréquence du VFO actif (ou celle accordée ci-dessous) et repasse en réception au relâchement. Coupure de sécurité après 3 minutes. | Hold the PTT button to talk: the PC microphone is used (not this device's). The radio transmits on the frequency of the active VFO (or the one tuned below) and returns to reception on release. Safety cut-off after 3 minutes. | Tieni premuto il pulsante PTT per parlare: viene usato il microfono del PC (non quello di questo dispositivo). La radio trasmette sulla frequenza del VFO attivo (o quella sintonizzata qui sotto) e torna in ricezione al rilascio. Interruzione di sicurezza dopo 3 minuti.
+Groupes et canaux mémoire | Memory groups and channels | Gruppi e canali di memoria
+GROUPE | GROUP | GRUPPO
+Chargement du groupe | Loading group | Caricamento del gruppo
+METTRE SUR VFO A | SET ON VFO A | IMPOSTA SU VFO A
+METTRE SUR VFO B | SET ON VFO B | IMPOSTA SU VFO B
+AJOUTER UNE FRÉQUENCE | ADD A FREQUENCY | AGGIUNGI UNA FREQUENZA
+Enregistrer une nouvelle fréquence dans le premier canal libre du groupe affiché | Save a new frequency in the first free channel of the displayed group | Salva una nuova frequenza nel primo canale libero del gruppo visualizzato
+RENOMMER LE GROUPE | RENAME GROUP | RINOMINA IL GRUPPO
+Double-clic : canal sur le VFO A. Clic droit : modifier le canal, le mettre sur le VFO A ou B, | Double-click: channel on VFO A. Right-click: edit the channel, set it on VFO A or B, | Doppio clic: canale sul VFO A. Clic destro: modifica il canale, impostalo sul VFO A o B,
+exporter le groupe en CSV. Le changement de groupe recharge les canaux du poste. | export the group to CSV. Changing group reloads the radio's channels. | esporta il gruppo in CSV. Il cambio di gruppo ricarica i canali della radio.
+Double-clic : canal sur le VFO A (clic droit : VFO B). Le changement de groupe recharge les canaux du poste. Une nouvelle fréquence va dans le premier canal libre du groupe affiché. | Double-click: channel on VFO A (right-click: VFO B). Changing group reloads the radio's channels. A new frequency goes in the first free channel of the displayed group. | Doppio clic: canale sul VFO A (clic destro: VFO B). Il cambio di gruppo ricarica i canali della radio. Una nuova frequenza va nel primo canale libero del gruppo visualizzato.
+Changer de fréquence | Change frequency | Cambia frequenza
+FRÉQUENCE (MHz) · RÉCEPTION ET ÉMISSION | FREQUENCY (MHz) · RECEPTION AND TRANSMISSION | FREQUENZA (MHz) · RICEZIONE E TRASMISSIONE
+ACCORDER | TUNE | SINTONIZZA
+RETOUR AUX CANAUX | BACK TO CHANNELS | TORNA AI CANALI
+DAPNET 439,9875 | DAPNET 439.9875 |
+APRS 144,800 | APRS 144.800 |
+ISS 145,800 | ISS 145.800 |
+Appel 2 m 145,500 | Calling 2 m 145.500 | Chiamata 2 m 145,500
+Appel 70 cm 433,500 | Calling 70 cm 433.500 | Chiamata 70 cm 433,500
+Le mode fréquence du poste est utilisé : aucun canal n'est modifié en mémoire. L'émission (PTT, | The radio's frequency mode is used: no channel is changed in memory. Transmission (PTT, | Viene usata la modalità frequenza della radio: nessun canale viene modificato in memoria. La trasmissione (PTT,
+POCSAG) se fait sur la fréquence accordée. Le bandscope se centre sur cette fréquence. | POCSAG) takes place on the tuned frequency. The bandscope centres on this frequency. | POCSAG) avviene sulla frequenza sintonizzata. Il bandscope si centra su questa frequenza.
+Le mode fréquence du poste est utilisé : aucun canal n'est modifié en mémoire. L'émission (PTT, POCSAG) se fait sur la fréquence accordée. Le bandscope se centre sur cette fréquence. | The radio's frequency mode is used: no channel is changed in memory. Transmission (PTT, POCSAG) takes place on the tuned frequency. The bandscope centres on this frequency. | Viene usata la modalità frequenza della radio: nessun canale viene modificato in memoria. La trasmissione (PTT, POCSAG) avviene sulla frequenza sintonizzata. Il bandscope si centra su questa frequenza.
+ÉMISSION… | TRANSMITTING… | TRASMISSIONE…
+s · RELÂCHER | s · RELEASE | s · RILASCIA
+Le poste émet | The radio is transmitting | La radio sta trasmettendo
+Envoi de l'audio au poste… | Sending audio to the radio… | Invio dell'audio alla radio…
+Émission sur | Transmitting on | Trasmissione su
+Fréquence d'émission inconnue | Transmit frequency unknown | Frequenza di trasmissione sconosciuta
+POSTE NON CONNECTÉ | RADIO NOT CONNECTED | RADIO NON CONNESSA
+LECTURE DES RÉGLAGES… | READING SETTINGS… | LETTURA IMPOSTAZIONI…
+DOUBLE VEILLE ACTIVE | DUAL WATCH ON | DOPPIO ASCOLTO ATTIVO
+· RÉCEPTION SUR A | · RECEIVING ON A | · RICEZIONE SU A
+· RÉCEPTION SUR B | · RECEIVING ON B | · RICEZIONE SU B
+UN SEUL VFO (A) | SINGLE VFO (A) | UN SOLO VFO (A)
+Accordé sur | Tuned to | Sintonizzato su
+MHz (mode fréquence) | MHz (frequency mode) | MHz (modalità frequenza)
+Sur les canaux mémoire | On memory channels | Sui canali di memoria
+Poste non connecté (canal audio fermé) | Radio not connected (audio channel closed) | Radio non connessa (canale audio chiuso)
+Une émission est déjà en cours (POCSAG / SSTV) | A transmission is already in progress (POCSAG / SSTV) | Una trasmissione è già in corso (POCSAG / SSTV)
+Émission impossible : fréquence d'émission inconnue ou canal en réception seule | Cannot transmit: transmit frequency unknown or receive-only channel | Trasmissione impossibile: frequenza di trasmissione sconosciuta o canale di sola ricezione
+PTT : émission sur | PTT: transmitting on | PTT: trasmissione su
+PTT : fin d'émission ( | PTT: end of transmission ( | PTT: fine trasmissione (
+, coupure de sécurité | , safety cut-off | , interruzione di sicurezza
+Émission impossible (canal audio fermé) | Cannot transmit (audio channel closed) | Trasmissione impossibile (canale audio chiuso)
+Émission impossible : | Cannot transmit: | Trasmissione impossibile:
+canal(aux) dans le groupe | channel(s) in the group | canale/i nel gruppo
+Choisissez un canal dans la liste. | Choose a channel from the list. | Scegli un canale dall'elenco.
+Canal : réglages du poste pas encore lus. | Channel: radio settings not read yet. | Canale: impostazioni della radio non ancora lette.
+RX seul | RX only | Solo RX
+Double veille : retour aux canaux mémoire (le mode fréquence n'écoute qu'une fréquence) | Dual watch: back to memory channels (frequency mode listens to one frequency only) | Doppio ascolto: ritorno ai canali di memoria (la modalità frequenza ascolta una sola frequenza)
+Double veille : réglages du poste pas encore lus. | Dual watch: radio settings not read yet. | Doppio ascolto: impostazioni della radio non ancora lette.
+Double veille | Dual watch | Doppio ascolto
+désactivée | off | disattivato
+Fréquence invalide. | Invalid frequency. | Frequenza non valida.
+Hors des bandes du poste (136–174 / 400–520 MHz). | Outside the radio's bands (136–174 / 400–520 MHz). | Fuori dalle bande della radio (136–174 / 400–520 MHz).
+Accord sur | Tuning to | Sintonia su
+Retour aux canaux mémoire | Back to memory channels | Ritorno ai canali di memoria
+Modifier le canal | Edit the channel | Modifica il canale
+Mettre sur le VFO A | Set on VFO A | Imposta sul VFO A
+Mettre sur le VFO B | Set on VFO B | Imposta sul VFO B
+Ajouter une fréquence au groupe… | Add a frequency to the group… | Aggiungi una frequenza al gruppo…
+Renommer le groupe… | Rename the group… | Rinomina il gruppo…
+Exporter le groupe en CSV… | Export the group to CSV… | Esporta il gruppo in CSV…
+Canaux pas encore lus, réessayez dans un instant. | Channels not read yet, try again in a moment. | Canali non ancora letti, riprova tra un istante.
+Plus de canal libre dans ce groupe ( | No free channel left in this group ( | Nessun canale libero in questo gruppo (
+canaux) : modifiez un canal existant ou changez de groupe. | channels): edit an existing channel or change group. | canali): modifica un canale esistente o cambia gruppo.
+Groupe courant inconnu, réessayez dans un instant. | Current group unknown, try again in a moment. | Gruppo corrente sconosciuto, riprova tra un istante.
+Nouveau nom du groupe | New name of group | Nuovo nome del gruppo
+(10 caractères au plus) | (10 characters at most) | (massimo 10 caratteri)
+RENOMMER | RENAME | RINOMINA
+Renommer le groupe | Rename the group | Rinomina il gruppo
+Nom vide. | Empty name. | Nome vuoto.
+Nom trop long (10 caractères au plus). | Name too long (10 characters at most). | Nome troppo lungo (massimo 10 caratteri).
+Groupe inconnu ou poste déconnecté. | Unknown group or radio disconnected. | Gruppo sconosciuto o radio disconnessa.
+Canal pas encore lu par le poste, réessayez dans un instant. | Channel not read from the radio yet, try again in a moment. | Canale non ancora letto dalla radio, riprova tra un istante.
+Nouvelle fréquence | New frequency | Nuova frequenza
+Inclus dans le balayage (scan) | Included in scan | Incluso nella scansione
+Émission interdite sur ce canal | Transmission forbidden on this channel | Trasmissione vietata su questo canale
+NOUVELLE FRÉQUENCE · CANAL LIBRE | NEW FREQUENCY · FREE CHANNEL | NUOVA FREQUENZA · CANALE LIBERO
+· GROUPE | · GROUP | · GRUPPO
+Nom (10 caractères au plus) | Name (10 characters at most) | Nome (massimo 10 caratteri)
+Fréquences (MHz) : réception · émission (vide = même que la réception) | Frequencies (MHz): reception · transmission (empty = same as reception) | Frequenze (MHz): ricezione · trasmissione (vuoto = uguale alla ricezione)
+Sous-tons : réception · émission (88.5 = CTCSS, D023 = DCS, vide = aucun) | Sub-tones: reception · transmission (88.5 = CTCSS, D023 = DCS, empty = none) | Subtoni: ricezione · trasmissione (88.5 = CTCSS, D023 = DCS, vuoto = nessuno)
+Puissance d'émission | Transmit power | Potenza di trasmissione
+HAUTE | HIGH | ALTA
+MOYENNE | MEDIUM | MEDIA
+BASSE | LOW | BASSA
+Largeur de bande | Bandwidth | Larghezza di banda
+Modulation |  | Modulazione
+ENREGISTRER DANS LE POSTE | SAVE TO RADIO | SALVA NELLA RADIO
+réception | reception | ricezione
+émission | transmission | trasmissione
+Poste déconnecté. | Radio disconnected. | Radio disconnessa.
+Valeur invalide : | Invalid value: | Valore non valido:
+Fréquence de | Frequency of | Frequenza di
+invalide. | invalid. | non valida.
+hors plage : | out of range: | fuori intervallo:
+Fichier CSV | CSV file | File CSV
+Export CSV : | CSV export: | Esportazione CSV:
+canal(aux) du groupe | channel(s) of group | canale/i del gruppo
+canal(aux) exporté(s) dans | channel(s) exported to | canale/i esportato/i in
+canal(aux) pas encore lu(s), ignoré(s)) | channel(s) not read yet, skipped) | canale/i non ancora letto/i, ignorato/i)
+Export impossible : | Could not export: | Esportazione impossibile:
+Réglages du poste pas encore lus. | Radio settings not read yet. | Impostazioni della radio non ancora lette.
+Canal libre pas encore lu, réessayez. | Free channel not read yet, try again. | Canale libero non ancora letto, riprova.
+ex. 145.500 | e.g. 145.500 | es. 145.500
+vide = même | empty = same | vuoto = uguale
+88.5 ou D023 | 88.5 or D023 | 88.5 o D023
+Réception, MHz | Reception, MHz | Ricezione, MHz
+Émission, MHz (vide = même que la réception) | Transmission, MHz (empty = same as reception) | Trasmissione, MHz (vuoto = uguale alla ricezione)
+Sous-ton à l'émission (vide = aucun) | Transmit sub-tone (empty = none) | Subtono in trasmissione (vuoto = nessuno)
+Enregistrée dans le premier canal libre du groupe affiché (25 kHz, puissance haute, FM). | Saved in the first free channel of the displayed group (25 kHz, high power, FM). | Salvata nel primo canale libero del gruppo visualizzato (25 kHz, potenza alta, FM).
+Ajouter une fréquence | Add a frequency | Aggiungi una frequenza
+Nouveau nom (10 caractères au plus) | New name (10 characters at most) | Nuovo nome (massimo 10 caratteri)
+N° | No. | N.
+
+# --- Wav
+pas un fichier WAV | not a WAV file | non è un file WAV
+pas de donnees audio | no audio data | nessun dato audio
+seul le PCM 16 bits est pris en charge (fichier : | only 16-bit PCM is supported (file: | è supportato solo il PCM a 16 bit (file:
+bits) | bits) | bit)
+
+# --- WebServer
+Serveur web : | Web server: | Server web:
+(code | (code | (codice
+Serveur web arrêté | Web server stopped | Server web fermato
+Serveur web : connexion depuis | Web server: connection from | Server web: connessione da
+Erreur : | Error: | Errore:
+
+# --- WindLayer / map.js
+réponse incomplète ( | incomplete response ( | risposta incompleta (
+points) | points) | punti)
+Vent (Open-Meteo) : | Wind (Open-Meteo): | Vento (Open-Meteo):
+VENT 10 m · | WIND 10 m · | VENTO 10 m ·
+chargement… | loading… | caricamento…
+
+# --- web : app.js, views.js
+Serveur web | Web server | Server web
+Arrêter le serveur web ? Cette page ne sera plus accessible. | Stop the web server? This page will no longer be reachable. | Fermare il server web? Questa pagina non sarà più raggiungibile.
+Écouter dans ce navigateur | Listen in this browser | Ascolta in questo browser
+· interface web | · web interface | · interfaccia web
+Recherche… une mise à jour s'installe depuis le PC. | Checking… an update is installed from the PC. | Ricerca… un aggiornamento si installa dal PC.
+TNC KISS · | KISS TNC · | TNC KISS ·
+(port choisi sur le PC) | (port chosen on the PC) | (porta scelta sul PC)
+Port COM à choisir sur le PC | COM port to choose on the PC | Porta COM da scegliere sul PC
+Décodage | Decoding | Decodifica
+lancé (voir le JOURNAL) | started (see the LOG) | avviata (vedi il REGISTRO)
+Dossier des résultats : | Results folder: | Cartella dei risultati:
+Effacer la carte et les tableaux APRS et décodages ? | Clear the map and the APRS and decodes tables? | Cancellare la mappa e le tabelle APRS e decodifiche?
+EFFACER | CLEAR | CANCELLA
+Version d'écran (image de la fenêtre du PC) | Screen version (image of the PC window) | Versione schermo (immagine della finestra del PC)
+rien n'est écrit en mémoire). Double-clic pour écouter une fréquence. | nothing is written to memory). Double-click to listen to a frequency. | nulla viene scritto in memoria). Doppio clic per ascoltare una frequenza.
+6. POCSAG et SSTV : décodage permanent ; émission (radioamateurs) depuis l'onglet. | 6. POCSAG and SSTV: permanent decoding; transmission (radio amateurs) from the tab. | 6. POCSAG e SSTV: decodifica permanente; trasmissione (radioamatori) dalla scheda.
+7. VFO : double veille, volume, squelch, PTT (micro du PC), groupes et canaux, accord libre. | 7. VFO: dual watch, volume, squelch, PTT (PC microphone), groups and channels, free tuning. | 7. VFO: doppio ascolto, volume, squelch, PTT (microfono del PC), gruppi e canali, sintonia libera.
+8. SATELLITES : passages, carte, suivi Doppler avec le poste. | 8. SATELLITES: passes, map, Doppler tracking with the radio. | 8. SATELLITI: passaggi, mappa, tracciamento Doppler con la radio.
+Carte : glisser pour déplacer, molette ou pincement pour zoomer, clic sur une épingle. | Map: drag to move, wheel or pinch to zoom, click on a pin. | Mappa: trascina per spostare, rotella o pizzico per lo zoom, clic su un segnaposto.
+Cette page pilote l'application du PC : tout ce que vous faites ici s'applique au poste. | This page controls the PC application: everything you do here applies to the radio. | Questa pagina controlla l'applicazione del PC: tutto ciò che fai qui si applica alla radio.
+Lecture audio impossible dans ce navigateur. | Audio playback not possible in this browser. | Riproduzione audio impossibile in questo browser.
+Touchez encore SON pour autoriser le son | Tap SOUND again to allow sound | Tocca di nuovo AUDIO per consentire l'audio
+Son du poste : à l'écoute (le son arrive quand le poste reçoit) | Radio sound: listening (sound arrives when the radio receives) | Audio della radio: in ascolto (l'audio arriva quando la radio riceve)
+Son interrompu : | Sound interrupted: | Audio interrotto:
+Liaison avec le PC perdue — nouvel essai… | Link with the PC lost — retrying… | Collegamento con il PC perso — nuovo tentativo…
+Couper le son dans ce navigateur | Mute sound in this browser | Silenzia l'audio in questo browser
+Écouter le son du poste dans ce navigateur | Listen to the radio sound in this browser | Ascolta l'audio della radio in questo browser
+Liaison avec le PC perdue | Link with the PC lost | Collegamento con il PC perso
+Envoi impossible | Could not send | Invio impossibile
+Radio et options | Radio and options | Radio e opzioni
+SON | SOUND | AUDIO
+
+# --- fragments
+Émission : | Transmission: | Trasmissione:
+Position : | Position: | Posizione:
+· CelesTrak : | · CelesTrak: | · CelesTrak:
+Bluetooth : | Bluetooth: | Bluetooth:
+btbridge : | btbridge: | btbridge:
+reponse compressee non geree | compressed response not supported | risposta compressa non gestita
+reponse tronquee | truncated response | risposta troncata
+fichier trop gros | file too large | file troppo grande
+°  ·  Él | °  ·  El | °  ·  El
+à | to | a
+
+# --- web : pages de connexion et d'ecran
+HTMod · connexion | HTMod · sign in | HTMod · accesso
+Accès à distance. Le code est affiché dans l'application, rubrique Options. | Remote access. The code is shown in the application, under Options. | Accesso remoto. Il codice è visualizzato nell'applicazione, nella sezione Opzioni.
+CODE D'ACCÈS | ACCESS CODE | CODICE DI ACCESSO
+Code incorrect. | Incorrect code. | Codice errato.
+connexion… | connecting… | connessione…
+connecté · | connected · | connesso ·
+liaison perdue, nouvel essai… | link lost, retrying… | collegamento perso, nuovo tentativo…
+reconnexion… | reconnecting… | riconnessione…
+Écouter le son reçu par le poste | Listen to the sound received by the radio | Ascolta l'audio ricevuto dalla radio
+Son | Sound | Audio
+Clavier (téléphone, tablette) | Keyboard (phone, tablet) | Tastiera (telefono, tablet)
+Clavier | Keyboard | Tastiera
+Taille réelle ou ajustée à l'écran | Actual size or fit to screen | Dimensione reale o adattata allo schermo

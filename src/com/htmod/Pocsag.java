@@ -314,7 +314,7 @@ final class Pocsag {
         List<Integer> nibbles = new ArrayList<>();
         for (char c : digits.toCharArray()) {
             int n = NUMERIC_CHARS.indexOf(Character.toUpperCase(c));
-            if (n < 0) throw new IllegalArgumentException("caractère non numérique : " + c);
+            if (n < 0) throw new IllegalArgumentException(Tr.t("caractère non numérique : ") + c);
             nibbles.add(n);
         }
         while (nibbles.size() % 5 != 0) nibbles.add(NUMERIC_CHARS.indexOf(' '));
