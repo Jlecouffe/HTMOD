@@ -76,7 +76,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.table.AbstractTableModel;
 
 public final class App implements Radio.Listener, Decoders.Listener {
-    static final String VERSION = "1.4";
+    static final String VERSION = "1.5";
 
     private final Preferences prefs = Preferences.userRoot().node("htmod");
     private final File bridgeExe;
