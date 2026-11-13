@@ -653,6 +653,8 @@ final class VfoPanel extends JPanel {
         int[] power = {c.maxPower ? 0 : c.medPower ? 1 : 2}, bw = {c.wide ? 0 : 1}, mod = {c.rxMod == 1 ? 1 : 0};
         Shack.Switch scan = new Shack.Switch(Tr.t("Inclus dans le balayage (scan)"), c.scan);
         Shack.Switch txOff = new Shack.Switch(Tr.t("Émission interdite sur ce canal"), c.txDisable);
+        Shack.Switch flat = new Shack.Switch(Tr.t("Audio plat (sans désaccentuation) : POCSAG, SARSAT, sondes"), c.preDeEmphBypass);
+        flat.setToolTipText(Tr.t("Coupe la désaccentuation 750 µs du poste en réception (et la pré-accentuation en émission). Le passe-bande 300-3100 Hz reste."));
         String grp = r.regionName(r.currentRegion());
         p.add(left(Shack.label((isNew ? Tr.t("NOUVELLE FRÉQUENCE · CANAL LIBRE ") : Tr.t("CANAL ")) + (ch + 1) + Tr.t(" · GROUPE ") + (r.currentRegion() + 1)
                 + (grp.isEmpty() ? "" : " " + grp.toUpperCase(Locale.ROOT)), Shack.tracked(Shack.mono(10f), 0.14f), Shack.MUTED)));
@@ -669,7 +671,7 @@ final class VfoPanel extends JPanel {
         p.add(left(cap(Tr.t("Modulation"))));
         p.add(left(keysOf(new String[]{"FM", "AM"}, mod)));
         p.add(Box.createVerticalStrut(6));
-        for (Shack.Switch s : new Shack.Switch[]{scan, txOff}) { s.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34)); p.add(left(s)); }
+        for (Shack.Switch s : new Shack.Switch[]{scan, txOff, flat}) { s.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34)); p.add(left(s)); }
         JPanel br = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 8));
         br.setOpaque(false);
         Shack.Key cancel = new Shack.Key(Tr.t("ANNULER")).font(Shack.bold(12f));
@@ -691,6 +693,7 @@ final class VfoPanel extends JPanel {
                 n.rxMod = n.txMod = mod[0];
                 n.scan = scan.isOn();
                 n.txDisable = txOff.isOn();
+                n.preDeEmphBypass = flat.isOn();
                 if (!r.isRunning()) throw new IllegalArgumentException(Tr.t("Poste déconnecté."));
                 r.writeChannel(n);
                 d.dispose();

@@ -69,9 +69,24 @@ final class Radio {
     private ByteArrayOutputStream tncAcc;
     private int tncNextFrag = -1;
 
+    /**
+     * Liaison fournie par la plateforme a la place de btbridge.exe (Android : sockets Bluetooth du
+     * telephone). Meme format que le pont : trames [canal][longueur sur 4 octets][donnees], canal 0 =
+     * commandes, 1 = audio, 2 = evenements texte (« connected 0 gaia », « connected 1 »...).
+     */
+    interface Link {
+        java.io.InputStream input();
+        OutputStream output();
+        void close();
+    }
+
+    /** Fabrique de liaisons (adresse MAC -> liaison) ; null = btbridge.exe. */
+    static volatile java.util.function.Function<String, Link> links;
+
     private final Listener listener;
     private final File bridgeExe;
     private Process proc;
+    private Link link;
     private OutputStream toBridge;
     private volatile boolean running;
 
@@ -142,22 +157,31 @@ final class Radio {
     synchronized void connect(String mac) throws IOException {
         disconnect();
         listener.onStatus(Tr.t("Connexion à ") + mac + "...");
-        proc = new ProcessBuilder(bridgeExe.getAbsolutePath(), "connect", mac).start();
-        toBridge = proc.getOutputStream();
+        java.util.function.Function<String, Link> lf = links;
+        final java.io.InputStream src;
+        if (lf != null) {
+            link = lf.apply(mac);
+            toBridge = link.output();
+            src = link.input();
+        } else {
+            proc = new ProcessBuilder(bridgeExe.getAbsolutePath(), "connect", mac).start();
+            toBridge = proc.getOutputStream();
+            src = proc.getInputStream();
+            final Process p = proc;
+            Thread err = new Thread(() -> {
+                try (BufferedReader r = new BufferedReader(new InputStreamReader(p.getErrorStream(), StandardCharsets.UTF_8))) {
+                    String l;
+                    while ((l = r.readLine()) != null) listener.onLog(Tr.t("btbridge : ") + l);
+                } catch (IOException ignore) {
+                }
+            }, "htmod-bridge-err");
+            err.setDaemon(true);
+            err.start();
+        }
         running = true;
-        final Process p = proc;
-        Thread rd = new Thread(() -> readLoop(p), "htmod-bridge");
+        Thread rd = new Thread(() -> readLoop(src), "htmod-bridge");
         rd.setDaemon(true);
         rd.start();
-        Thread err = new Thread(() -> {
-            try (BufferedReader r = new BufferedReader(new InputStreamReader(p.getErrorStream(), StandardCharsets.UTF_8))) {
-                String l;
-                while ((l = r.readLine()) != null) listener.onLog(Tr.t("btbridge : ") + l);
-            } catch (IOException ignore) {
-            }
-        }, "htmod-bridge-err");
-        err.setDaemon(true);
-        err.start();
         Thread tick = new Thread(this::tickLoop, "htmod-radio-tick");
         tick.setDaemon(true);
         tick.start();
@@ -174,6 +198,11 @@ final class Radio {
             proc.destroy();
             proc = null;
         }
+        if (link != null) {
+            link.close();
+            link = null;
+            toBridge = null;
+        }
         channels = new String[0];
         currCh = -1;
         userVfoHz = 0;
@@ -188,8 +217,8 @@ final class Radio {
 
     // ------------------------------------------------------------------ Pont
 
-    private void readLoop(Process p) {
-        try (DataInputStream in = new DataInputStream(p.getInputStream())) {
+    private void readLoop(java.io.InputStream src) {
+        try (DataInputStream in = new DataInputStream(src)) {
             while (true) {
                 int ch = in.read();
                 if (ch < 0) break;

@@ -128,6 +128,9 @@ public final class App implements Radio.Listener, Decoders.Listener {
     private SourceDataLine speaker;
     private volatile long lastPlayMs;
     private final Map<String, Long> aprsSeen = new HashMap<>();
+    /** Envoi des messages POCSAG recus vers un groupe WhatsApp (Options > WHATSAPP). */
+    private final WhatsApp whatsapp;
+    private final JLabel waLbl = new JLabel();
 
     public static void main(String[] args) {
         System.setProperty("awt.useSystemAAFontSettings", "on");
@@ -141,24 +144,28 @@ public final class App implements Radio.Listener, Decoders.Listener {
     }
 
     private App() {
-        bridgeExe = findBridge();
+        bridgeExe = findExe("btbridge.exe");
         outDir = new File(new File(System.getProperty("user.home"), "Documents"), "HTMod");
         decoders = new Decoders(outDir, this);
         radio = new Radio(bridgeExe, this);
         afsk = new Afsk1200(Decoders.SAMPLE_RATE, f -> onAx25(f, "audio"));
+        // session WhatsApp hors de Documents (souvent synchronise par OneDrive) : ce sont les cles du compte
+        String local = System.getenv("LOCALAPPDATA");
+        whatsapp = new WhatsApp(findExe("wabridge.exe"),
+                new File(local != null ? new File(local, "HTMod") : new File(outDir, ".prive"), "whatsapp"), this::log);
     }
 
     /** btbridge.exe est livre a cote de l'application (dossier app\ de jpackage, ou dossier courant). */
-    private static File findBridge() {
+    private static File findExe(String name) {
         List<File> candidates = new ArrayList<>();
         try {
             File jar = new File(App.class.getProtectionDomain().getCodeSource().getLocation().toURI());
             File dir = jar.isFile() ? jar.getParentFile() : jar;
-            candidates.add(new File(dir, "btbridge.exe"));
-            candidates.add(new File(dir.getParentFile(), "btbridge.exe"));
+            candidates.add(new File(dir, name));
+            candidates.add(new File(dir.getParentFile(), name));
         } catch (Exception ignore) {
         }
-        candidates.add(new File("btbridge.exe"));
+        candidates.add(new File(name));
         for (File f : candidates) if (f.isFile()) return f;
         return candidates.get(0);
     }
@@ -285,6 +292,7 @@ public final class App implements Radio.Listener, Decoders.Listener {
         for (Shack.Key k : connModeKeys) { k.setPreferredSize(new Dimension(120, 34)); k.font(Shack.bold(11.5f)); }
         modeRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
         radioCard.add(modeRow);
+
         kiss = new KissPanel(bridgeExe, new KissPanel.Host() {
             @Override public void frame(byte[] f) { onAx25(f, "KISS"); }
             @Override public void log(String s) { App.this.log(s); }
@@ -382,6 +390,21 @@ public final class App implements Radio.Listener, Decoders.Listener {
         fwKey.setVisible(false);
         fwKey.addActionListener(e -> { fwKey.setEnabled(false); Firewall.add(bridgeExe, this::log, () -> SwingUtilities.invokeLater(() -> { fwKey.setEnabled(true); checkFirewall(); })); });
         opts.add(fwKey);
+        // Messages POCSAG vers un groupe WhatsApp (Green-API)
+        Shack.Key waKey = new Shack.Key(Tr.t("MESSAGES POCSAG → WHATSAPP…")).font(Shack.bold(11.5f));
+        waKey.setToolTipText(Tr.t("Envoyer chaque message POCSAG reçu vers un groupe WhatsApp"));
+        waKey.setAlignmentX(Component.LEFT_ALIGNMENT);
+        waKey.setPreferredSize(new Dimension(260, 36));
+        waKey.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
+        waKey.addActionListener(e -> WhatsAppDialog.show(frame, whatsapp, this::refreshWhatsApp));
+        opts.add(Box.createVerticalStrut(6));
+        opts.add(waKey);
+        waLbl.setAlignmentX(Component.LEFT_ALIGNMENT);
+        waLbl.setFont(Shack.mono(11.5f));
+        waLbl.setBorder(new EmptyBorder(4, 2, 4, 0));
+        opts.add(waLbl);
+        refreshWhatsApp();
+        new Timer(5000, e -> refreshWhatsApp()).start();
         // Mises a jour (Releases GitHub)
         updateLbl.setAlignmentX(Component.LEFT_ALIGNMENT);
         updateLbl.setFont(Shack.mono(11.5f));
@@ -520,6 +543,8 @@ public final class App implements Radio.Listener, Decoders.Listener {
                 if (tray != null) SwingUtilities.invokeLater(() -> tray.displayMessage(title, text, TrayIcon.MessageType.INFO));
             }
             @Override public void csv(String type, String id, String details) { decoders.logExternal(type, id, details); }
+            @Override public void saveWav(String prefix, short[] pcm, int n) { decoders.saveWavExternal(prefix, pcm, n); }
+            @Override public void forward(Pocsag.Message m, String type, String body, String time) { whatsapp.pocsag(m, type, body, time); }
         });
         addView(tabBar, "POCSAG", Shack.PAGER, pocsag);
         sstv = new SstvPanel(new SstvPanel.Host() {
@@ -1098,6 +1123,12 @@ public final class App implements Radio.Listener, Decoders.Listener {
         System.exit(0);
     }
 
+    private void refreshWhatsApp() {
+        String s = whatsapp.status();
+        waLbl.setText(s);
+        waLbl.setForeground(!whatsapp.enabled() ? Shack.MUTED : !whatsapp.complete() || whatsapp.hasError() ? Shack.RED : Shack.GREEN);
+    }
+
     private void refreshCounters() {
         aprsCount.set(map.count(MapPanel.KIND_APRS));
         sondeCount.set(map.count(MapPanel.KIND_SONDE));
@@ -1283,6 +1314,11 @@ public final class App implements Radio.Listener, Decoders.Listener {
 
     @Override
     public void onAudio(short[] pcm, int len) {
+        dispatchAudio(pcm, len);
+    }
+
+    /** Circuit de l'audio recu du poste : decodeurs, web, haut-parleur. */
+    private void dispatchAudio(short[] pcm, int len) {
         waterfall.feed(pcm, 0, len);
         if (!sweeping) { // en balayage, l'audio vient de frequences voisines
             decoders.feed(channelName, pcm, 0, len);
@@ -1577,7 +1613,13 @@ public final class App implements Radio.Listener, Decoders.Listener {
             }
             if (web == null) web = new WebServer(frame, new WebBackend(), pin, this::log);
             try {
-                web.start(prefs.getInt("webPort", 8080));
+                // port deja pris (Steam occupe souvent 8080) : on essaie les 9 suivants
+                int base = prefs.getInt("webPort", 8080);
+                java.io.IOException last = null;
+                for (int port = base; port < base + 10 && !web.isRunning(); port++) {
+                    try { web.start(port); } catch (java.io.IOException ex) { last = ex; }
+                }
+                if (!web.isRunning()) throw last != null ? last : new java.io.IOException(Tr.t("aucun port libre"));
                 webInfo.setText("<html>" + String.join("<br>", web.urls()) + Tr.t("<br>code d'accès : <b>") + pin + "</b></html>");
                 webInfo.setForeground(Shack.CYAN);
                 checkFirewall(); // touche AUTORISER DANS LE PARE-FEU si la regle manque (rien d'automatique)

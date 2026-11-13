@@ -42,6 +42,10 @@ final class PocsagPanel extends JPanel {
         void log(String s);
         void notify(String title, String text);
         void csv(String type, String id, String details);
+        /** WAV de diagnostic (si « Enregistrer les WAV » est actif). */
+        void saveWav(String prefix, short[] pcm, int n);
+        /** Message recu, a transmettre ailleurs (groupe WhatsApp...) : type, texte, heure. */
+        default void forward(Pocsag.Message m, String type, String body, String time) {}
     }
 
     private final Host host;
@@ -55,7 +59,7 @@ final class PocsagPanel extends JPanel {
     private volatile Pocsag decoder;
 
     private int func, baudIdx, levelIdx;
-    private boolean numeric, precomp, invert;
+    private boolean numeric, precomp, invert, afsk;
     private static final int[] LEVELS = {40, 60, 80, 100};
 
     PocsagPanel(Host host) {
@@ -68,6 +72,7 @@ final class PocsagPanel extends JPanel {
         levelIdx = prefs.getInt("pocsagLevelIdx", 2);
         precomp = prefs.getBoolean("pocsagPre", false);
         invert = prefs.getBoolean("pocsagInv", false);
+        afsk = prefs.getBoolean("pocsagAfsk", false);
 
         // --- reception
         Shack.Card rxCard = new Shack.Card(16);
@@ -82,7 +87,10 @@ final class PocsagPanel extends JPanel {
         ht.add(Shack.label(Tr.t("MESSAGES REÇUS · 512 / 1200 / 2400 BAUDS"), Shack.tracked(Shack.mono(11f), 0.16f), Shack.MUTED));
         ht.add(syncLbl);
         head.add(ht, BorderLayout.WEST);
-        head.add(countLbl, BorderLayout.EAST);
+        JPanel he = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        he.setOpaque(false);
+        he.add(countLbl);
+        head.add(he, BorderLayout.EAST);
         rxCard.add(head, BorderLayout.NORTH);
         JTable table = new JTable(model);
         Shack.styleTable(table, 0, 1, 3);
@@ -92,6 +100,31 @@ final class PocsagPanel extends JPanel {
             if (i < 5) table.getColumnModel().getColumn(i).setMinWidth(w[i]);
         }
         rxCard.add(Shack.scroll(table), BorderLayout.CENTER);
+        JTextField rawFrame = Shack.field(prefs.get("pocsagRawFrame", ""), 36);
+        rawFrame.setToolTipText(Tr.t("Symboles acceptés : 0123456789*U -)(. Les retours à la ligne sont ignorés."));
+        JTextField rawText = Shack.field("", 36);
+        rawText.setEditable(false);
+        rawText.setForeground(Shack.MUTED);
+        rawText.setToolTipText(Tr.t("Le texte alpha reconstitué apparaîtra ici."));
+        Shack.Key rawDecode = new Shack.Key(Tr.t("DÉCODER")).font(Shack.mono(11f));
+        rawDecode.addActionListener(e -> decodeNumericFrame(rawFrame, rawText));
+        rawFrame.addActionListener(e -> decodeNumericFrame(rawFrame, rawText));
+        JPanel rawBar = new JPanel();
+        rawBar.setOpaque(false);
+        rawBar.setLayout(new BoxLayout(rawBar, BoxLayout.Y_AXIS));
+        JPanel rawInput = new JPanel(new BorderLayout(8, 0));
+        rawInput.setOpaque(false);
+        rawInput.add(Shack.label(Tr.t("TRAME"), Shack.mono(11f), Shack.MUTED), BorderLayout.WEST);
+        rawInput.add(rawFrame, BorderLayout.CENTER);
+        rawInput.add(rawDecode, BorderLayout.EAST);
+        JPanel rawOutput = new JPanel(new BorderLayout(8, 0));
+        rawOutput.setOpaque(false);
+        rawOutput.setBorder(new EmptyBorder(5, 0, 3, 0));
+        rawOutput.add(Shack.label(Tr.t("TEXTE"), Shack.mono(11f), Shack.MUTED), BorderLayout.WEST);
+        rawOutput.add(rawText, BorderLayout.CENTER);
+        rawBar.add(rawInput);
+        rawBar.add(rawOutput);
+        rxCard.add(rawBar, BorderLayout.SOUTH);
         add(rxCard, BorderLayout.CENTER);
 
         // --- emission
@@ -117,7 +150,10 @@ final class PocsagPanel extends JPanel {
         pre.addActionListener(e -> precomp = pre.isOn());
         Shack.Switch inv = new Shack.Switch(Tr.t("Inverser la polarité"), invert);
         inv.addActionListener(e -> invert = inv.isOn());
-        for (Shack.Switch s : new Shack.Switch[]{pre, inv}) {
+        Shack.Switch afskSw = new Shack.Switch(Tr.t("Modulation AFSK 1200/2200 Hz (entre postes Benshi)"), afsk);
+        afskSw.setToolTipText(Tr.t("Passe le passe-bande 300-3100 Hz des postes ; décodé par HTMod, pas par un pager du commerce."));
+        afskSw.addActionListener(e -> afsk = afskSw.isOn());
+        for (Shack.Switch s : new Shack.Switch[]{pre, inv, afskSw}) {
             s.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
             tx.add(left(s));
         }
@@ -162,7 +198,63 @@ final class PocsagPanel extends JPanel {
         return p;
     }
 
+    /** Reinterpretation immediate des symboles affiches par un pager en mode numerique. */
+    private void decodeNumericFrame(JTextField input, JTextField output) {
+        try {
+            Pocsag.AlphaDecode decoded = Pocsag.decodeNumericSymbolsAsAlpha(input.getText());
+            prefs.put("pocsagRawFrame", input.getText());
+            String status = decoded.bitOffset == 0 ? Tr.t("ASCII 7 bits, alignement standard.")
+                    : Tr.t("ASCII 7 bits, décalage détecté : ") + decoded.bitOffset + Tr.t(" bit(s).");
+            if (decoded.corrupt > 0) status += " " + decoded.corrupt + Tr.t(" octet(s) non imprimable(s) indiqué(s) par ·.");
+            output.setText(decoded.text);
+            output.setForeground(decoded.corrupt == 0 ? Shack.GREEN : Shack.AMBER);
+            output.setToolTipText(status);
+        } catch (IllegalArgumentException ex) {
+            output.setText(ex.getMessage());
+            output.setForeground(Shack.RED);
+            output.setToolTipText(ex.getMessage());
+        }
+    }
+
     // ------------------------------------------------------------------ Reception
+
+    // --- diagnostic d'une reception (squelch ouvert) : duree, niveau, synchros, WAV
+    private static final int BURST_MAX = Decoders.SAMPLE_RATE * 60;
+    private short[] burst = new short[Decoders.SAMPLE_RATE * 4];
+    private int burstN;
+    private long burstTotal;
+    private double burstSq;
+    private int burstPeak;
+    private long burstHz;
+
+    private void burstAdd(short[] b) {
+        if (burstTotal == 0) { Radio r = host.radio(); burstHz = r.isRunning() ? r.currentRxHz() : 0; }
+        burstTotal += b.length;
+        for (short s : b) { burstSq += s * (double) s; burstPeak = Math.max(burstPeak, Math.abs(s)); }
+        if (burstN + b.length <= BURST_MAX) {
+            if (burstN + b.length > burst.length) burst = java.util.Arrays.copyOf(burst, Math.min(BURST_MAX, Math.max(burst.length * 2, burstN + b.length)));
+            System.arraycopy(b, 0, burst, burstN, b.length);
+            burstN += b.length;
+        }
+    }
+
+    /** Fin de reception : une ligne de journal (et un WAV) pour savoir ce que le poste a vraiment transmis. */
+    private void burstEnd(String sync) {
+        double secs = burstTotal / (double) Decoders.SAMPLE_RATE;
+        if (secs >= 0.3) {
+            double rms = Math.sqrt(burstSq / burstTotal);
+            host.log(String.format(Locale.ROOT, Tr.t("POCSAG : réception %.1f s"), secs)
+                    + (burstHz > 0 ? " · " + Bandscope.mhz(burstHz) + " MHz" : "")
+                    + String.format(Locale.ROOT, Tr.t(" · niveau %.0f dBFS (crête %.0f dBFS)"), 20 * Math.log10(Math.max(1, rms) / 32768.0),
+                            20 * Math.log10(Math.max(1, burstPeak) / 32768.0))
+                    + Tr.t(" · synchro : ") + (sync.isEmpty() ? Tr.t("aucune") : sync));
+            if (secs >= 0.5) host.saveWav("poste", burst, burstN);
+        }
+        burstN = 0;
+        burstTotal = 0;
+        burstSq = 0;
+        burstPeak = 0;
+    }
 
     private void startDecoder() {
         decoder = new Pocsag(Decoders.SAMPLE_RATE, this::onMessage);
@@ -170,7 +262,12 @@ final class PocsagPanel extends JPanel {
             while (true) {
                 try {
                     short[] b = rx.poll(600, TimeUnit.MILLISECONDS);
-                    if (b == null) { decoder.flush(); continue; } // fin de reception
+                    if (b == null) { // fin de reception
+                        decoder.flush();
+                        if (burstTotal > 0) burstEnd(decoder.takeSyncSummary());
+                        continue;
+                    }
+                    burstAdd(b);
                     decoder.process(b, 0, b.length);
                 } catch (InterruptedException e) {
                     return;
@@ -203,9 +300,11 @@ final class PocsagPanel extends JPanel {
     private void onMessage(Pocsag.Message m) {
         String type = m.toneOnly ? "bip" : m.isNumeric ? "num" : "alpha";
         String body = m.toneOnly ? Tr.t("(bip seul)") : m.text();
-        host.log("POCSAG RIC " + m.address + " F" + m.function + " " + m.baud + " bd " + type + " : " + body.replace('\n', ' '));
-        host.csv("POCSAG", String.valueOf(m.address), m.baud + " bd / F" + m.function + " / " + type + " / " + body.replace('\n', ' '));
+        String rate = m.baud + " bd" + (m.afsk ? " AFSK" : "");
+        host.log("POCSAG RIC " + m.address + " F" + m.function + " " + rate + " " + type + " [" + m.demod + (m.votes > 1 ? " ×" + m.votes : "") + "] : " + body.replace('\n', ' '));
+        host.csv("POCSAG", String.valueOf(m.address), rate + " / F" + m.function + " / " + type + " / " + body.replace('\n', ' '));
         host.notify("POCSAG RIC " + m.address + " (F" + m.function + ")", body);
+        host.forward(m, type, body, new SimpleDateFormat("HH:mm:ss", Locale.ROOT).format(new Date()));
         SwingUtilities.invokeLater(() -> {
             model.add(m, type, body);
             countLbl.setText(model.getRowCount() + Tr.t(" message(s)"));
@@ -214,7 +313,7 @@ final class PocsagPanel extends JPanel {
 
     private void refreshStatus() {
         Pocsag d = decoder;
-        List<Integer> s = d == null ? new ArrayList<Integer>() : d.syncedBauds();
+        List<String> s = d == null ? new ArrayList<String>() : d.syncedBauds();
         syncLbl.setText(host.sweeping() ? Tr.t("Réception en pause (balayage bandscope)")
                 : s.isEmpty() ? Tr.t("En écoute… (aucune synchro)") : Tr.t("Synchronisé : ") + s + Tr.t(" bauds"));
         if (host.transmitter().isBusy()) return;
@@ -258,6 +357,7 @@ final class PocsagPanel extends JPanel {
             warn.accept(e.getMessage());
             return;
         }
+        if (afsk && Pocsag.BAUDS[baudIdx] == 2400) { warn.accept(Tr.t("AFSK : choisissez 512 ou 1200 bauds.")); return; }
         long hz = r.currentTxHz();
         if (hz <= 0) { warn.accept(Tr.t("Fréquence d'émission inconnue (lecture des canaux en cours, ou émission interdite sur ce canal).")); return; }
         if (!amateur(hz)) {
@@ -272,11 +372,13 @@ final class PocsagPanel extends JPanel {
         prefs.putInt("pocsagLevelIdx", levelIdx);
         prefs.putBoolean("pocsagPre", precomp);
         prefs.putBoolean("pocsagInv", invert);
+        prefs.putBoolean("pocsagAfsk", afsk);
         int baud = Pocsag.BAUDS[baudIdx];
-        short[] pcm = Pocsag.waveform(Pocsag.bitstream(Pocsag.codewords(address, func, payload)), baud, Decoders.SAMPLE_RATE,
-                LEVELS[levelIdx] / 100.0, invert, precomp);
+        boolean[] bits = Pocsag.bitstream(Pocsag.codewords(address, func, payload));
+        short[] pcm = afsk ? Pocsag.waveformAfsk(bits, baud, Decoders.SAMPLE_RATE, LEVELS[levelIdx] / 100.0, invert)
+                : Pocsag.waveform(bits, baud, Decoders.SAMPLE_RATE, LEVELS[levelIdx] / 100.0, invert, precomp);
         double secs = pcm.length / (double) Decoders.SAMPLE_RATE;
-        if (!confirm.test("RIC " + address + Tr.t(" · fonction ") + func + " · " + baud + Tr.t(" bauds · ") + String.format(Locale.ROOT, "%.1f", secs)
+        if (!confirm.test("RIC " + address + Tr.t(" · fonction ") + func + " · " + baud + Tr.t(" bauds · ") + (afsk ? "AFSK · " : "") + String.format(Locale.ROOT, "%.1f", secs)
                         + Tr.t(" s d'émission\nFréquence : ") + Bandscope.mhz(hz) + " MHz\n\n"
                         + Tr.t("Je confirme être radioamateur et émettre sur une fréquence autorisée."))) return;
         boolean started = t.transmit(pcm, true, new Transmitter.Listener() {
@@ -286,7 +388,7 @@ final class PocsagPanel extends JPanel {
                     txLbl.setText(Tr.t("Émission en cours sur ") + Bandscope.mhz(hz) + " MHz (" + String.format(Locale.ROOT, "%.1f", seconds) + " s)…");
                     txLbl.setForeground(Shack.AMBER);
                 });
-                host.log(Tr.t("POCSAG : émission RIC ") + address + Tr.t(" sur ") + Bandscope.mhz(hz) + " MHz, " + baud + " bd");
+                host.log(Tr.t("POCSAG : émission RIC ") + address + Tr.t(" sur ") + Bandscope.mhz(hz) + " MHz, " + baud + " bd" + (afsk ? " AFSK" : ""));
             }
 
             @Override public void onTxEnd(boolean cancelled) {
@@ -309,7 +411,7 @@ final class PocsagPanel extends JPanel {
         return Json.obj("rows", rows, "sync", syncLbl.getText(), "count", countLbl.getText(), "tx", txLbl.getText(), "txColor", fg,
                 "busy", host.transmitter().isBusy(), "sendKey", sendKey.getText(),
                 "ric", prefs.get("pocsagRic", ""), "msg", prefs.get("pocsagMsg", ""), "func", func, "baud", baudIdx,
-                "numeric", numeric, "level", levelIdx, "pre", precomp, "inv", invert);
+                "numeric", numeric, "level", levelIdx, "pre", precomp, "inv", invert, "afsk", afsk);
     }
 
     /** Commande web ; renvoie un message d'erreur a afficher, ou null. */
@@ -322,6 +424,7 @@ final class PocsagPanel extends JPanel {
         levelIdx = Integer.parseInt(p.getOrDefault("level", "2"));
         precomp = "1".equals(p.get("pre"));
         invert = "1".equals(p.get("inv"));
+        afsk = "1".equals(p.get("afsk"));
         String[] err = {null};
         send(p.getOrDefault("ric", "").trim(), p.getOrDefault("msg", ""), msg -> true, s -> err[0] = s);
         return err[0];
@@ -339,7 +442,7 @@ final class PocsagPanel extends JPanel {
         private final SimpleDateFormat tf = new SimpleDateFormat("HH:mm:ss", Locale.ROOT);
 
         void add(Pocsag.Message m, String type, String body) {
-            rows.add(0, new Object[]{tf.format(new Date()), String.valueOf(m.address), "F" + m.function, m.baud + " bd",
+            rows.add(0, new Object[]{tf.format(new Date()), String.valueOf(m.address), "F" + m.function, m.baud + " bd" + (m.afsk ? " AFSK" : ""),
                     type + (m.badCodewords > 0 ? " ?" : ""), body.replace('\n', ' ')});
             if (rows.size() > 2000) rows.remove(rows.size() - 1);
             fireTableDataChanged();

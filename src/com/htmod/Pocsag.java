@@ -10,14 +10,28 @@
  * Emission : preambule de 576 bits 1010..., lots (synchro + 16 mots), NRZ a bords adoucis, rendu
  * en PCM 32 kHz, emis par le poste (Transmitter). Option : pre-compensation de la pre-accentuation
  * du poste (filtre de desaccentuation 750 us) pour garder des paliers plats en FM.
+ *
+ * Reception du POCSAG reel par un poste Benshi (RT-660 mesure, canal en audio plat) : la voie audio
+ * coupe tout sous 290 Hz, resonne et ecrete ; le decodeur ci-dessus n'y decode rien. Un detecteur de
+ * Viterbi par debit (PosteDetector) simule le poste a partir de sa reponse mesuree.
+ * Un meme message decode par plusieurs demodulateurs n'est publie qu'une fois (le plus propre), et un
+ * lot n'est publie que si la synchro suivante confirme sa polarite.
+ *
+ * Variante AFSK (entre postes Benshi) : les memes trames sur une sous-porteuse a phase continue
+ * (bit 1 = 1200 Hz, bit 0 = 2200 Hz), dans la bande du poste ; correlateurs quadratiques sur un
+ * bit. Un pager du commerce n'entend pas l'AFSK : il faut HTMod (ou equivalent) des deux cotes.
  */
 package com.htmod;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 final class Pocsag {
     static final int[] BAUDS = {512, 1200, 2400};
+    /** Debits AFSK : a 2400 bauds, la fenetre d'un bit est trop courte pour separer 1200 et 2200 Hz. */
+    static final int[] AFSK_BAUDS = {512, 1200};
+    static final double AFSK_MARK = 1200, AFSK_SPACE = 2200;
     static final int SYNC = 0x7CD215D8;
     static final int IDLE = 0x7A89C197;
     /** Polynome generateur BCH(31,21) : x^10+x^9+x^8+x^6+x^5+x^3+1. */
@@ -28,8 +42,16 @@ final class Pocsag {
     static final class Message {
         int address, function, baud;
         String numeric, alpha;
-        boolean isNumeric, toneOnly;
+        boolean isNumeric, toneOnly, afsk;
         int corrected, badCodewords;
+        /** Demodulateur qui a decode le message (journal, mise au point). */
+        String demod = "NRZ";
+        /** Nombre de demodulateurs ayant decode exactement ce message. */
+        int votes = 1;
+        /** Bits corriges dans le mot d'adresse. */
+        int addrFix;
+        /** Mots de 20 bits du champ message. */
+        List<Integer> payload = new ArrayList<>();
 
         String text() { return isNumeric ? numeric : alpha; }
     }
@@ -38,14 +60,27 @@ final class Pocsag {
 
     // ------------------------------------------------------------------ Decodeur
 
+    /** Familles de demodulateurs : NRZ (audio plat, fichiers WAV), poste Benshi (Viterbi), AFSK. */
+    private static final int NRZ = 0, POSTE = 1, AFSK = 2;
+
     private final Listener listener;
     private final BaudDemod[] demods;
     private float dcPrevX, dcPrevY;
 
+    /** Un meme message est souvent decode par plusieurs demodulateurs : on garde le meilleur. */
+    private final List<Message> pending = new ArrayList<>();
+    private final List<Long> pendingAt = new ArrayList<>();
+    private final long hold;
+    private long now;
+
     Pocsag(int sampleRate, Listener l) {
         listener = l;
-        demods = new BaudDemod[BAUDS.length];
-        for (int i = 0; i < BAUDS.length; i++) demods[i] = new BaudDemod(sampleRate, BAUDS[i]);
+        hold = sampleRate; // 1 s
+        List<BaudDemod> ds = new ArrayList<>();
+        for (int b : BAUDS) ds.add(new BaudDemod(sampleRate, b, NRZ, null, null));
+        for (int b : BAUDS) ds.add(new BaudDemod(sampleRate, b, POSTE, null, new PosteDetector(sampleRate, b)));
+        for (int b : AFSK_BAUDS) ds.add(new BaudDemod(sampleRate, b, AFSK, new AfskFront(sampleRate, b), null));
+        demods = ds.toArray(new BaudDemod[0]);
     }
 
     void process(short[] buf, int off, int n) {
@@ -54,22 +89,145 @@ final class Pocsag {
             float y = x - dcPrevX + 0.999f * dcPrevY; // passe-haut ~7 Hz
             dcPrevX = x;
             dcPrevY = y;
-            for (BaudDemod d : demods) d.sample(y);
+            for (BaudDemod d : demods) {
+                switch (d.kind) {
+                    case AFSK: d.sample(d.afsk.next(y)); break;
+                    default: d.sample(y);
+                }
+            }
+            now++;
         }
+        release(false);
     }
 
-    /** Debits actuellement synchronises (affichage d'etat). */
-    List<Integer> syncedBauds() {
-        List<Integer> r = new ArrayList<>();
-        for (BaudDemod d : demods) if (d.synced) r.add(d.baud);
+    /** Debits actuellement synchronises (affichage d'etat), « 1200 AFSK » pour la sous-porteuse. */
+    List<String> syncedBauds() {
+        List<String> r = new ArrayList<>();
+        for (BaudDemod d : demods) {
+            String s = d.baud + (d.kind == AFSK ? " AFSK" : "");
+            if (d.synced && !r.contains(s)) r.add(s);
+        }
         return r;
     }
 
+    /** Demodulateurs ayant trouve la synchro POCSAG depuis le dernier appel (diagnostic de reception). */
+    private final java.util.Set<String> syncSeen = new java.util.LinkedHashSet<>();
+
+    /** « 1200 bd EQ ch40, 1200 bd NRZ » ou « » ; remet la liste a zero. */
+    String takeSyncSummary() {
+        StringBuilder sb = new StringBuilder(); // sans String.join : aussi compile pour Android 5
+        for (String x : syncSeen) sb.append(sb.length() > 0 ? ", " : "").append(x);
+        String s = sb.toString();
+        syncSeen.clear();
+        return s;
+    }
+
+    /** Nom court du demodulateur (journal) : « NRZ », « POSTE », « AFSK ». */
+    private static String demodName(int kind) {
+        return kind == POSTE ? "POSTE" : kind == AFSK ? "AFSK" : "NRZ";
+    }
+
+    /** Propose un message decode ; les doublons (meme debit, RIC, fonction) sont fusionnes. */
+    private void offer(Message m) {
+        for (int i = 0; i < pending.size(); i++) {
+            Message p = pending.get(i);
+            if (p.baud == m.baud && p.address == m.address && p.function == m.function && p.afsk == m.afsk) {
+                boolean same = p.text().equals(m.text()) && p.toneOnly == m.toneOnly;
+                int dl = m.payload.size() - p.payload.size(); // version tronquee : un demodulateur a decroche
+                if (m.badCodewords < p.badCodewords || (m.badCodewords == p.badCodewords && (dl > 0 || (dl == 0 && m.corrected < p.corrected)))) {
+                    m.votes = same ? p.votes + 1 : 1;
+                    pending.set(i, m);
+                } else if (same) p.votes++;
+                return;
+            }
+        }
+        // meme texte sous un autre RIC : l'adresse a ete mal corrigee par l'un des demodulateurs ;
+        // on garde celle qui a demande le moins de corrections
+        String t = m.text();
+        if (!m.toneOnly && t.length() >= 5) {
+            for (int i = 0; i < pending.size(); i++) {
+                Message p = pending.get(i);
+                if (p.baud == m.baud && p.afsk == m.afsk && !p.toneOnly && t.equals(p.text())) {
+                    if (m.corrected < p.corrected) { m.votes = p.votes + 1; pending.set(i, m); }
+                    else p.votes++;
+                    return;
+                }
+            }
+        }
+        pending.add(m);
+        pendingAt.add(now);
+    }
+
+    private void release(boolean all) {
+        while (!pending.isEmpty() && (all || now - pendingAt.get(0) >= hold)) {
+            Message m = pending.remove(0);
+            pendingAt.remove(0);
+            // vu par un seul demodulateur et garde des mots illisibles : refuse ; bip seul obtenu par
+            // correction : refuse aussi (bruit ou mots inverses corriges en fausse adresse)
+            if ((m.votes == 1 && (m.badCodewords > 0 || m.addrFix >= 2)) || (m.toneOnly && m.corrected > 0)) continue;
+            listener.onMessage(m);
+        }
+    }
+
+    /**
+     * Discriminateur AFSK : amplitude a 1200 Hz et a 2200 Hz sur une fenetre glissante d'un bit
+     * (correlateurs complexes), chacune normalisee par sa propre AGC (comme Afsk1200) : la
+     * pre-accentuation ou la desaccentuation du poste desequilibrent les deux tons de plusieurs dB.
+     * Sortie souple positive pour un bit 1 (mark).
+     */
+    private static final class AfskFront {
+        private final int len;
+        private final double[] reM, imM, reS, imS;
+        private double sReM, sImM, sReS, sImS;
+        private double mPeak, mValley, sPeak, sValley;
+        private double cM = 1, sM = 0, cS = 1, sS = 0;
+        private final double rcM, rsM, rcS, rsS;
+        private int idx, renorm;
+
+        AfskFront(int sampleRate, int baud) {
+            len = Math.max(4, (int) Math.round(sampleRate / (double) baud));
+            reM = new double[len]; imM = new double[len]; reS = new double[len]; imS = new double[len];
+            double wM = 2 * Math.PI * AFSK_MARK / sampleRate, wS = 2 * Math.PI * AFSK_SPACE / sampleRate;
+            rcM = Math.cos(wM); rsM = Math.sin(wM); rcS = Math.cos(wS); rsS = Math.sin(wS);
+        }
+
+        float next(float x) {
+            double a = x * cM, b = -x * sM, c = x * cS, d = -x * sS;
+            sReM += a - reM[idx]; sImM += b - imM[idx]; sReS += c - reS[idx]; sImS += d - imS[idx];
+            reM[idx] = a; imM[idx] = b; reS[idx] = c; imS[idx] = d;
+            idx = (idx + 1) % len;
+            double t = cM * rcM - sM * rsM; sM = sM * rcM + cM * rsM; cM = t;
+            t = cS * rcS - sS * rsS; sS = sS * rcS + cS * rsS; cS = t;
+            if (++renorm >= 4096) { // les oscillateurs derivent lentement en amplitude
+                renorm = 0;
+                double m = Math.hypot(cM, sM), s = Math.hypot(cS, sS);
+                cM /= m; sM /= m; cS /= s; sS /= s;
+                double r1 = 0, r2 = 0, r3 = 0, r4 = 0; // et les sommes glissantes en arrondi
+                for (int k = 0; k < len; k++) { r1 += reM[k]; r2 += imM[k]; r3 += reS[k]; r4 += imS[k]; }
+                sReM = r1; sImM = r2; sReS = r3; sImS = r4;
+            }
+            double m = Math.sqrt(sReM * sReM + sImM * sImM), s = Math.sqrt(sReS * sReS + sImS * sImS);
+            // AGC : attaque rapide, relachement lent
+            mPeak = m > mPeak ? m * 0.25 + mPeak * 0.75 : mPeak * 0.9995 + m * 0.0005;
+            mValley = m < mValley ? m * 0.25 + mValley * 0.75 : mValley * 0.9995 + m * 0.0005;
+            sPeak = s > sPeak ? s * 0.25 + sPeak * 0.75 : sPeak * 0.9995 + s * 0.0005;
+            sValley = s < sValley ? s * 0.25 + sValley * 0.75 : sValley * 0.9995 + s * 0.0005;
+            double mn = mPeak - mValley > 1e-6 ? (m - 0.5 * (mPeak + mValley)) / (mPeak - mValley) : 0;
+            double sn = sPeak - sValley > 1e-6 ? (s - 0.5 * (sPeak + sValley)) / (sPeak - sValley) : 0;
+            return (float) (mn - sn);
+        }
+    }
+
     /** Termine les messages en cours (fin de reception). */
-    void flush() { for (BaudDemod d : demods) d.loseSync(); }
+    void flush() {
+        for (BaudDemod d : demods) d.loseSync();
+        release(true);
+    }
 
     private final class BaudDemod {
-        final int baud;
+        final int baud, kind;
+        /** Discriminateur AFSK en amont (famille AFSK seulement). */
+        final AfskFront afsk;
         private final double step;
         private final int maLen;
         private final float[] ring;
@@ -89,8 +247,14 @@ final class Pocsag {
         private int badInBatch;
         private Building msg;
 
-        BaudDemod(int sampleRate, int baud) {
+        /** Detecteur de Viterbi de la voie audio d'un poste Benshi (famille POSTE), null sinon. */
+        final PosteDetector poste;
+
+        BaudDemod(int sampleRate, int baud, int kind, AfskFront afsk, PosteDetector poste) {
             this.baud = baud;
+            this.kind = kind;
+            this.afsk = afsk;
+            this.poste = poste;
             double spb = sampleRate / (double) baud;
             step = 1.0 / spb;
             maLen = Math.max(1, (int) Math.round(spb / 4));
@@ -99,6 +263,11 @@ final class Pocsag {
         }
 
         void sample(float x) {
+            if (poste != null) {
+                int b = poste.next(x / 32768.0, synced);
+                if (b >= 0) bit(b == 1);
+                return;
+            }
             maSum += x - ring[ringIdx];
             ring[ringIdx] = x;
             ringIdx = (ringIdx + 1) % maLen;
@@ -132,8 +301,14 @@ final class Pocsag {
             bitsInCw = 0;
             int cw = inverted ? ~shift : shift;
             if (cwIndex == 16) { // entre deux lots : synchro attendue, sinon fin de transmission
-                if (Integer.bitCount(cw ^ SYNC) <= 2) { cwIndex = 0; badInBatch = 0; }
-                else loseSync();
+                if (Integer.bitCount(cw ^ SYNC) <= 2) { commit(); cwIndex = 0; badInBatch = 0; }
+                else if (Integer.bitCount(cw ^ ~SYNC) <= 2) {
+                    // polarite basculee pendant le lot : un mot BCH complemente reste valide, le lot est faux
+                    discard();
+                    inverted = !inverted;
+                    cwIndex = 0;
+                    badInBatch = 0;
+                } else loseSync();
                 return;
             }
             codeword(cw, cwIndex);
@@ -141,6 +316,7 @@ final class Pocsag {
         }
 
         private void startSync(boolean inv) {
+            syncSeen.add(baud + " bd " + demodName(kind));
             synced = true;
             inverted = inv;
             bitsInCw = 0;
@@ -148,8 +324,22 @@ final class Pocsag {
             badInBatch = 0;
         }
 
+        /** Messages termines dans le lot en cours : publies quand la synchro suivante confirme le lot. */
+        private final List<Message> held = new ArrayList<>();
+
+        private void commit() {
+            for (Message m : held) offer(m);
+            held.clear();
+        }
+
+        private void discard() {
+            held.clear();
+            msg = null;
+        }
+
         void loseSync() {
             finishMessage();
+            commit(); // fin de transmission : le dernier lot est valide par ses mots BCH
             synced = false;
             cwIndex = 0;
             bitsInCw = 0;
@@ -163,12 +353,18 @@ final class Pocsag {
                 return;
             }
             int cw = fix[0];
+            if (cw == 0 || cw == -1) { // mots valides mais typiques d'un demodulateur bloque
+                if (++badInBatch >= 6) { loseSync(); return; }
+                if (msg != null) msg.bad++;
+                return;
+            }
             if (cw == IDLE) { finishMessage(); return; }
             if ((cw & (1 << 31)) == 0) { // mot d'adresse
                 finishMessage();
                 int addr = (((cw >>> 13) & 0x3FFFF) << 3) | (index / 2);
                 msg = new Building(addr, (cw >>> 11) & 3);
                 msg.corrected += fix[1];
+                msg.addrFix = fix[1];
             } else if (msg != null) {
                 msg.corrected += fix[1];
                 msg.payload.add((cw >>> 11) & 0xFFFFF);
@@ -179,14 +375,18 @@ final class Pocsag {
             Building m = msg;
             if (m == null) return;
             msg = null;
-            listener.onMessage(buildMessage(m.address, m.function, baud, m.payload, m.corrected, m.bad));
+            Message out = buildMessage(m.address, m.function, baud, m.payload, m.corrected, m.bad);
+            out.addrFix = m.addrFix;
+            out.afsk = kind == AFSK;
+            out.demod = demodName(kind);
+            held.add(out);
         }
     }
 
     private static final class Building {
         final int address, function;
         final List<Integer> payload = new ArrayList<>();
-        int corrected, bad;
+        int corrected, bad, addrFix;
 
         Building(int a, int f) { address = a; function = f; }
     }
@@ -240,31 +440,218 @@ final class Pocsag {
         return r;
     }
 
-    static String decodeNumeric(List<Integer> payload) {
+    /** Symboles du jeu POCSAG numerique, sans supprimer les espaces de bourrage. */
+    private static String numericSymbols(List<Integer> payload) {
         StringBuilder sb = new StringBuilder();
         for (int w : payload) for (int k = 4; k >= 0; k--) sb.append(NUMERIC_CHARS.charAt(reverseBits((w >>> (k * 4)) & 0xF, 4)));
-        return sb.toString().trim();
+        return sb.toString();
+    }
+
+    static String decodeNumeric(List<Integer> payload) {
+        return numericSymbols(payload).trim();
+    }
+
+    /**
+     * Resultat d'une reinterpretation du jeu numerique comme texte alpha.
+     *
+     * Certains reseaux transportent de l'ASCII 7 bits dans une charge que leur pager affiche
+     * en mode « numerique ». Le decalage retenu est indique pour rendre le resultat verifiable ;
+     * le caractere · represente un octet non imprimable inattendu.
+     */
+    static final class AlphaDecode {
+        final String text;
+        final int bitOffset, printable, corrupt;
+        /** Proposition issue d'une seule correction de symbole, jamais appliquee silencieusement. */
+        final String suggestedText, correctedSymbols;
+        final int correctedSymbol;
+
+        AlphaDecode(String text, int bitOffset, int printable, int corrupt) {
+            this(text, bitOffset, printable, corrupt, null, null, -1);
+        }
+
+        AlphaDecode(String text, int bitOffset, int printable, int corrupt, String suggestedText, String correctedSymbols, int correctedSymbol) {
+            this.text = text;
+            this.bitOffset = bitOffset;
+            this.printable = printable;
+            this.corrupt = corrupt;
+            this.suggestedText = suggestedText;
+            this.correctedSymbols = correctedSymbols;
+            this.correctedSymbol = correctedSymbol;
+        }
+
+        boolean hasSuggestion() { return suggestedText != null; }
+    }
+
+    private static final class AlphaCandidate {
+        final String text;
+        final int printable, corrupt, score;
+
+        AlphaCandidate(String text, int printable, int corrupt, int score) {
+            this.text = text;
+            this.printable = printable;
+            this.corrupt = corrupt;
+            this.score = score;
+        }
+    }
+
+    /** Flux de bits d'une suite de mots POCSAG, dans l'ordre du champ message. */
+    private static String payloadBits(List<Integer> payload) {
+        StringBuilder bits = new StringBuilder(payload.size() * 20);
+        for (int w : payload) for (int b = 19; b >= 0; b--) bits.append(((w >>> b) & 1) == 0 ? '0' : '1');
+        return bits.toString();
+    }
+
+    /** Decode une position donnee d'un flux alpha 7 bits (bits de caractere LSB d'abord). */
+    private static AlphaCandidate alphaCandidate(String bits, int offset) {
+        StringBuilder sb = new StringBuilder();
+        int printable = 0, corrupt = 0, word = 0, words = 0;
+        for (int p = offset; p + 7 <= bits.length(); p += 7) {
+            int v = 0;
+            for (int b = 0; b < 7; b++) v = (v << 1) | (bits.charAt(p + b) - '0');
+            int c = reverseBits(v, 7);
+            if (c == 10) {
+                sb.append('\n');
+                printable++;
+                if (word >= 2) words += word * word;
+                word = 0;
+            } else if (c >= 32 && c <= 126) {
+                sb.append((char) c);
+                printable++;
+                if (Character.isLetter(c)) word++;
+                else {
+                    if (word >= 2) words += word * word;
+                    word = 0;
+                }
+            } else if (c != 0 && c != 3 && c != 4 && c != 0x17 && c != 13) {
+                sb.append('·');
+                corrupt++;
+                if (word >= 2) words += word * word;
+                word = 0;
+            } else {
+                if (word >= 2) words += word * word;
+                word = 0;
+            }
+        }
+        if (word >= 2) words += word * word;
+        int end = sb.length();
+        while (end > 0 && Character.isWhitespace(sb.charAt(end - 1))) end--;
+        String text = sb.substring(0, end);
+        // Les longues sequences de lettres et les caracteres imprimables distinguent tres bien
+        // un texte d'un mauvais alignement de bits, tout en pénalisant les octets abimés.
+        int score = printable * 3 + words - corrupt * 10 - (text.isEmpty() ? 30 : 0);
+        return new AlphaCandidate(text, printable, corrupt, score);
+    }
+
+    /** Essaie les sept alignements possibles d'un flux ASCII 7 bits. */
+    private static AlphaDecode decodeAlphaAutoBits(String bits) {
+        AlphaCandidate best = null;
+        int bestOffset = 0;
+        for (int offset = 0; offset < 7; offset++) {
+            AlphaCandidate c = alphaCandidate(bits, offset);
+            if (best == null || c.score > best.score) {
+                best = c;
+                bestOffset = offset;
+            }
+        }
+        return new AlphaDecode(best.text, bestOffset, best.printable, best.corrupt);
+    }
+
+    /** Flux de bits issu des symboles affiches en mode numerique. */
+    private static String numericSymbolsBits(String symbols) {
+        StringBuilder bits = new StringBuilder(symbols.length() * 4);
+        for (int i = 0; i < symbols.length(); i++) {
+            int transmitted = reverseBits(NUMERIC_CHARS.indexOf(symbols.charAt(i)), 4);
+            for (int b = 3; b >= 0; b--) bits.append(((transmitted >>> b) & 1) == 0 ? '0' : '1');
+        }
+        return bits.toString();
+    }
+
+    /**
+     * Petit score de vraisemblance pour les libelles francais courants de radiomessagerie.
+     * Il ne sert qu'a proposer une correction d'un seul symbole recopie depuis un ecran, jamais
+     * a changer le message recu automatiquement.
+     */
+    private static int operationalTextScore(String text) {
+        String s = text.toLowerCase(Locale.ROOT);
+        int score = 0;
+        for (String word : new String[]{"mission", "intervention", "relev", "accid", "reception", "protec"}) {
+            if (s.contains(word)) score += 50;
+        }
+        return score;
+    }
+
+    /**
+     * Cherche une substitution unique de symbole qui rend un texte nettement plus plausible.
+     * Une photo peut confondre U et 1, ou une parenthese et un chiffre ; sans les mots BCH
+     * originaux, une proposition explicite est plus sure qu'une correction cachee.
+     */
+    private static AlphaDecode suggestOneSymbolFix(String symbols, AlphaDecode original) {
+        int originalScore = operationalTextScore(original.text);
+        AlphaDecode best = null;
+        String bestSymbols = null;
+        int bestIndex = -1, bestScore = originalScore;
+        char[] chars = symbols.toCharArray();
+        for (int i = 0; i < chars.length; i++) {
+            char was = chars[i];
+            for (int n = 0; n < NUMERIC_CHARS.length(); n++) {
+                char replacement = NUMERIC_CHARS.charAt(n);
+                if (replacement == was) continue;
+                chars[i] = replacement;
+                AlphaDecode candidate = decodeAlphaAutoBits(numericSymbolsBits(new String(chars)));
+                int score = operationalTextScore(candidate.text);
+                // Une proposition ne doit pas masquer une degradation marquee de la trame.
+                if (score > bestScore && candidate.printable >= original.printable - 1 && candidate.corrupt <= original.corrupt + 1) {
+                    best = candidate;
+                    bestSymbols = new String(chars);
+                    bestIndex = i;
+                    bestScore = score;
+                }
+            }
+            chars[i] = was;
+        }
+        if (best == null || bestScore < originalScore + 50) return original;
+        return new AlphaDecode(original.text, original.bitOffset, original.printable, original.corrupt,
+                best.text, bestSymbols, bestIndex);
+    }
+
+    /**
+     * Reinterprete une chaine affichee par un pager en « numerique » comme un flux alpha.
+     * Les retours ligne servent seulement a mettre en forme une copie depuis l'ecran et sont ignores ;
+     * les espaces ordinaires restent des symboles POCSAG (valeur 0xC).
+     */
+    static AlphaDecode decodeNumericSymbolsAsAlpha(String symbols) {
+        if (symbols == null) throw new IllegalArgumentException("trame absente");
+        StringBuilder normalized = new StringBuilder(symbols.length());
+        int used = 0;
+        for (int i = 0; i < symbols.length(); i++) {
+            char c = symbols.charAt(i);
+            if (c == '\r' || c == '\n' || c == '\t') continue;
+            if (c == '\u00a0') c = ' ';
+            c = Character.toUpperCase(c);
+            int n = NUMERIC_CHARS.indexOf(c);
+            if (n < 0) throw new IllegalArgumentException("symbole POCSAG numerique invalide : " + symbols.charAt(i));
+            normalized.append(c);
+            used++;
+        }
+        if (used == 0) throw new IllegalArgumentException("trame vide");
+        AlphaDecode direct = decodeAlphaAutoBits(numericSymbolsBits(normalized.toString()));
+        return suggestOneSymbolFix(normalized.toString(), direct);
     }
 
     static String decodeAlpha(List<Integer> payload) {
-        StringBuilder sb = new StringBuilder();
-        int acc = 0, nbits = 0;
-        for (int w : payload) {
-            for (int b = 19; b >= 0; b--) {
-                acc = (acc << 1) | ((w >>> b) & 1);
-                if (++nbits == 7) {
-                    int c = reverseBits(acc, 7);
-                    if (c == 10) sb.append('\n');
-                    else if (c >= 32 && c <= 126) sb.append((char) c);
-                    else if (c != 0 && c != 3 && c != 4 && c != 0x17 && c != 13) sb.append('·');
-                    acc = 0;
-                    nbits = 0;
-                }
-            }
-        }
-        int e = sb.length();
-        while (e > 0 && Character.isWhitespace(sb.charAt(e - 1))) e--;
-        return sb.substring(0, e);
+        return alphaCandidate(payloadBits(payload), 0).text;
+    }
+
+    /**
+     * Version automatique, utile lorsque le reseau place un petit en-tete avant le texte. L'alignement
+     * standard est garde s'il ne contient aucun octet non imprimable : sinon un decalage peut sortir
+     * un meilleur score sur un texte correct (chiffres et espaces) et l'afficher illisible.
+     */
+    private static AlphaDecode decodeAlphaAuto(List<Integer> payload) {
+        String bits = payloadBits(payload);
+        AlphaCandidate std = alphaCandidate(bits, 0);
+        if (std.corrupt == 0 && !std.text.isEmpty()) return new AlphaDecode(std.text, 0, std.printable, 0);
+        return decodeAlphaAutoBits(bits);
     }
 
     /** Choix numerique / alpha au contenu (comme le mode « auto » de multimon-ng). */
@@ -287,9 +674,10 @@ final class Pocsag {
         m.function = function;
         m.baud = baud;
         m.numeric = decodeNumeric(payload);
-        m.alpha = decodeAlpha(payload);
+        m.alpha = decodeAlphaAuto(payload).text;
         m.isNumeric = guessNumeric(function, m.numeric, m.alpha);
         m.toneOnly = payload.isEmpty();
+        m.payload = new ArrayList<>(payload);
         m.corrected = corrected;
         m.badCodewords = bad;
         return m;
@@ -398,6 +786,29 @@ final class Pocsag {
         }
         short[] out = new short[n];
         for (int i = 0; i < n; i++) out[i] = (short) Math.round(Math.max(-1, Math.min(1, y[i] * level)) * 32767);
+        return out;
+    }
+
+    /**
+     * Forme d'onde AFSK : sous-porteuse a phase continue (bit 1 = 1200 Hz, bit 0 = 2200 Hz, echange si
+     * invert), dans la bande 300-3100 Hz de la voie audio des postes Benshi. Rampes de 2 ms aux bords,
+     * 150 ms de silence avant et apres.
+     */
+    static short[] waveformAfsk(boolean[] bits, int baud, int rate, double level, boolean invert) {
+        double spb = rate / (double) baud;
+        int lead = rate * 150 / 1000;
+        int body = (int) Math.ceil(bits.length * spb);
+        int ramp = rate * 2 / 1000;
+        short[] out = new short[lead * 2 + body];
+        double phase = 0;
+        for (int i = 0; i < body; i++) {
+            int bi = Math.min(bits.length - 1, (int) (i / spb));
+            double f = bits[bi] != invert ? AFSK_MARK : AFSK_SPACE;
+            phase += 2 * Math.PI * f / rate;
+            if (phase > 2 * Math.PI) phase -= 2 * Math.PI;
+            double env = Math.min(1, Math.min(i, body - 1 - i) / (double) ramp);
+            out[lead + i] = (short) Math.round(Math.sin(phase) * env * level * 32767);
+        }
         return out;
     }
 }

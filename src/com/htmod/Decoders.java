@@ -310,6 +310,9 @@ final class Decoders {
 
     private static String num(double v, int dec) { return Double.isNaN(v) ? "" : fmt(v, dec); }
 
+    /** WAV de diagnostic d'un autre module (audio recu par le poste pour le POCSAG...), si l'option est active. */
+    void saveWavExternal(String prefix, short[] pcm, int n) { saveWav(prefix, pcm, n); }
+
     /** Enregistre un WAV mono 16 bits / 32 kHz (diagnostic) ; garde les 60 plus recents. */
     private void saveWav(String prefix, short[] pcm, int n) {
         if (!saveWav) return;

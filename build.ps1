@@ -36,6 +36,20 @@ $refs = "$wm\Windows.Devices.winmd", "$wm\Windows.Foundation.winmd", "$wm\Window
 & $csc /nologo /optimize+ /target:exe /platform:anycpu "/out:$out\stage\btbridge.exe" $refs "$w\bridge\BtBridge.cs"
 if ($LASTEXITCODE -ne 0) { Fail "csc btbridge" }
 
+# 1 bis. Pont WhatsApp (envoi des messages POCSAG vers un groupe) : Go + bibliotheque libre whatsmeow.
+#        Go est installe dans <Bsht>\tools\go (go.dev) ; les modules sont telecharges au premier build.
+$go = "$b\tools\go\bin\go.exe"
+if (Test-Path $go) {
+    $env:GOPATH = "$b\tools\gopath"; $env:GOCACHE = "$b\tools\gocache"; $env:CGO_ENABLED = "0"
+    Push-Location "$w\bridge\wa"
+    & $go build -trimpath -ldflags "-s -w" -o "$out\stage\wabridge.exe" .
+    $goExit = $LASTEXITCODE
+    Pop-Location
+    if ($goExit -ne 0) { Fail "go wabridge" }
+} else {
+    Write-Host "Go absent ($go) : wabridge.exe non construit (envoi WhatsApp indisponible)" -ForegroundColor Yellow
+}
+
 # 2. Appli Java : sources Windows + decodeurs partages avec la version Android (mod\src).
 $shared = "Sarsat.java", "Sondes.java", "ReedSolomon.java" | ForEach-Object { "$b\mod\src\com\htmod\$_" }
 $src = @((Get-ChildItem "$w\src\com\htmod\*.java").FullName) + $shared

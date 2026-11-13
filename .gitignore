@@ -2,3 +2,6 @@
 out/
 dist/
 *.class
+# appli Android (android\build.ps1) : sorties et cle de signature (a garder hors du depot)
+android/build/
+android/keystore/

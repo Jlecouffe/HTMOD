@@ -388,6 +388,15 @@ Message (vide = bip seul) | Message (empty = beep only) | Messaggio (vuoto = sol
 Niveau audio | Audio level | Livello audio
 Pré-compensation (pré-accentuation) | Pre-compensation (pre-emphasis) | Precompensazione (pre-enfasi)
 Inverser la polarité | Invert polarity | Inverti la polarità
+Modulation AFSK 1200/2200 Hz (entre postes Benshi) | AFSK 1200/2200 Hz modulation (between Benshi radios) | Modulazione AFSK 1200/2200 Hz (tra radio Benshi)
+Passe le passe-bande 300-3100 Hz des postes ; décodé par HTMod, pas par un pager du commerce. | Gets through the radios' 300-3100 Hz passband; decoded by HTMod, not by a commercial pager. | Attraversa la banda passante 300-3100 Hz delle radio; decodificato da HTMod, non da un cercapersone commerciale.
+AFSK : choisissez 512 ou 1200 bauds. | AFSK: choose 512 or 1200 baud. | AFSK: scegli 512 o 1200 baud.
+POCSAG : réception %.1f s | POCSAG: reception %.1f s | POCSAG: ricezione %.1f s
+· niveau %.0f dBFS (crête %.0f dBFS) | · level %.0f dBFS (peak %.0f dBFS) | · livello %.0f dBFS (picco %.0f dBFS)
+· synchro : | · sync: | · sincronismo:
+aucune | none | nessuna
+Audio plat (sans désaccentuation) : POCSAG, SARSAT, sondes | Flat audio (no de-emphasis): POCSAG, SARSAT, radiosondes | Audio piatto (senza deenfasi): POCSAG, SARSAT, sonde
+Coupe la désaccentuation 750 µs du poste en réception (et la pré-accentuation en émission). Le passe-bande 300-3100 Hz reste. | Turns off the radio's 750 µs de-emphasis on receive (and pre-emphasis on transmit). The 300-3100 Hz passband remains. | Disattiva la deenfasi 750 µs della radio in ricezione (e la preenfasi in trasmissione). La banda passante 300-3100 Hz resta.
 <html><body style='width:290px'>Émission sur la fréquence du canal ou celle accordée | <html><body style='width:290px'>Transmits on the channel frequency or the one tuned | <html><body style='width:290px'>Trasmissione sulla frequenza del canale o su quella sintonizzata
 dans l'onglet VFO, réservée aux radioamateurs sur une fréquence autorisée (ex. DAPNET 439,9875 MHz). | in the VFO tab, for radio amateurs only on an authorised frequency (e.g. DAPNET 439.9875 MHz). | nella scheda VFO, riservata ai radioamatori su una frequenza autorizzata (es. DAPNET 439,9875 MHz).
 Vérifiez la réception avec un second poste ou un SDR.</body></html> | Check reception with a second radio or an SDR.</body></html> | Verifica la ricezione con una seconda radio o un SDR.</body></html>
@@ -835,3 +844,57 @@ Son | Sound | Audio
 Clavier (téléphone, tablette) | Keyboard (phone, tablet) | Tastiera (telefono, tablet)
 Clavier | Keyboard | Tastiera
 Taille réelle ou ajustée à l'écran | Actual size or fit to screen | Dimensione reale o adattata allo schermo
+
+# --- messages POCSAG vers un groupe WhatsApp (pont wabridge.exe, whatsmeow)
+MESSAGES POCSAG → WHATSAPP… | POCSAG MESSAGES → WHATSAPP… | MESSAGGI POCSAG → WHATSAPP…
+Envoyer chaque message POCSAG reçu vers un groupe WhatsApp | Send every received POCSAG message to a WhatsApp group | Invia ogni messaggio POCSAG ricevuto a un gruppo WhatsApp
+WhatsApp : désactivé | WhatsApp: off | WhatsApp: disattivato
+WhatsApp : PC non relié (QR code à scanner) | WhatsApp: PC not linked (scan the QR code) | WhatsApp: PC non collegato (scansiona il codice QR)
+WhatsApp : aucun groupe choisi | WhatsApp: no group selected | WhatsApp: nessun gruppo scelto
+WhatsApp → | WhatsApp → | WhatsApp →
+(hors ligne) | (offline) | (offline)
+envoyé(s) | sent | inviato/i
+· erreur : | · error: | · errore:
+wabridge.exe introuvable ( | wabridge.exe not found ( | wabridge.exe non trovato (
+pont WhatsApp arrêté | WhatsApp bridge stopped | ponte WhatsApp arrestato
+WhatsApp : PC relié au compte + | WhatsApp: PC linked to account + | WhatsApp: PC collegato all'account +
+WhatsApp : PC délié du compte | WhatsApp: PC unlinked from the account | WhatsApp: PC scollegato dall'account
+WhatsApp : | WhatsApp: | WhatsApp:
+WhatsApp : file d'attente pleine, message ignoré | WhatsApp: queue full, message dropped | WhatsApp: coda piena, messaggio ignorato
+WhatsApp : envoi impossible ( | WhatsApp: sending failed ( | WhatsApp: invio impossibile (
+aucun groupe choisi | no group selected | nessun gruppo scelto
+Messages POCSAG vers WhatsApp | POCSAG messages to WhatsApp | Messaggi POCSAG verso WhatsApp
+Envoyer les messages POCSAG reçus vers un groupe WhatsApp | Send received POCSAG messages to a WhatsApp group | Invia i messaggi POCSAG ricevuti a un gruppo WhatsApp
+Ajouter l'heure, le RIC, la fonction et le débit au message | Add time, RIC, function and baud rate to the message | Aggiungi ora, RIC, funzione e velocità al messaggio
+ENVOI DES MESSAGES POCSAG VERS WHATSAPP | SENDING POCSAG MESSAGES TO WHATSAPP | INVIO DEI MESSAGGI POCSAG A WHATSAPP
+<html><body style='width:440px'>Gratuit, sans compte supplémentaire : le PC est relié à votre WhatsApp | <html><body style='width:440px'>Free, no extra account: the PC is linked to your WhatsApp | <html><body style='width:440px'>Gratuito, senza account aggiuntivi: il PC è collegato al tuo WhatsApp
+comme WhatsApp Web. Touchez RELIER, puis dans WhatsApp sur le téléphone : Réglages › Appareils connectés › | like WhatsApp Web. Click LINK, then in WhatsApp on the phone: Settings › Linked devices › | come WhatsApp Web. Premi COLLEGA, poi in WhatsApp sul telefono: Impostazioni › Dispositivi collegati ›
+Connecter un appareil, et scannez le QR code. Client WhatsApp non officiel (bibliothèque libre whatsmeow) : | Link a device, and scan the QR code. Unofficial WhatsApp client (free whatsmeow library): | Collega un dispositivo, e scansiona il codice QR. Client WhatsApp non ufficiale (libreria libera whatsmeow):
+usage personnel et modéré conseillé.</body></html> | personal, moderate use recommended.</body></html> | si consiglia un uso personale e moderato.</body></html>
+RELIER MON WHATSAPP (QR CODE) | LINK MY WHATSAPP (QR CODE) | COLLEGA IL MIO WHATSAPP (CODICE QR)
+DÉLIER | UNLINK | SCOLLEGA
+LISTER MES GROUPES | LIST MY GROUPS | ELENCA I MIEI GRUPPI
+Groupe destinataire | Recipient group | Gruppo destinatario
+Identifiant du groupe (rempli par la liste, ex. 120363…@g.us) | Group ID (filled from the list, e.g. 120363…@g.us) | ID del gruppo (compilato dall'elenco, es. 120363…@g.us)
+RIC à transmettre (vide = tous ; ex. 25814, 25819, 25800-25899) | RICs to forward (empty = all; e.g. 25814, 25819, 25800-25899) | RIC da inoltrare (vuoto = tutti; es. 25814, 25819, 25800-25899)
+PC relié au compte WhatsApp + | PC linked to WhatsApp account + | PC collegato all'account WhatsApp +
+(connexion…) | (connecting…) | (connessione…)
+PC non relié à WhatsApp | PC not linked to WhatsApp | PC non collegato a WhatsApp
+Connexion à WhatsApp, QR code en préparation… | Connecting to WhatsApp, preparing QR code… | Connessione a WhatsApp, preparazione del codice QR…
+Scannez ce QR code avec WhatsApp (Réglages › Appareils connectés › Connecter un appareil) | Scan this QR code with WhatsApp (Settings › Linked devices › Link a device) | Scansiona questo codice QR con WhatsApp (Impostazioni › Dispositivi collegati › Collega un dispositivo)
+PC relié : choisissez maintenant le groupe (LISTER MES GROUPES) | PC linked: now choose the group (LIST MY GROUPS) | PC collegato: ora scegli il gruppo (ELENCA I MIEI GRUPPI)
+Liaison non aboutie ( | Link not completed ( | Collegamento non riuscito (
+) : touchez RELIER pour un nouveau QR code | ): click LINK for a new QR code | ): premi COLLEGA per un nuovo codice QR
+Liaison impossible : | Link failed: | Collegamento impossibile:
+Lecture des groupes… | Reading groups… | Lettura dei gruppi…
+groupe(s) trouvé(s) | group(s) found | gruppo/i trovato/i
+Liste impossible : | List failed: | Elenco impossibile:
+ENVOYER UN TEST | SEND A TEST | INVIA UN TEST
+Envoi du message de test… | Sending test message… | Invio del messaggio di prova…
+📟 HTMod : test de l'envoi des messages POCSAG vers ce groupe. | 📟 HTMod: test of POCSAG message forwarding to this group. | 📟 HTMod: prova dell'invio dei messaggi POCSAG a questo gruppo.
+Message de test envoyé au groupe | Test message sent to the group | Messaggio di prova inviato al gruppo
+Échec : | Failed: | Errore:
+FERMER | CLOSE | CHIUDI
+WhatsApp : PC relié, envoi désactivé (MESSAGES POCSAG → WHATSAPP) | WhatsApp: PC linked, sending off (POCSAG MESSAGES → WHATSAPP) | WhatsApp: PC collegato, invio disattivato (MESSAGGI POCSAG → WHATSAPP)
+: choisissez le groupe dans la liste | : choose the group in the list | : scegli il gruppo nell'elenco
+aucun port libre | no free port | nessuna porta libera

@@ -466,7 +466,7 @@ VIEWS.POCSAG = function (v) {
   v.append(h('div', { class: 'card table-card', style: { flex: 1 } },
     h('div', { class: 'head' }, h('div', null, label(_t('MESSAGES REÇUS · 512 / 1200 / 2400 BAUDS'), 'tracked'), sync), count), g));
 
-  const F = { func: 3, baud: 1, numeric: 0, level: 2, pre: 0, inv: 0 };
+  const F = { func: 3, baud: 1, numeric: 0, level: 2, pre: 0, inv: 0, afsk: 0 };
   const ric = field('', { inputmode: 'numeric' }), msg = field('');
   const kFunc = choice(['0', '1', '2', '3'], 3, i => F.func = i);
   const kBaud = choice(['512 bd', '1200 bd', '2400 bd'], 1, i => F.baud = i);
@@ -474,17 +474,18 @@ VIEWS.POCSAG = function (v) {
   const kLevel = choice(['40 %', '60 %', '80 %', '100 %'], 2, i => F.level = i);
   const sPre = toggle(_t('Pré-compensation (pré-accentuation)'), false, x => F.pre = x ? 1 : 0);
   const sInv = toggle(_t('Inverser la polarité'), false, x => F.inv = x ? 1 : 0);
-  const txL = h('div', { class: 'mono', style: { fontSize: '11.5px', marginTop: '6px', color: C.muted } }, ' ');
+  const sAfsk = toggle(_t('Modulation AFSK 1200/2200 Hz (entre postes Benshi)'), false, x => F.afsk = x ? 1 : 0);
+  const txL =h('div', { class: 'mono', style: { fontSize: '11.5px', marginTop: '6px', color: C.muted } }, ' ');
   const send = key(_t('ÉMETTRE'), async () => {
     const d = S.pocsag;
     if (d && d.busy) { cmd('pocsag.stop'); return; }
-    const ok = await confirmBox(_t('Émettre le message POCSAG ?'), 'RIC ' + ric.value.trim() + _t(' · fonction ') + F.func + ' · ' + [512, 1200, 2400][F.baud] + _t(' bauds\n')
+    const ok = await confirmBox(_t('Émettre le message POCSAG ?'), 'RIC ' + ric.value.trim() + _t(' · fonction ') + F.func + ' · ' + [512, 1200, 2400][F.baud] + (F.afsk ? ' AFSK' : '') + _t(' bauds\n')
       + (d ? d.tx : '') + _t('\n\nJe confirme être radioamateur et émettre sur une fréquence autorisée.'), _t('ÉMETTRE'));
     if (ok) cmd('pocsag.send', Object.assign({ ric: ric.value, msg: msg.value }, F));
   }, { primary: true, cls: 'wide' });
   send.style.height = '48px';
   v.append(h('div', { class: 'card tx-card' }, label(_t('ÉMISSION'), 'tracked'), caption(_t('RIC (adresse du récepteur)')), ric, caption(_t('Fonction')), kFunc, caption(_t('Débit')), kBaud,
-    caption(_t('Type')), kType, caption(_t('Message (vide = bip seul)')), msg, caption(_t('Niveau audio')), kLevel, sPre, sInv, txL, h('div', { style: { height: '8px' } }), send,
+    caption(_t('Type')), kType, caption(_t('Message (vide = bip seul)')), msg, caption(_t('Niveau audio')), kLevel, sPre, sInv, sAfsk, txL, h('div', { style: { height: '8px' } }), send,
     h('div', { style: { height: '8px' } }),
     note(_t('Émission sur la fréquence du canal ou celle accordée dans l\'onglet VFO, réservée aux radioamateurs sur une fréquence autorisée (ex. DAPNET 439,9875 MHz). Vérifiez la réception avec un second poste ou un SDR.'))));
   let init = false;
@@ -492,8 +493,8 @@ VIEWS.POCSAG = function (v) {
     if (!init) {
       init = true;
       ric.value = d.ric; msg.value = d.msg;
-      Object.assign(F, { func: d.func, baud: d.baud, numeric: d.numeric ? 1 : 0, level: d.level, pre: d.pre ? 1 : 0, inv: d.inv ? 1 : 0 });
-      kFunc.set(d.func); kBaud.set(d.baud); kType.set(d.numeric ? 1 : 0); kLevel.set(d.level); sPre.set(d.pre); sInv.set(d.inv);
+      Object.assign(F, { func: d.func, baud: d.baud, numeric: d.numeric ? 1 : 0, level: d.level, pre: d.pre ? 1 : 0, inv: d.inv ? 1 : 0, afsk: d.afsk ? 1 : 0 });
+      kFunc.set(d.func); kBaud.set(d.baud); kType.set(d.numeric ? 1 : 0); kLevel.set(d.level); sPre.set(d.pre); sInv.set(d.inv); sAfsk.set(d.afsk);
     }
     setText(sync, d.sync); setText(count, d.count); setText(txL, d.tx); txL.style.color = d.txColor;
     send.setText(d.sendKey);

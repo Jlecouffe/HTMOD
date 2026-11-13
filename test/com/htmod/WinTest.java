@@ -91,7 +91,8 @@ public class WinTest {
         KissTest.run();
 
         TrTest.run();
-        PocsagTest.run();
+        WhatsAppTest.run();
+        PocsagTest.run(new File(a.length > 1 ? a[1] : "test/data"));
         SstvTest.run();
         ChannelTest.run();
         SatTest.run(new File(a.length > 1 ? a[1] : "test/data"));
